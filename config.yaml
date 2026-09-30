@@ -6,8 +6,9 @@
 #
 # Per aggiungere una serie basta copiare un blocco e cambiarne i campi:
 #   id             codice della serie presso la fonte (es. su FRED "DGS10")
-#   fonte          modulo che la scarica: per ora solo "fred"
-#                  (in futuro: "ecb", "bis", "yfinance")
+#   fonte          modulo che la scarica: "fred" o "ecb" (in futuro: "bis", "yfinance")
+#                  oppure "calcolata" = differenza tra due altre serie (vedi componenti)
+#                  Per la BCE l'id è "DATASET/CHIAVE", es. FM/D.U2.EUR.4F.KR.DFR.LEV
 #   nome           etichetta mostrata sul sito
 #   regione        tab in cui compare (deve esistere nella lista "regioni")
 #   categoria      gruppo tematico (serve a orientarsi e per i confronti futuri)
@@ -15,6 +16,14 @@
 #   trasformazione "livello" = dato così com'è
 #                  "yoy"     = variazione % rispetto a un anno prima
 #   riepilogo      true = compare nella scheda riassuntiva in cima alla pagina
+#
+# Campi facoltativi:
+#   riserva        fonte alternativa se la principale non risponde, es.
+#                    riserva: {fonte: fred, id: ECBDFR}
+#                  (si può aggiungere "trasformazione" se diversa da quella principale)
+#   componenti     solo per fonte "calcolata": [A, B] -> la serie è A − B,
+#                  calcolata nelle date in cui esistono entrambe
+#   decimali       cifre decimali mostrate sul sito (predefinito 2)
 #
 # Nota: una serie scaricata ma non usata da nessun grafico compare comunque
 # nella scheda riassuntiva (se riepilogo: true) e nella tabella "Stato delle serie".
@@ -27,13 +36,32 @@ regioni:
     attiva: true
   - id: eurozona
     nome: Eurozona
-    attiva: false
+    attiva: true
   - id: asia
     nome: Asia
     attiva: false
   - id: globale
     nome: Confronto globale
     attiva: false
+
+# Recessioni disegnate come bande grigie, per le regioni senza una serie scaricabile.
+# (Per gli USA si usa la serie FRED USREC, più in basso.)
+recessioni:
+  eurozona:
+    # Fonte: CEPR-EABCN Euro Area Business Cycle Dating Committee (https://cepr.org),
+    # l'equivalente europeo del NBER. Non ha un'API: le date vanno copiate a mano
+    # quando il comitato annuncia un nuovo picco o minimo.
+    # picco = ultimo trimestre di espansione; minimo = ultimo trimestre di recessione.
+    # Elenco aggiornato alla recessione Covid del 2020. A settembre 2026 il sito CEPR non era
+    # consultabile in automatico: controllare a mano se ci sono annunci successivi.
+    fonte: CEPR-EABCN Euro Area Business Cycle Dating Committee
+    periodi:
+      - {picco: 1974Q3, minimo: 1975Q1}
+      - {picco: 1980Q1, minimo: 1982Q3}
+      - {picco: 1992Q1, minimo: 1993Q3}
+      - {picco: 2008Q1, minimo: 2009Q2}
+      - {picco: 2011Q3, minimo: 2013Q1}
+      - {picco: 2019Q4, minimo: 2020Q2}
 
 serie:
   # --- Politica monetaria -------------------------------------------
@@ -212,3 +240,190 @@ serie:
     unita: indicatore
     trasformazione: livello
     riepilogo: false
+
+  # =================================================================
+  # EUROZONA (fonte principale BCE, riserva FRED dove esiste)
+  # =================================================================
+
+  # --- Politica monetaria -------------------------------------------
+  - id: FM/D.U2.EUR.4F.KR.DFR.LEV
+    fonte: ecb
+    nome: Tasso sui depositi BCE (DFR)
+    regione: eurozona
+    categoria: politica_monetaria
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+    riserva: {fonte: fred, id: ECBDFR}
+
+  # --- Curva AAA area euro (proxy Bund) ------------------------------
+  # Curva stimata dalla BCE sui titoli di Stato con rating AAA, giornaliera dal 2004
+  - id: YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_3M
+    fonte: ecb
+    nome: AAA 3 mesi
+    regione: eurozona
+    categoria: curva
+    unita: "%"
+    trasformazione: livello
+    riepilogo: false
+  - id: YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_1Y
+    fonte: ecb
+    nome: AAA 1 anno
+    regione: eurozona
+    categoria: curva
+    unita: "%"
+    trasformazione: livello
+    riepilogo: false
+  - id: YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y
+    fonte: ecb
+    nome: AAA 2 anni
+    regione: eurozona
+    categoria: curva
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+  - id: YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_5Y
+    fonte: ecb
+    nome: AAA 5 anni
+    regione: eurozona
+    categoria: curva
+    unita: "%"
+    trasformazione: livello
+    riepilogo: false
+  - id: YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y
+    fonte: ecb
+    nome: AAA 10 anni
+    regione: eurozona
+    categoria: curva
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+  - id: YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_30Y
+    fonte: ecb
+    nome: AAA 30 anni
+    regione: eurozona
+    categoria: curva
+    unita: "%"
+    trasformazione: livello
+    riepilogo: false
+  - id: EA_AAA_10A_2A
+    fonte: calcolata
+    componenti: [YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y, YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y]
+    nome: Pendenza AAA 10A-2A
+    regione: eurozona
+    categoria: spread_curva
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+
+  # --- Spread sovrani -----------------------------------------------
+  # Rendimenti 10 anni dei singoli Paesi: solo MENSILI (media del mese), dal dataset
+  # BCE dei criteri di convergenza. I dati giornalieri per Paese non sono gratuiti.
+  - id: IRS/M.DE.L.L40.CI.0000.EUR.N.Z
+    fonte: ecb
+    nome: Bund 10 anni (media mensile)
+    regione: eurozona
+    categoria: titoli_stato
+    unita: "%"
+    trasformazione: livello
+    riepilogo: false
+    riserva: {fonte: fred, id: IRLTLT01DEM156N}
+  - id: IRS/M.IT.L.L40.CI.0000.EUR.N.Z
+    fonte: ecb
+    nome: BTP 10 anni (media mensile)
+    regione: eurozona
+    categoria: titoli_stato
+    unita: "%"
+    trasformazione: livello
+    riepilogo: false
+    riserva: {fonte: fred, id: IRLTLT01ITM156N}
+  - id: IRS/M.FR.L.L40.CI.0000.EUR.N.Z
+    fonte: ecb
+    nome: OAT 10 anni (media mensile)
+    regione: eurozona
+    categoria: titoli_stato
+    unita: "%"
+    trasformazione: livello
+    riepilogo: false
+    riserva: {fonte: fred, id: IRLTLT01FRM156N}
+  - id: SPREAD_BTP_BUND
+    fonte: calcolata
+    componenti: [IRS/M.IT.L.L40.CI.0000.EUR.N.Z, IRS/M.DE.L.L40.CI.0000.EUR.N.Z]
+    nome: Spread BTP-Bund (mensile)
+    regione: eurozona
+    categoria: spread_sovrani
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+  - id: SPREAD_OAT_BUND
+    fonte: calcolata
+    componenti: [IRS/M.FR.L.L40.CI.0000.EUR.N.Z, IRS/M.DE.L.L40.CI.0000.EUR.N.Z]
+    nome: Spread OAT-Bund (mensile)
+    regione: eurozona
+    categoria: spread_sovrani
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+  # Spread giornaliero: curva di TUTTI i titoli di Stato area euro meno curva AAA, 10 anni
+  - id: YC/B.U2.EUR.4F.G_N_C.SV_C_YM.SR_10Y
+    fonte: ecb
+    nome: Tutti i titoli di Stato 10 anni
+    regione: eurozona
+    categoria: titoli_stato
+    unita: "%"
+    trasformazione: livello
+    riepilogo: false
+  - id: EA_TUTTI_MENO_AAA_10A
+    fonte: calcolata
+    componenti: [YC/B.U2.EUR.4F.G_N_C.SV_C_YM.SR_10Y, YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y]
+    nome: Spread tutti - AAA 10A
+    regione: eurozona
+    categoria: spread_sovrani
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+
+  # --- Inflazione ---------------------------------------------------
+  # ATTENZIONE: dal 2026 l'HICP è nel dataset BCE "HICP" (codice fornitore 4D0).
+  # Il vecchio dataset "ICP" è fermo a dicembre 2025.
+  - id: HICP/M.U2.N.000000.4D0.ANR
+    fonte: ecb
+    nome: HICP headline
+    regione: eurozona
+    categoria: inflazione
+    unita: "% a/a"
+    trasformazione: livello   # la BCE pubblica già la variazione annua
+    riepilogo: true
+    riserva: {fonte: fred, id: CP0000EZCCM086NEST, trasformazione: yoy}
+  - id: HICP/M.U2.N.XEF000.4D0.ANR
+    fonte: ecb
+    nome: HICP core
+    regione: eurozona
+    categoria: inflazione
+    unita: "% a/a"
+    trasformazione: livello
+    riepilogo: true
+    riserva: {fonte: fred, id: 00XEFDEZCCM086NEST, trasformazione: yoy}
+
+  # --- Credito ------------------------------------------------------
+  # Nessuna fonte gratuita per lo spread Investment Grade in euro.
+  - id: BAMLHE00EHYIOAS
+    fonte: fred
+    nome: OAS High Yield euro
+    regione: eurozona
+    categoria: credito
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+
+  # --- Cambio -------------------------------------------------------
+  - id: EXR/D.USD.EUR.SP00.A
+    fonte: ecb
+    nome: EUR/USD
+    regione: eurozona
+    categoria: cambio
+    unita: dollari
+    trasformazione: livello
+    riepilogo: true
+    decimali: 4
+    riserva: {fonte: fred, id: DEXUSEU}

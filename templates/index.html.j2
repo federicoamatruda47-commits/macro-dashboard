@@ -16,7 +16,7 @@
   <header class="testata">
     <div class="contenitore">
       <h1>Dashboard macro</h1>
-      <p class="aggiornamento">Aggiornata il <strong>{{ aggiornato }}</strong> · fonte dati: FRED</p>
+      <p class="aggiornamento">Aggiornata il <strong>{{ aggiornato }}</strong> · fonti dati: FRED e BCE</p>
     </div>
   </header>
 
@@ -43,10 +43,24 @@
       </ul>
     </div>
     {% endif %}
+    {# Controllo di freschezza: la serie si scarica senza errori ma non riceve dati nuovi da troppo tempo
+       (può voler dire che la fonte l'ha dismessa o sostituita) #}
     {% if in_ritardo %}
-    <div class="avviso avviso-ritardo">
-      <strong>ⓘ Dati meno recenti del solito:</strong>
-      {% for s in in_ritardo %}{{ s.nome }} (ultimo dato {{ s.data }}){{ ", " if not loop.last }}{% endfor %}.
+    <div class="avviso avviso-ritardo" role="alert">
+      <strong>⚠ Attenzione: {{ in_ritardo|length }} {{ 'serie non riceve' if in_ritardo|length == 1 else 'serie non ricevono' }} dati nuovi da troppo tempo</strong>
+      (soglie: 10 giorni per le giornaliere, 21 per le settimanali, 75 per le mensili, 120 per le trimestrali,
+      contati dalla fine del periodo dell'ultimo dato). Controllare che la fonte non sia cambiata.
+      <ul>
+        {% for s in in_ritardo %}<li>{{ s.regione }} · <code>{{ s.id }}</code> {{ s.nome }}: ultimo dato {{ s.data }}, serie {{ s.frequenza }}, {{ s.giorni }} giorni (soglia {{ s.soglia }})</li>{% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    {% if riserve %}
+    <div class="avviso avviso-riserva">
+      <strong>ⓘ Fonte di riserva in uso</strong> per {{ riserve|length }} {{ 'serie' }}: i dati sono comunque aggiornati.
+      <ul>
+        {% for s in riserve %}<li><code>{{ s.id }}</code> {{ s.nome }}: {{ s.nota }}</li>{% endfor %}
+      </ul>
     </div>
     {% endif %}
 
@@ -141,7 +155,7 @@
                 <tr>
                   <td>{{ s.nome }}</td>
                   <td><code>{{ s.id }}</code></td>
-                  <td>{{ s.fonte }}</td>
+                  <td>{{ s.fonte }}{% if s.nota_fonte %} <span class="stato-ritardo" title="{{ s.nota_fonte }}">ⓘ</span>{% endif %}</td>
                   <td>{{ s.frequenza }}</td>
                   <td>{{ s.dal }}</td>
                   <td>{{ s.ultimo }}</td>
@@ -160,7 +174,8 @@
   </main>
 
   <footer class="piede contenitore">
-    <p>Dati: Federal Reserve Bank of St. Louis (FRED), incluse le serie ICE BofA, Moody's, CBOE e NBER ivi pubblicate.
+    <p>Dati: Federal Reserve Bank of St. Louis (FRED), incluse le serie ICE BofA, Moody's, CBOE e NBER ivi pubblicate;
+      Banca centrale europea (ECB Data Portal); date delle recessioni dell'area euro: CEPR-EABCN Euro Area Business Cycle Dating Committee.
       Dashboard a scopo di studio, non è una consulenza finanziaria.</p>
   </footer>
 

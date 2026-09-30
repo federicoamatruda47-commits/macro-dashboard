@@ -9,7 +9,7 @@ import pandas as pd
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from plotly.offline import get_plotlyjs_version
 
-from .data import Serie, tipo_variazione, trova_serie, variazioni
+from .data import NOMI_FONTI, Serie, tipo_variazione, trova_serie, variazioni
 from .regions import REGIONI, Grafico
 
 FUSO_ORARIO = ZoneInfo("Europe/Rome")
@@ -26,8 +26,16 @@ def numero(valore: float, decimali: int = 2, segno: bool = False) -> str:
     return testo.replace("-", "−")  # segno meno tipografico
 
 
-def valore_con_unita(valore: float, unita: str) -> str:
-    return numero(valore, 2) + ("%" if unita.startswith("%") else "")
+def valore_con_unita(valore: float, unita: str, decimali: int = 2) -> str:
+    return numero(valore, decimali) + ("%" if unita.startswith("%") else "")
+
+
+
+def nome_fonte(s: Serie) -> str:
+    """Es. 'BCE', 'Calcolata' oppure 'FRED (riserva)' se la fonte principale non ha risposto."""
+    fonte = s.fonte_usata or s.fonte
+    base, _, resto = fonte.partition(" ")
+    return (NOMI_FONTI.get(base, base.upper()) + (" " + resto if resto else "")).strip()
 
 
 def testo_variazione(valore: float | None, unita: str) -> str:
@@ -54,7 +62,7 @@ def _scheda_riepilogo(s: Serie, oggi: pd.Timestamp) -> dict:
     scheda = {"nome": s.nome, "id": s.id, "ok": s.ok, "errore": s.errore}
     if s.ok:
         scheda.update(
-            valore=valore_con_unita(s.ultimo_valore, s.unita),
+            valore=valore_con_unita(s.ultimo_valore, s.unita, s.decimali),
             data=data_it(s.ultima_data),
             ritardo=s.in_ritardo(oggi),
             variazioni=[{"etichetta": etichetta, "testo": testo_variazione(v, s.unita)}
@@ -88,12 +96,23 @@ def _dati_grafico(grafico: Grafico, serie: dict[str, Serie], oggi: pd.Timestamp)
 
 def _riga_stato(s: Serie, oggi: pd.Timestamp) -> dict:
     """Una riga della tabella 'Stato delle serie' in fondo alla pagina."""
+    fonte = nome_fonte(s)
+    if s.componenti:
+        fonte += ": " + " − ".join(s.componenti)
     return {
-        "id": s.id, "nome": s.nome, "fonte": s.fonte.upper(), "unita": s.unita,
+        "id": s.id, "nome": s.nome, "fonte": fonte, "unita": s.unita,
         "frequenza": s.frequenza or "—", "dal": data_it(s.prima_data), "ultimo": data_it(s.ultima_data),
-        "valore": valore_con_unita(s.ultimo_valore, s.unita) if s.ok and s.unita != "indicatore" else "—",
-        "ok": s.ok, "ritardo": s.in_ritardo(oggi), "errore": s.errore,
+        "valore": (valore_con_unita(s.ultimo_valore, s.unita, s.decimali)
+                   if s.ok and s.unita != "indicatore" else "—"),
+        "ok": s.ok, "ritardo": s.in_ritardo(oggi), "errore": s.errore, "nota_fonte": s.nota_fonte,
     }
+
+
+def _voce_ritardo(s: Serie, oggi: pd.Timestamp, nomi_regioni: dict[str, str]) -> dict:
+    """Una riga dell'avviso 'dati non aggiornati'."""
+    return {"id": s.id, "nome": s.nome, "regione": nomi_regioni.get(s.regione, s.regione),
+            "data": data_it(s.ultima_data), "frequenza": s.frequenza,
+            "giorni": s.giorni_senza_dati(oggi), "soglia": s.soglia_ritardo}
 
 
 def prepara_contesto(config: dict, serie: dict[str, Serie]) -> dict:
@@ -109,7 +128,7 @@ def prepara_contesto(config: dict, serie: dict[str, Serie]) -> dict:
 
         sezioni = []
         if attiva:
-            for sezione in costruttore(serie):
+            for sezione in costruttore(serie, config):
                 sezioni.append({
                     "id": sezione.id, "titolo": sezione.titolo, "descrizione": sezione.descrizione,
                     "grafici": [_dati_grafico(g, serie, oggi) for g in sezione.grafici],
@@ -121,12 +140,13 @@ def prepara_contesto(config: dict, serie: dict[str, Serie]) -> dict:
             "stato": [_riga_stato(s, oggi) for s in serie_regione],
         })
 
+    nomi_regioni = {r["id"]: r["nome"] for r in config["regioni"]}
     return {
         "aggiornato": adesso.strftime("%d/%m/%Y alle %H:%M") + " (ora italiana)",
         "regioni": regioni,
         "errori": [{"id": s.id, "nome": s.nome, "errore": s.errore} for s in serie.values() if not s.ok],
-        "in_ritardo": [{"id": s.id, "nome": s.nome, "data": data_it(s.ultima_data)}
-                       for s in serie.values() if s.in_ritardo(oggi)],
+        "in_ritardo": [_voce_ritardo(s, oggi, nomi_regioni) for s in serie.values() if s.in_ritardo(oggi)],
+        "riserve": [{"id": s.id, "nome": s.nome, "nota": s.nota_fonte} for s in serie.values() if s.nota_fonte],
         "totale_serie": len(serie),
         "plotly_versione": get_plotlyjs_version(),
         "versione": adesso.strftime("%Y%m%d%H%M"),

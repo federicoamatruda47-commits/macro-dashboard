@@ -41,7 +41,7 @@ def _date(serie: pd.Series) -> list[str]:
 
 
 def _valori(serie: pd.Series) -> list[float]:
-    return serie.round(3).tolist()
+    return serie.round(4).tolist()  # 4 decimali: servono per i cambi (es. EUR/USD 1,1355)
 
 
 def _suffisso(unita: str) -> str:
@@ -71,6 +71,21 @@ def periodi_recessione(usrec: Serie | None) -> list[tuple[pd.Timestamp, pd.Times
     return periodi
 
 
+def periodi_da_trimestri(elenco: list[dict] | None) -> list[tuple[pd.Timestamp, pd.Timestamp]]:
+    """Trasforma un elenco di recessioni datate per trimestre (es. CEPR) in coppie (inizio, fine).
+
+    Ogni voce ha "picco" e "minimo" nel formato "2008Q1". Come per il NBER, la recessione
+    va dal trimestre DOPO il picco fino al trimestre del minimo compreso:
+    picco 2008Q1, minimo 2009Q2 -> banda dal 1° aprile 2008 al 1° luglio 2009.
+    """
+    periodi = []
+    for voce in elenco or []:
+        picco = pd.Period(str(voce["picco"]), freq="Q")
+        minimo = pd.Period(str(voce["minimo"]), freq="Q")
+        periodi.append(((picco + 1).start_time.normalize(), (minimo + 1).start_time.normalize()))
+    return periodi
+
+
 def _layout_base(unita: str) -> dict:
     """Impostazioni comuni a tutti i grafici (i colori li completa il JavaScript)."""
     return dict(
@@ -86,7 +101,8 @@ def _layout_base(unita: str) -> dict:
     )
 
 
-def _aggiungi_recessioni(figura: go.Figure, recessioni, inizio: pd.Timestamp, fine: pd.Timestamp) -> None:
+def _aggiungi_recessioni(figura: go.Figure, recessioni, inizio: pd.Timestamp, fine: pd.Timestamp,
+                         etichetta: str) -> None:
     """Disegna le bande grigie, solo per le recessioni dentro il periodo del grafico."""
     visibili = [(a, b) for a, b in recessioni if b > inizio and a < fine]
     for a, b in visibili:
@@ -94,7 +110,7 @@ def _aggiungi_recessioni(figura: go.Figure, recessioni, inizio: pd.Timestamp, fi
                          fillcolor=COLORE_RECESSIONE, line_width=0, layer="below")
     if visibili:
         # Voce di legenda "finta" per spiegare cosa sono le bande grigie
-        figura.add_trace(go.Scatter(x=[None], y=[None], mode="markers", name="Recessione NBER",
+        figura.add_trace(go.Scatter(x=[None], y=[None], mode="markers", name=etichetta,
                                     marker=dict(symbol="square", size=12, color=COLORE_RECESSIONE),
                                     hoverinfo="skip"))
 
@@ -115,7 +131,8 @@ def _aggiungi_linea_riferimento(figura: go.Figure, valore: float, etichetta: str
 # ---------------------------------------------------------------------
 
 def linee_storiche(serie: list[Serie], recessioni=None, riferimento: tuple[float, str] | None = None,
-                   evidenzia_inversioni: bool = False) -> go.Figure | None:
+                   evidenzia_inversioni: bool = False,
+                   etichetta_recessioni: str = "Recessione NBER") -> go.Figure | None:
     """Grafico a linee nel tempo, con recessioni e (opzionali) inversioni o linea di riferimento.
 
     Le serie non disponibili vengono saltate: il grafico mostra quelle rimaste.
@@ -131,7 +148,7 @@ def linee_storiche(serie: list[Serie], recessioni=None, riferimento: tuple[float
 
     inizio = min(s.prima_data for s in disponibili)
     fine = max(s.ultima_data for s in disponibili)
-    _aggiungi_recessioni(figura, recessioni or [], inizio, fine)
+    _aggiungi_recessioni(figura, recessioni or [], inizio, fine, etichetta_recessioni)
 
     for slot, s in enumerate(serie, start=1):  # lo slot segue la posizione in lista, non la disponibilità
         if not s.ok:
@@ -150,7 +167,7 @@ def linee_storiche(serie: list[Serie], recessioni=None, riferimento: tuple[float
         figura.add_trace(go.Scatter(
             x=_date(dati), y=_valori(dati), mode="lines", name=s.nome,
             line=dict(width=2, color=PALETTE[slot - 1]), meta={"slot": slot},
-            hovertemplate=f"%{{y:.2f}}{suffisso}<extra>{s.nome}</extra>",
+            hovertemplate=f"%{{y:.{s.decimali}f}}{suffisso}<extra>{s.nome}</extra>",
         ))
 
     if evidenzia_inversioni:

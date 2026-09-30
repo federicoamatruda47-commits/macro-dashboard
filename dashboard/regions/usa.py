@@ -12,8 +12,8 @@ from .modello import Grafico, Sezione
 SCADENZE = [("3M", "DGS3MO"), ("2A", "DGS2"), ("5A", "DGS5"), ("10A", "DGS10"), ("30A", "DGS30")]
 
 
-def costruisci(serie: dict[str, Serie]) -> list[Sezione]:
-    """Restituisce le sezioni della pagina USA."""
+def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
+    """Restituisce le sezioni della pagina USA (config non serve: le recessioni arrivano da USREC)."""
     recessioni = charts.periodi_recessione(serie.get("USREC"))
 
     def lista(*ids: str) -> list[Serie]:

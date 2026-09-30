@@ -15,9 +15,15 @@ from .sources import FONTI, ErroreFonte
 
 CAMPI_OBBLIGATORI = ["id", "fonte", "nome", "regione", "categoria", "unita", "trasformazione"]
 TRASFORMAZIONI = ["livello", "yoy"]
+FONTE_CALCOLATA = "calcolata"  # serie ottenuta da altre serie (componenti: [A, B] -> A − B)
+# Come mostrare il nome della fonte sul sito
+NOMI_FONTI = {"fred": "FRED", "ecb": "BCE", FONTE_CALCOLATA: "Calcolata"}
 
-# Dopo quanti giorni senza nuovi dati una serie si considera "in ritardo"
-SOGLIA_RITARDO_GIORNI = {"giornaliera": 10, "settimanale": 21, "mensile": 70, "trimestrale": 190}
+# Controllo di freschezza: dopo quanti giorni senza nuovi dati una serie è "in ritardo".
+# Per mensili e trimestrali i giorni si contano dalla FINE del periodo
+# (il dato di agosto "vale" fino al 31 agosto, anche se è datato 1° agosto).
+SOGLIA_RITARDO_GIORNI = {"giornaliera": 10, "settimanale": 21, "mensile": 75, "trimestrale": 120}
+DURATA_PERIODO = {"mensile": pd.DateOffset(months=1), "trimestrale": pd.DateOffset(months=3)}
 
 
 @dataclass
@@ -32,8 +38,13 @@ class Serie:
     unita: str
     trasformazione: str
     riepilogo: bool = False
+    decimali: int = 2                    # cifre decimali mostrate sul sito (es. 4 per EUR/USD)
+    riserva: dict | None = None          # fonte alternativa se la principale non risponde
+    componenti: list[str] | None = None  # solo per fonte "calcolata": [A, B] -> A − B
     dati: pd.Series | None = None  # dati già trasformati (es. in variazione annua)
     errore: str | None = None
+    fonte_usata: str | None = None       # es. "fred (riserva)" se si è dovuto usare la riserva
+    nota_fonte: str | None = None        # perché si è usata la riserva
 
     @property
     def ok(self) -> bool:
@@ -65,11 +76,28 @@ class Serie:
             return "mensile"
         return "trimestrale"
 
+    @property
+    def soglia_ritardo(self) -> int | None:
+        return SOGLIA_RITARDO_GIORNI.get(self.frequenza) if self.frequenza else None
+
+    def giorni_senza_dati(self, oggi: pd.Timestamp) -> int | None:
+        """Giorni trascorsi dalla fine del periodo dell'ultimo dato."""
+        if not self.ok:
+            return None
+        fine_periodo = self.ultima_data
+        if self.frequenza in DURATA_PERIODO:
+            fine_periodo = fine_periodo + DURATA_PERIODO[self.frequenza] - pd.Timedelta(days=1)
+        return max((oggi - fine_periodo).days, 0)
+
     def in_ritardo(self, oggi: pd.Timestamp) -> bool:
-        """True se l'ultimo dato è più vecchio del normale per questa frequenza."""
-        if not self.ok or self.frequenza is None:
+        """True se l'ultimo dato è più vecchio del normale per questa frequenza.
+
+        Serve a scoprire le serie "congelate": la fonte risponde senza errori
+        ma non aggiunge più dati (es. un dataset dismesso e sostituito da un altro).
+        """
+        if not self.ok or self.soglia_ritardo is None:
             return False
-        return (oggi - self.ultima_data).days > SOGLIA_RITARDO_GIORNI[self.frequenza]
+        return self.giorni_senza_dati(oggi) > self.soglia_ritardo
 
 
 def trova_serie(serie: dict[str, "Serie"], id_serie: str) -> "Serie":
@@ -94,10 +122,28 @@ def carica_config(percorso: Path) -> dict:
         config = yaml.safe_load(file)
 
     id_regioni = {regione["id"] for regione in config.get("regioni", [])}
+    id_serie = [voce.get("id") for voce in config.get("serie", [])]
+    doppi = sorted({i for i in id_serie if id_serie.count(i) > 1})
+    if doppi:
+        raise ValueError(f"Serie ripetute in config.yaml: {doppi}")
+
     for voce in config.get("serie", []):
         mancanti = [campo for campo in CAMPI_OBBLIGATORI if campo not in voce]
         if mancanti:
             raise ValueError(f"Serie {voce.get('id', '?')}: mancano i campi {mancanti} in config.yaml")
+        if voce["fonte"] == FONTE_CALCOLATA:
+            componenti = voce.get("componenti")
+            if not (isinstance(componenti, list) and len(componenti) == 2):
+                raise ValueError(f"Serie {voce['id']}: una serie calcolata richiede 'componenti: [A, B]'")
+            sconosciute = [c for c in componenti if c not in id_serie]
+            if sconosciute:
+                raise ValueError(f"Serie {voce['id']}: componenti non presenti in config.yaml: {sconosciute}")
+        riserva = voce.get("riserva")
+        if riserva is not None:
+            if not (isinstance(riserva, dict) and "fonte" in riserva and "id" in riserva):
+                raise ValueError(f"Serie {voce['id']}: 'riserva' deve avere almeno 'fonte' e 'id'")
+            if riserva.get("trasformazione", voce["trasformazione"]) not in TRASFORMAZIONI:
+                raise ValueError(f"Serie {voce['id']}: trasformazione della riserva non valida")
         if voce["trasformazione"] not in TRASFORMAZIONI:
             raise ValueError(f"Serie {voce['id']}: trasformazione '{voce['trasformazione']}' non valida "
                              f"(usa una tra {TRASFORMAZIONI})")
@@ -110,29 +156,96 @@ def carica_config(percorso: Path) -> dict:
 # Download
 # ---------------------------------------------------------------------
 
+def _nuova_serie(voce: dict) -> Serie:
+    return Serie(**{campo: voce[campo] for campo in CAMPI_OBBLIGATORI},
+                 riepilogo=bool(voce.get("riepilogo", False)),
+                 decimali=int(voce.get("decimali", 2)),
+                 riserva=voce.get("riserva"),
+                 componenti=voce.get("componenti"))
+
+
+def _scarica_da(fonte: str, id_fonte: str, trasformazione: str) -> pd.Series:
+    funzione_download = FONTI.get(fonte)
+    if funzione_download is None:
+        raise ErroreFonte(f"fonte '{fonte}' non supportata")
+    return trasforma(funzione_download(id_fonte), trasformazione)
+
+
+def _descrivi_errore(errore: Exception) -> str:
+    if isinstance(errore, ErroreFonte):
+        return str(errore)
+    return f"errore imprevisto ({type(errore).__name__})"
+
+
+def _scarica_una(serie: Serie) -> None:
+    """Scarica una serie dalla fonte principale; se fallisce, prova la riserva (se c'è)."""
+    try:
+        serie.dati = _scarica_da(serie.fonte, serie.id, serie.trasformazione)
+        serie.fonte_usata = serie.fonte
+        return
+    except Exception as errore:  # anche un errore imprevisto non deve fermare le altre serie
+        serie.errore = _descrivi_errore(errore)
+
+    if not serie.riserva:
+        return
+    riserva = serie.riserva
+    try:
+        serie.dati = _scarica_da(riserva["fonte"], riserva["id"],
+                                 riserva.get("trasformazione", serie.trasformazione))
+    except Exception as errore:
+        serie.errore += f"; non risponde neanche la riserva ({_descrivi_errore(errore)})"
+        return
+    principale = NOMI_FONTI.get(serie.fonte, serie.fonte.upper())
+    alternativa = NOMI_FONTI.get(riserva["fonte"], riserva["fonte"].upper())
+    serie.nota_fonte = (f"{principale} non disponibile ({serie.errore}): "
+                        f"usata la riserva {alternativa} {riserva['id']}")
+    serie.fonte_usata = f"{riserva['fonte']} (riserva)"
+    serie.errore = None
+
+
+def _calcola(serie: Serie, risultati: dict[str, Serie]) -> None:
+    """Serie calcolata: componente A meno componente B, solo nelle date in comune."""
+    a, b = (risultati[c] for c in serie.componenti)
+    mancanti = [c.id for c in (a, b) if not c.ok]
+    if mancanti:
+        serie.errore = "manca il dato di partenza: " + ", ".join(mancanti)
+        return
+    tabella = pd.concat([a.dati, b.dati], axis=1, join="inner").dropna()
+    if tabella.empty:
+        serie.errore = "le due serie di partenza non hanno date in comune"
+        return
+    differenza = (tabella.iloc[:, 0] - tabella.iloc[:, 1]).rename(serie.id)
+    serie.dati = trasforma(differenza, serie.trasformazione)
+    serie.fonte_usata = FONTE_CALCOLATA
+
+
 def scarica_tutte(config: dict) -> dict[str, Serie]:
-    """Scarica tutte le serie della configurazione. Non si ferma mai per un errore."""
+    """Scarica tutte le serie della configurazione. Non si ferma mai per un errore.
+
+    Prima le serie da scaricare, poi quelle calcolate (che usano le prime).
+    """
     risultati: dict[str, Serie] = {}
-    for voce in config["serie"]:
-        serie = Serie(**{campo: voce[campo] for campo in CAMPI_OBBLIGATORI},
-                      riepilogo=bool(voce.get("riepilogo", False)))
-        funzione_download = FONTI.get(serie.fonte)
+    voci = config["serie"]
+    da_scaricare = [v for v in voci if v["fonte"] != FONTE_CALCOLATA]
+    calcolate = [v for v in voci if v["fonte"] == FONTE_CALCOLATA]
 
-        try:
-            if funzione_download is None:
-                raise ErroreFonte(f"fonte '{serie.fonte}' non supportata")
-            grezza = funzione_download(serie.id)
-            serie.dati = trasforma(grezza, serie.trasformazione)
-            print(f"  OK      {serie.id:<14} {len(serie.dati):>6} dati, ultimo {serie.ultima_data:%d/%m/%Y}")
-        except ErroreFonte as errore:
-            serie.errore = str(errore)
-            print(f"  ERRORE  {serie.id:<14} {serie.errore}")
-        except Exception as errore:  # errore imprevisto: lo registriamo e andiamo avanti
-            serie.errore = f"errore imprevisto ({type(errore).__name__})"
-            print(f"  ERRORE  {serie.id:<14} {serie.errore}: {errore}")
+    for voce in da_scaricare + calcolate:
+        serie = _nuova_serie(voce)
+        if serie.fonte == FONTE_CALCOLATA:
+            _calcola(serie, risultati)
+        else:
+            _scarica_una(serie)
 
+        if serie.ok:
+            riserva = "  [RISERVA]" if serie.nota_fonte else ""
+            print(f"  OK      {serie.id:<36} {len(serie.dati):>6} dati, "
+                  f"ultimo {serie.ultima_data:%d/%m/%Y}{riserva}")
+        else:
+            print(f"  ERRORE  {serie.id:<36} {serie.errore}")
         risultati[serie.id] = serie
-    return risultati
+
+    # Stesso ordine di config.yaml (conta per schede riassuntive e tabelle)
+    return {voce["id"]: risultati[voce["id"]] for voce in voci}
 
 
 # ---------------------------------------------------------------------
