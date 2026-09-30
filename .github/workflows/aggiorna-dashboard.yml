@@ -1,0 +1,60 @@
+# =====================================================================
+# Aggiornamento automatico su GitHub
+# Ogni giorno GitHub avvia un computer temporaneo, scarica i dati,
+# genera il sito e lo pubblica su GitHub Pages.
+#
+# Prerequisiti (da fare una volta sola sul sito di GitHub):
+#   1. Settings > Secrets and variables > Actions > New repository secret
+#      Nome: FRED_API_KEY   Valore: la tua chiave FRED
+#   2. Settings > Pages > Source: "GitHub Actions"
+# =====================================================================
+name: Aggiorna dashboard
+
+on:
+  schedule:
+    - cron: "30 13 * * 1-6"  # ogni giorno lun-sab alle 13:30 UTC (dopo i dati FRED del mattino USA)
+  workflow_dispatch:          # permette di avviarlo a mano dalla scheda "Actions"
+  push:
+    branches: [main]          # e a ogni modifica del codice
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  genera:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Installa le librerie
+        run: pip install -r requirements.txt
+
+      - name: Scarica i dati e genera il sito
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python build.py  # se NESSUNA serie si scarica, esce con errore e non pubblica
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  pubblica:
+    needs: genera
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v5

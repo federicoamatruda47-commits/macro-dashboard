@@ -1,0 +1,15 @@
+# Segreti: la chiave API non deve MAI finire su GitHub
+.env
+
+# Ambiente virtuale Python (si ricrea con: pip install -r requirements.txt)
+.venv/
+
+# File temporanei di Python
+__pycache__/
+*.pyc
+
+# Impostazioni locali di Claude (anteprima nel browser dell'app)
+.claude/
+
+# Il sito generato viene ricostruito ogni giorno dalla GitHub Action
+site/

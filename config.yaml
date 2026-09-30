@@ -1,0 +1,214 @@
+# =====================================================================
+# CONFIGURAZIONE DELLA DASHBOARD
+# ---------------------------------------------------------------------
+# Qui si decide QUALI dati scaricare. Il codice Python legge questo file
+# e non contiene elenchi di serie "scritti a mano".
+#
+# Per aggiungere una serie basta copiare un blocco e cambiarne i campi:
+#   id             codice della serie presso la fonte (es. su FRED "DGS10")
+#   fonte          modulo che la scarica: per ora solo "fred"
+#                  (in futuro: "ecb", "bis", "yfinance")
+#   nome           etichetta mostrata sul sito
+#   regione        tab in cui compare (deve esistere nella lista "regioni")
+#   categoria      gruppo tematico (serve a orientarsi e per i confronti futuri)
+#   unita          unità DOPO la trasformazione: "%", "% a/a", "indice", "punti"
+#   trasformazione "livello" = dato così com'è
+#                  "yoy"     = variazione % rispetto a un anno prima
+#   riepilogo      true = compare nella scheda riassuntiva in cima alla pagina
+#
+# Nota: una serie scaricata ma non usata da nessun grafico compare comunque
+# nella scheda riassuntiva (se riepilogo: true) e nella tabella "Stato delle serie".
+# =====================================================================
+
+# Tab mostrate in cima al sito. "attiva: false" = tab visibile ma "in arrivo".
+regioni:
+  - id: usa
+    nome: Stati Uniti
+    attiva: true
+  - id: eurozona
+    nome: Eurozona
+    attiva: false
+  - id: asia
+    nome: Asia
+    attiva: false
+  - id: globale
+    nome: Confronto globale
+    attiva: false
+
+serie:
+  # --- Politica monetaria -------------------------------------------
+  - id: DFF
+    fonte: fred
+    nome: Fed funds effettivo
+    regione: usa
+    categoria: politica_monetaria
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+
+  # --- Curva dei Treasury -------------------------------------------
+  - id: DGS3MO
+    fonte: fred
+    nome: Treasury 3 mesi
+    regione: usa
+    categoria: curva
+    unita: "%"
+    trasformazione: livello
+    riepilogo: false
+  - id: DGS2
+    fonte: fred
+    nome: Treasury 2 anni
+    regione: usa
+    categoria: curva
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+  - id: DGS5
+    fonte: fred
+    nome: Treasury 5 anni
+    regione: usa
+    categoria: curva
+    unita: "%"
+    trasformazione: livello
+    riepilogo: false
+  - id: DGS10
+    fonte: fred
+    nome: Treasury 10 anni
+    regione: usa
+    categoria: curva
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+  - id: DGS30
+    fonte: fred
+    nome: Treasury 30 anni
+    regione: usa
+    categoria: curva
+    unita: "%"
+    trasformazione: livello
+    riepilogo: false
+
+  # --- Spread della curva -------------------------------------------
+  - id: T10Y2Y
+    fonte: fred
+    nome: Spread 10A-2A
+    regione: usa
+    categoria: spread_curva
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+  - id: T10Y3M
+    fonte: fred
+    nome: Spread 10A-3M
+    regione: usa
+    categoria: spread_curva
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+
+  # --- Tassi reali e breakeven --------------------------------------
+  - id: DFII10
+    fonte: fred
+    nome: Tasso reale 10A (TIPS)
+    regione: usa
+    categoria: tassi_reali
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+  - id: T10YIE
+    fonte: fred
+    nome: Breakeven 10A
+    regione: usa
+    categoria: tassi_reali
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+
+  # --- Inflazione (indici di prezzo trasformati in variazione annua) -
+  - id: CPIAUCSL
+    fonte: fred
+    nome: CPI headline
+    regione: usa
+    categoria: inflazione
+    unita: "% a/a"
+    trasformazione: yoy
+    riepilogo: true
+  - id: CPILFESL
+    fonte: fred
+    nome: CPI core
+    regione: usa
+    categoria: inflazione
+    unita: "% a/a"
+    trasformazione: yoy
+    riepilogo: true
+  - id: PCEPILFE
+    fonte: fred
+    nome: PCE core
+    regione: usa
+    categoria: inflazione
+    unita: "% a/a"
+    trasformazione: yoy
+    riepilogo: true
+
+  # --- Credito ------------------------------------------------------
+  - id: BAA10Y
+    fonte: fred
+    nome: Spread Baa - Treasury 10A
+    regione: usa
+    categoria: credito
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+  - id: BAMLC0A0CM
+    fonte: fred
+    nome: OAS Investment Grade
+    regione: usa
+    categoria: credito
+    unita: "%"
+    trasformazione: livello
+    riepilogo: false
+  - id: BAMLH0A0HYM2
+    fonte: fred
+    nome: OAS High Yield
+    regione: usa
+    categoria: credito
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+
+  # --- Condizioni finanziarie e lavoro ------------------------------
+  - id: VIXCLS
+    fonte: fred
+    nome: VIX
+    regione: usa
+    categoria: condizioni
+    unita: punti
+    trasformazione: livello
+    riepilogo: true
+  - id: DTWEXBGS
+    fonte: fred
+    nome: Dollaro broad
+    regione: usa
+    categoria: condizioni
+    unita: indice
+    trasformazione: livello
+    riepilogo: true
+  - id: UNRATE
+    fonte: fred
+    nome: Tasso di disoccupazione
+    regione: usa
+    categoria: lavoro
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+
+  # --- Recessioni NBER (1 = recessione, 0 = espansione) --------------
+  # Non è un grafico: serve a disegnare le bande grigie sui grafici storici.
+  - id: USREC
+    fonte: fred
+    nome: Recessioni NBER
+    regione: usa
+    categoria: recessioni
+    unita: indicatore
+    trasformazione: livello
+    riepilogo: false

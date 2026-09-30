@@ -1,0 +1,9 @@
+# Dipendenze del progetto (versioni verificate con Python 3.14 su Windows)
+# pandas 3.0.6 viene bloccato da Smart App Control di Windows su questo PC:
+# restiamo su 3.0.5 finché una versione più recente non risulta sbloccata
+pandas==3.0.5
+plotly==7.1.0
+PyYAML==6.0.3
+requests==2.34.2
+python-dotenv==1.2.3
+Jinja2==3.1.6

@@ -1,0 +1,191 @@
+/* =====================================================================
+   Stile della dashboard.
+   I colori sono "variabili" (--nome) definite una sola volta: il tema
+   scuro cambia solo i valori, non le regole. Anche i grafici leggono
+   queste variabili tramite app.js.
+   ===================================================================== */
+
+:root {
+  color-scheme: light;
+  --pagina: #f9f9f7;          /* sfondo della pagina */
+  --superficie: #fcfcfb;      /* sfondo di schede e grafici */
+  --testo: #0b0b0b;
+  --testo-2: #52514e;         /* testo secondario */
+  --testo-tenue: #898781;     /* assi, etichette minori */
+  --griglia: #e1e0d9;
+  --asse: #c3c2b7;
+  --bordo: rgba(11, 11, 11, 0.10);
+  --accento: #2a78d6;
+  --avviso-sfondo: #fff4d6;
+  --avviso-bordo: #fab219;
+  --errore-testo: #a82a2a;
+  --ok-testo: #006300;
+
+  /* Palette dei grafici (slot 1-8, ordine fisso) */
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
+  --s5: #e87ba4; --s6: #008300; --s7: #4a3aa7; --s8: #e34948;
+}
+
+/* Tema scuro: segue l'impostazione del sistema operativo */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --pagina: #0d0d0d;
+    --superficie: #1a1a19;
+    --testo: #ffffff;
+    --testo-2: #c3c2b7;
+    --testo-tenue: #898781;
+    --griglia: #2c2c2a;
+    --asse: #383835;
+    --bordo: rgba(255, 255, 255, 0.10);
+    --accento: #3987e5;
+    --avviso-sfondo: #2e2610;
+    --avviso-bordo: #fab219;
+    --errore-testo: #ff8a8a;
+    --ok-testo: #0ca30c;
+
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+    --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--pagina);
+  color: var(--testo);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.contenitore { max-width: 1280px; margin: 0 auto; padding: 0 16px; }
+
+h1, h2, h3 { line-height: 1.25; margin: 0; }
+h1 { font-size: 1.6rem; }
+h2 { font-size: 1.25rem; }
+h3 { font-size: 0.95rem; font-weight: 600; }
+code { font-size: 0.85em; }
+
+/* ---- Testata ---- */
+.testata { padding: 20px 0 12px; }
+.aggiornamento { margin: 4px 0 0; color: var(--testo-2); font-size: 0.9rem; }
+
+/* ---- Tab delle regioni ---- */
+.tab-barra {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--pagina);
+  border-bottom: 1px solid var(--griglia);
+}
+.tab-lista { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.tab {
+  flex: none;
+  padding: 12px 14px;
+  border: 0; border-bottom: 3px solid transparent;
+  background: none; color: var(--testo-2);
+  font: inherit; font-weight: 600; cursor: pointer;
+  white-space: nowrap;
+}
+.tab[aria-selected="true"] { color: var(--testo); border-bottom-color: var(--accento); }
+.tab:focus-visible { outline: 2px solid var(--accento); outline-offset: -2px; }
+.presto {
+  margin-left: 4px; padding: 1px 6px; border-radius: 999px;
+  background: var(--griglia); color: var(--testo-2);
+  font-size: 0.7rem; font-weight: 500;
+}
+
+/* ---- Avvisi ---- */
+.avviso {
+  margin: 16px 0 0; padding: 12px 14px;
+  border-left: 4px solid var(--avviso-bordo); border-radius: 6px;
+  background: var(--avviso-sfondo); font-size: 0.92rem;
+}
+.avviso ul { margin: 6px 0 0; padding-left: 20px; }
+.avviso-piccolo { margin: 4px 0 0; color: var(--errore-testo); font-size: 0.82rem; }
+
+/* ---- Blocchi e sezioni ---- */
+.blocco { margin-top: 32px; }
+.descrizione { margin: 4px 0 12px; color: var(--testo-2); font-size: 0.9rem; max-width: 75ch; }
+.in-arrivo { margin: 48px 0; text-align: center; color: var(--testo-2); }
+
+/* ---- Scheda riassuntiva (KPI) ---- */
+.griglia-kpi {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+}
+.kpi {
+  padding: 12px;
+  background: var(--superficie);
+  border: 1px solid var(--bordo); border-radius: 10px;
+}
+.kpi h3 { color: var(--testo-2); font-weight: 500; font-size: 0.85rem; }
+.kpi-valore { margin: 2px 0 0; font-size: 1.6rem; font-weight: 600; }
+.kpi-data { margin: 0 0 8px; color: var(--testo-tenue); font-size: 0.78rem; }
+.kpi-variazioni { margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.kpi-variazioni dt { color: var(--testo-tenue); font-size: 0.72rem; }
+.kpi-variazioni dd { margin: 0; font-size: 0.8rem; font-variant-numeric: tabular-nums; color: var(--testo-2); white-space: nowrap; }
+/* Telefono: due schede per riga, variazioni una sotto l'altra */
+@media (max-width: 600px) {
+  .griglia-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .kpi { padding: 10px; }
+  .kpi-valore { font-size: 1.35rem; }
+  .kpi-variazioni { grid-template-columns: 1fr; gap: 0; }
+  .kpi-variazioni div { display: flex; justify-content: space-between; gap: 6px; }
+}
+.kpi-errore .kpi-valore { color: var(--testo-tenue); }
+.kpi-errore .kpi-data { color: var(--errore-testo); }
+.in-ritardo { color: var(--errore-testo); }
+
+/* ---- Grafici ---- */
+.griglia-grafici { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 1000px) {
+  .griglia-grafici { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .scheda-grafico.largo { grid-column: 1 / -1; }
+}
+.scheda-grafico {
+  min-width: 0;
+  padding: 12px 12px 10px;
+  background: var(--superficie);
+  border: 1px solid var(--bordo); border-radius: 10px;
+}
+.scheda-testa { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
+.periodi { display: flex; gap: 2px; }
+.periodi button {
+  min-width: 40px; min-height: 32px; padding: 2px 8px;
+  border: 1px solid var(--griglia); border-radius: 6px;
+  background: none; color: var(--testo-2);
+  font: inherit; font-size: 0.8rem; cursor: pointer;
+}
+.periodi button[aria-pressed="true"] { background: var(--testo); border-color: var(--testo); color: var(--superficie); }
+.periodi button:focus-visible { outline: 2px solid var(--accento); outline-offset: 1px; }
+
+.grafico { height: 340px; margin-top: 6px; }
+.scheda-grafico.largo .grafico { height: 400px; }
+@media (max-width: 600px) {
+  .grafico, .scheda-grafico.largo .grafico { height: 360px; } /* più alto: la legenda va su più righe */
+}
+.grafico-vuoto {
+  display: grid; place-items: center;
+  border: 1px dashed var(--griglia); border-radius: 8px;
+  color: var(--testo-tenue); font-size: 0.9rem;
+}
+.scheda-piede { margin-top: 6px; font-size: 0.78rem; color: var(--testo-tenue); }
+.scheda-piede p { margin: 2px 0 0; }
+.nota { color: var(--testo-2); }
+
+/* ---- Tabella "Stato delle serie" ---- */
+.stato summary { cursor: pointer; list-style: revert; }
+.stato summary h2 { display: inline; }
+.tabella-scorrevole { overflow-x: auto; margin-top: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: var(--superficie); }
+th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--griglia); white-space: nowrap; }
+th { color: var(--testo-2); font-weight: 600; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.stato-ok { color: var(--ok-testo); }
+.stato-errore { color: var(--errore-testo); white-space: normal; }
+.stato-ritardo { color: var(--testo-2); }
+
+/* ---- Piede ---- */
+.piede { margin-top: 40px; padding-bottom: 32px; color: var(--testo-tenue); font-size: 0.8rem; }
