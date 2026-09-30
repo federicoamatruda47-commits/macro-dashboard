@@ -8,7 +8,10 @@ in modo semplice e proporre un piano prima di modifiche importanti.
 Roadmap in 3 fasi:
 1. **USA** (fatta): politica monetaria, curva Treasury, spread, tassi reali, inflazione, credito, condizioni
 2. **Eurozona** (fatta): DFR, curva AAA (proxy Bund), spread sovrani, HICP, HY in euro, EUR/USD. Fonte BCE, riserva FRED
-3. **Asia** (Giappone, Cina, Corea) + sezione **Confronto globale** (fonti previste: BIS, yfinance)
+3. **Asia** (Giappone, Cina, Corea) + sezione **Confronto globale** (fonti previste: BIS, Yahoo tramite `sources/yahoo.py`)
+
+Tab tematica **Commodities** (fatta): tabella di performance, energia, metalli preziosi e industriali, agricoli,
+grafici commodities vs tassi USA. Fonte Yahoo Finance (future continui), riserva FRED (spot o medie mensili FMI).
 
 ## Regole del progetto
 - **Commenti e testi del sito in italiano.** Numeri in formato italiano (virgola decimale).
@@ -18,38 +21,54 @@ Roadmap in 3 fasi:
 - **Smart App Control di Windows è attivo** su questo PC e blocca alcuni file compilati appena pubblicati
   (es. pandas 3.0.6 → "Un criterio di controllo dell'applicazione ha bloccato il file"). Soluzione adottata:
   usare una versione leggermente precedente (pandas 3.0.5). Non modificare le impostazioni di sicurezza.
+  yfinance 1.7.0 e le sue librerie compilate (curl_cffi 0.16.3, cffi, lxml, protobuf) funzionano: provate il 30/09/2026.
+  Per verificare una libreria nuova senza toccare `.venv`: installarla in un ambiente virtuale temporaneo e importarla.
 - La chiave API sta in `.env` (`FRED_API_KEY=...`), mai nel codice, nei log o sul sito. `.env` e `.venv` sono in `.gitignore`.
 - Un errore su una serie **non deve mai** bloccare la generazione del sito: la serie diventa "non disponibile"
   e compare un avviso. `build.py` esce con codice 1 solo se non si scarica nessuna serie.
+- **Serie calcolate solo con componenti dalla stessa fonte.** Una serie `fonte: calcolata` (differenza o rapporto)
+  si calcola solo se tutte le componenti vengono dalla stessa fonte principale. Se anche una sola componente è
+  passata alla riserva, la serie calcolata diventa "non disponibile" con un avviso che spiega il motivo: non si
+  mescolano mai spot e future, fonti diverse o unità diverse (es. Brent spot FRED − WTI future Yahoo).
+  Vale per tutte le serie calcolate (spread Brent-WTI, rapporto rame/oro, spread BTP-Bund, pendenze...). Codice: `data._calcola`.
+- Una riserva può avere un'unità diversa dalla principale (`riserva: {..., unita: ..., nota: ...}`): la serie assume
+  l'unità della riserva e l'avviso lo dice. Per questo non mettere nello stesso grafico serie che potrebbero finire
+  in unità diverse (es. grano e mais sono in due grafici separati).
 - **Controllo di freschezza** su tutte le serie: se l'ultimo dato supera la soglia (10 giorni giornaliere, 21 settimanali,
   75 mensili, 120 trimestrali, contati dalla fine del periodo) il sito mostra un avviso in cima. Serve a scoprire
   le serie "congelate" che non danno errore (vedi il caso HICP sotto).
 - Grafici: un solo asse y per grafico (niente doppio asse), palette a ordine fisso (`--s1`…`--s8` in `static/style.css`,
-  uguale a `PALETTE` in `dashboard/charts.py`). Bande grigie = recessioni: NBER (serie `USREC`) per gli USA,
+  uguale a `PALETTE` in `dashboard/charts.py`). Bande grigie = recessioni: NBER (serie `USREC`) per USA e Commodities,
   CEPR (date scritte a mano in `config.yaml` → `recessioni:`) per l'Eurozona.
+  Per confrontare due serie con unità diverse si usa `charts.due_pannelli`: due pannelli sovrapposti con lo stesso
+  asse del tempo, ognuno col suo asse y (il pannello in basso si può invertire). `app.js` gestisce più assi e gli
+  assi invertiti (`layout.meta.assi_invertiti`).
+- Sotto i grafici con future continui Yahoo compare la nota sui cambi di scadenza (piccoli salti di prezzo).
 - Prima di aggiungere una serie, verificarne sulla fonte **storico e ultimo dato** (non solo che esista).
 - Non fare commit o push senza richiesta esplicita dell'utente.
 
 ## Struttura
 ```
 config.yaml              regioni/tab, recessioni CEPR, elenco delle serie (id, fonte, nome, regione, categoria, unita,
-                         trasformazione, riepilogo; facoltativi: riserva, componenti, decimali)
+                         trasformazione, riepilogo; facoltativi: riserva, componenti, operazione, fattore, decimali)
 build.py                 comando unico: scarica → calcola → genera site/
 dashboard/
   sources/               un modulo per fonte; ognuno espone scarica(id) -> pandas.Series
-    __init__.py          registro FONTI {"fred": fred.scarica, "ecb": ecb.scarica}
+    __init__.py          registro FONTI {"fred": ..., "ecb": ..., "yahoo": ...}
     fred.py              API ufficiale FRED (retry, errori senza chiave nel messaggio)
     ecb.py               API ECB Data Portal, senza chiave; id = "DATASET/CHIAVE" (es. FM/D.U2.EUR.4F.KR.DFR.LEV)
+    yahoo.py             Yahoo Finance via yfinance (non ufficiale), id = ticker (es. CL=F); riusabile per borse e cambi
     errori.py            ErroreFonte
-  data.py                classe Serie, lettura config, download con riserva, serie calcolate (A − B),
-                         trasformazioni (livello / yoy), variazioni 1s/1m/1a, controllo di freschezza
-  charts.py              grafici riutilizzabili: linee_storiche (recessioni, inversioni, linea di riferimento), curva_rendimenti,
-                         periodi_recessione (da USREC), periodi_da_trimestri (da elenco CEPR)
+  data.py                classe Serie, lettura config, download con riserva, serie calcolate (A − B o A / B, stessa fonte),
+                         trasformazioni (livello / yoy), variazioni 1s/1m/1a (+ da inizio anno), controllo di freschezza
+  charts.py              grafici riutilizzabili: linee_storiche (recessioni, inversioni, linea di riferimento, unità sull'asse),
+                         due_pannelli, curva_rendimenti, periodi_recessione (da USREC), periodi_da_trimestri (da elenco CEPR)
   regions/
-    __init__.py          registro REGIONI {"usa": usa.costruisci, "eurozona": eurozona.costruisci}
-    modello.py           dataclass Sezione e Grafico
+    __init__.py          registro REGIONI {"usa": ..., "eurozona": ..., "commodities": ...}
+    modello.py           dataclass Sezione (anche tabella_performance) e Grafico (anche alto)
     usa.py               composizione della pagina USA
     eurozona.py          composizione della pagina Eurozona
+    commodities.py       composizione della tab Commodities (tematica, non geografica)
   render.py              prepara i dati per il template e scrive site/
 templates/index.html.j2  pagina HTML (Jinja2)
 static/style.css         stile, tema chiaro/scuro, layout per telefono
@@ -61,7 +80,8 @@ site/                    OUTPUT generato (non versionato: lo ricrea la GitHub Ac
 ## Come si aggiunge…
 - **una serie**: un blocco in `config.yaml`; se deve apparire in un grafico, aggiungerla in `regions/<regione>.py`.
   Riserva automatica: `riserva: {fonte: fred, id: ..., trasformazione: ...}` (usata solo se la principale fallisce,
-  segnalata con un avviso). Spread calcolato: `fonte: calcolata` + `componenti: [A, B]` → A − B nelle date comuni.
+  segnalata con un avviso). Spread calcolato: `fonte: calcolata` + `componenti: [A, B]` → A − B nelle date comuni;
+  `operazione: rapporto` → A / B, `fattore: 1000` moltiplica il risultato.
 - **una fonte** (es. BIS): `dashboard/sources/bis.py` con `scarica(id)`, registrarla in `sources/__init__.py`
   e in `NOMI_FONTI` di `data.py` (nome mostrato sul sito).
 - **una regione**: `dashboard/regions/<id>.py` con `costruisci(serie, config) -> list[Sezione]`, registrarla in
@@ -95,3 +115,17 @@ python -m http.server 8000 --directory site   # anteprima su http://localhost:80
 - Recessioni: nessuna API. L'indicatore OECD su FRED (`EUROREC`) è fermo al 08/2022; il sito CEPR blocca
   le richieste automatiche (403). Date CEPR in `config.yaml`, da aggiornare a mano.
 - Riserve FRED per l'HICP: `CP0000EZCCM086NEST` e `00XEFDEZCCM086NEST` (indici a composizione variabile → `trasformazione: yoy`).
+
+### Commodities (verificate il 30/09/2026)
+- Yahoo, future continui giornalieri: `CL=F` WTI e `NG=F` Henry Hub (dal 2000), `BZ=F` Brent (dal 2007), `TTF=F` gas
+  europeo in €/MWh (dal 2017), `GC=F` oro, `SI=F` argento, `HG=F` rame in $/libbra (dal 2000), `ALI=F` alluminio COMEX
+  (dal 2014, volume quasi zero ma prezzo aggiornato e coerente con l'FMI), `ZW=F` grano e `ZC=F` mais in cent/bushel (dal 2000).
+- Il dato del giorno Yahoo può essere un prezzo non ancora definitivo (la build gira alle 13:30 UTC, a mercato aperto).
+- Riserve FRED: spot giornalieri `DCOILWTICO`, `DCOILBRENTEU`, `DHHNGSP` (stessa unità, ma spot ≠ future: a settembre 2026
+  il Brent spot era circa 11 $ sopra il future); medie mensili FMI `PNGASEUUSDM` ($/MMBtu), `PCOPPUSDM`, `PALUMUSDM`,
+  `PWHEAMTUSDM`, `PMAIZMTUSDM` ($/tonnellata), dal 1992, circa 2 mesi di ritardo.
+- **Oro e argento: nessuna riserva gratuita.** FRED non pubblica più l'LBMA; `PGOLDUSDM`/`PSILVUSDM` non esistono;
+  gli indici NASDAQ `NASDAQQGLDI`/`NASDAQQSLVO` non seguono il prezzo (1 anno: −16% contro +8% del future). Se Yahoo fallisce
+  spesso su GitHub, valutare il Pink Sheet mensile della Banca Mondiale (file Excel, servirebbe una fonte nuova).
+- WTI: il 20/04/2020 il future ha chiuso a −37 $: `yahoo.py` non scarta i valori negativi.
+- I cambi di scadenza si vedono nei dati (es. il Brent di novembre scade l'ultimo giorno lavorativo di settembre).

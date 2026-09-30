@@ -12,12 +12,13 @@ Nota: le serie con `fonte: calcolata` (es. uno spread = serie A − serie B)
 non passano da qui: le calcola dashboard/data.py dopo aver scaricato le altre.
 """
 
-from . import ecb, fred
+from . import ecb, fred, yahoo
 from .errori import ErroreFonte
 
 FONTI = {
     "fred": fred.scarica,
     "ecb": ecb.scarica,
+    "yahoo": yahoo.scarica,
 }
 
 __all__ = ["FONTI", "ErroreFonte"]

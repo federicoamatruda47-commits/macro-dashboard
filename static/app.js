@@ -51,6 +51,16 @@
     return;
   }
 
+  // Nomi degli assi presenti nel layout: assi(layout, "y") -> ["yaxis", "yaxis2"]
+  function assi(layout, lettera) {
+    const schema = new RegExp("^" + lettera + "axis\\d*$");
+    const trovati = Object.keys(layout).filter((k) => schema.test(k));
+    return trovati.length ? trovati : [lettera + "axis"];
+  }
+
+  // Asse verticale di una traccia: "y2" -> "yaxis2", nessuno -> "yaxis"
+  const asseDellaTraccia = (tr) => "yaxis" + String(tr.yaxis || "y").slice(1);
+
   // ------------------------------------------------------------------
   // 4. Colori dal tema CSS
   // ------------------------------------------------------------------
@@ -69,10 +79,15 @@
     layout.paper_bgcolor = t.superficie;
     layout.plot_bgcolor = t.superficie;
     layout.font = Object.assign({}, layout.font, { color: t.testo2 });
-    layout.xaxis = Object.assign({}, layout.xaxis, {
-      color: t.tenue, linecolor: t.asse, showline: true, spikecolor: t.tenue,
+    // Tutti gli assi: xaxis, xaxis2... (i grafici a due pannelli ne hanno più di uno)
+    assi(layout, "x").forEach((k) => {
+      layout[k] = Object.assign({}, layout[k], {
+        color: t.tenue, linecolor: t.asse, showline: true, spikecolor: t.tenue,
+      });
     });
-    layout.yaxis = Object.assign({}, layout.yaxis, { color: t.tenue, gridcolor: t.griglia });
+    assi(layout, "y").forEach((k) => {
+      layout[k] = Object.assign({}, layout[k], { color: t.tenue, gridcolor: t.griglia });
+    });
     layout.legend = Object.assign({}, layout.legend, { font: { color: t.testo2, size: 12 } });
     layout.hoverlabel = { bgcolor: t.superficie, bordercolor: t.griglia, font: { color: t.testo } };
     layout.dragmode = schermoTouch ? false : "zoom"; // sul telefono il dito deve scorrere la pagina
@@ -107,27 +122,49 @@
     return [inizio.toISOString().slice(0, 10), fine.toISOString().slice(0, 10)];
   }
 
-  // Minimo e massimo dei valori visibili nel periodo scelto (+ margine del 6%)
-  function intervalloY(data, layout, da, a) {
-    let min = Infinity;
-    let max = -Infinity;
+  // Per ogni asse verticale: minimo e massimo dei valori visibili nel periodo scelto (+ margine del 6%).
+  // Restituisce es. { yaxis: [1, 5], yaxis2: [3, -1] }. Gli assi "invertiti" hanno l'intervallo al contrario.
+  function intervalliY(data, layout, da, a) {
+    const meta = layout.meta || {};
+    const estremi = {};
     data.forEach((tr) => {
       if (!tr.x || !tr.y) return;
+      const asse = asseDellaTraccia(tr);
+      const e = estremi[asse] || (estremi[asse] = { min: Infinity, max: -Infinity });
       for (let i = 0; i < tr.x.length; i++) {
         const x = giorno(tr.x[i]);
         const y = tr.y[i];
         if (y === null || (da && x < da) || (a && x > a)) continue;
-        if (y < min) min = y;
-        if (y > max) max = y;
+        if (y < e.min) e.min = y;
+        if (y > e.max) e.max = y;
       }
     });
-    ((layout.meta && layout.meta.riferimenti) || []).forEach((r) => {
-      if (r < min) min = r;
-      if (r > max) max = r;
+    // Le linee di riferimento (es. obiettivo 2%) stanno sul primo asse
+    if (estremi.yaxis) {
+      (meta.riferimenti || []).forEach((r) => {
+        if (r < estremi.yaxis.min) estremi.yaxis.min = r;
+        if (r > estremi.yaxis.max) estremi.yaxis.max = r;
+      });
+    }
+    const risultato = {};
+    Object.keys(estremi).forEach((asse) => {
+      const { min, max } = estremi[asse];
+      if (!isFinite(min)) return;
+      const margine = (max - min || Math.abs(max) || 1) * 0.06;
+      const intervallo = [min - margine, max + margine];
+      risultato[asse] = (meta.assi_invertiti || []).includes(asse) ? intervallo.reverse() : intervallo;
     });
-    if (!isFinite(min)) return null;
-    const margine = (max - min || Math.abs(max) || 1) * 0.06;
-    return [min - margine, max + margine];
+    return risultato;
+  }
+
+  // Modifiche per Plotly.relayout: { "yaxis.range": [...], "yaxis.autorange": false, ... }
+  function modificheY(intervalli) {
+    const modifiche = {};
+    Object.keys(intervalli).forEach((asse) => {
+      modifiche[asse + ".range"] = intervalli[asse];
+      modifiche[asse + ".autorange"] = false;
+    });
+    return modifiche;
   }
 
   function segnaPulsante(id, periodo) {
@@ -138,9 +175,11 @@
 
   async function impostaPeriodo(el, periodo) {
     const x = intervalloX(el.data, periodo);
-    const y = intervalloY(el.data, el.layout, x && x[0], x && x[1]);
-    const modifiche = x ? { "xaxis.range": x, "xaxis.autorange": false } : { "xaxis.autorange": true };
-    if (y) Object.assign(modifiche, { "yaxis.range": y, "yaxis.autorange": false });
+    const modifiche = modificheY(intervalliY(el.data, el.layout, x && x[0], x && x[1]));
+    assi(el.layout, "x").forEach((asse) => {  // nei grafici a due pannelli il tempo è condiviso
+      if (x) Object.assign(modifiche, { [asse + ".range"]: x, [asse + ".autorange"]: false });
+      else modifiche[asse + ".autorange"] = true;
+    });
     el._daPulsante = true;
     await Plotly.relayout(el, modifiche);
     el._daPulsante = false;
@@ -180,23 +219,26 @@
     const periodo = el.dataset.periodo;
     if (periodo) {
       const x = intervalloX(data, periodo);
-      if (x) layout.xaxis.range = x;
-      const y = intervalloY(data, layout, x && x[0], x && x[1]);
-      if (y) layout.yaxis.range = y;
+      if (x) assi(layout, "x").forEach((asse) => { layout[asse].range = x; });
+      const intervalli = intervalliY(data, layout, x && x[0], x && x[1]);
+      Object.keys(intervalli).forEach((asse) => {
+        layout[asse] = Object.assign({}, layout[asse], { range: intervalli[asse], autorange: false });
+      });
     }
 
     Plotly.newPlot(el, data, layout, opzioni).then(() => {
       // Zoom manuale (trascinando col mouse): adatta la scala verticale
       el.on("plotly_relayout", (evento) => {
         if (el._daPulsante || !periodo) return;
-        const cambiaX = "xaxis.range[0]" in evento || "xaxis.range" in evento || "xaxis.autorange" in evento;
-        if (!cambiaX) return;
-        const r = el.layout.xaxis.range;
-        const y = intervalloY(el.data, el.layout, giorno(r[0]), giorno(r[1]));
-        segnaPulsante(el.id, "xaxis.autorange" in evento ? "Max" : "");
-        if (y) {
+        // Chiave del tipo "xaxis.range[0]", "xaxis2.range" o "xaxis.autorange"
+        const chiave = Object.keys(evento).find((k) => /^xaxis\d*\.(range|autorange)/.test(k));
+        if (!chiave) return;
+        const r = el.layout[chiave.split(".")[0]].range;
+        const modifiche = modificheY(intervalliY(el.data, el.layout, giorno(r[0]), giorno(r[1])));
+        segnaPulsante(el.id, chiave.endsWith("autorange") ? "Max" : "");
+        if (Object.keys(modifiche).length) {
           el._daPulsante = true;
-          Plotly.relayout(el, { "yaxis.range": y }).then(() => { el._daPulsante = false; });
+          Plotly.relayout(el, modifiche).then(() => { el._daPulsante = false; });
         }
       });
     });

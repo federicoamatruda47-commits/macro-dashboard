@@ -8,6 +8,7 @@ Il JavaScript usa lo slot per scegliere il colore giusto della palette.
 
 import pandas as pd
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 from .data import Serie
 
@@ -101,13 +102,21 @@ def _layout_base(unita: str) -> dict:
     )
 
 
+def _titolo_unita(unita: str) -> dict:
+    """Titolo dell'asse verticale con l'unità di misura (es. '$/barile')."""
+    return dict(text=unita, font=dict(size=11), standoff=6)
+
+
 def _aggiungi_recessioni(figura: go.Figure, recessioni, inizio: pd.Timestamp, fine: pd.Timestamp,
-                         etichetta: str) -> None:
+                         etichetta: str, tutti_i_pannelli: bool = False) -> None:
     """Disegna le bande grigie, solo per le recessioni dentro il periodo del grafico."""
     visibili = [(a, b) for a, b in recessioni if b > inizio and a < fine]
+    # Nei grafici a più pannelli la banda va disegnata in ognuno
+    # (exclude_empty_subplots=False: le bande si aggiungono prima delle linee, a pannelli ancora vuoti)
+    pannelli = dict(row="all", col=1, exclude_empty_subplots=False) if tutti_i_pannelli else {}
     for a, b in visibili:
         figura.add_vrect(x0=max(a, inizio).strftime("%Y-%m-%d"), x1=min(b, fine).strftime("%Y-%m-%d"),
-                         fillcolor=COLORE_RECESSIONE, line_width=0, layer="below")
+                         fillcolor=COLORE_RECESSIONE, line_width=0, layer="below", **pannelli)
     if visibili:
         # Voce di legenda "finta" per spiegare cosa sono le bande grigie
         figura.add_trace(go.Scatter(x=[None], y=[None], mode="markers", name=etichetta,
@@ -132,11 +141,13 @@ def _aggiungi_linea_riferimento(figura: go.Figure, valore: float, etichetta: str
 
 def linee_storiche(serie: list[Serie], recessioni=None, riferimento: tuple[float, str] | None = None,
                    evidenzia_inversioni: bool = False,
-                   etichetta_recessioni: str = "Recessione NBER") -> go.Figure | None:
+                   etichetta_recessioni: str = "Recessione NBER",
+                   mostra_unita: bool = False) -> go.Figure | None:
     """Grafico a linee nel tempo, con recessioni e (opzionali) inversioni o linea di riferimento.
 
     Le serie non disponibili vengono saltate: il grafico mostra quelle rimaste.
     Restituisce None se nessuna serie è disponibile.
+    mostra_unita=True scrive l'unità di misura sull'asse verticale (es. per i prezzi).
     """
     disponibili = [s for s in serie if s.ok]
     if not disponibili:
@@ -145,6 +156,8 @@ def linee_storiche(serie: list[Serie], recessioni=None, riferimento: tuple[float
     unita = disponibili[0].unita
     suffisso = _suffisso(unita)
     figura = go.Figure(layout=_layout_base(unita))
+    if mostra_unita:
+        figura.update_yaxes(title=_titolo_unita(unita))
 
     inizio = min(s.prima_data for s in disponibili)
     fine = max(s.ultima_data for s in disponibili)
@@ -174,6 +187,50 @@ def linee_storiche(serie: list[Serie], recessioni=None, riferimento: tuple[float
         _aggiungi_linea_riferimento(figura, 0, "")
     if riferimento is not None:
         _aggiungi_linea_riferimento(figura, *riferimento)
+    return figura
+
+
+def due_pannelli(sopra: Serie, sotto: Serie, recessioni=None, inverti_sotto: bool = False,
+                 etichetta_recessioni: str = "Recessione NBER") -> go.Figure | None:
+    """Due grafici a linee uno sopra l'altro, con lo stesso asse del tempo.
+
+    Serve a confrontare due serie con unità diverse (es. oro in $ e tasso reale in %)
+    senza usare un doppio asse verticale: ogni pannello ha il suo asse.
+    inverti_sotto=True capovolge l'asse del pannello in basso (valori alti in basso),
+    utile quando le due serie di solito si muovono in direzioni opposte.
+    Se entrambe sono disponibili, si mostra solo il periodo in cui esistono tutte e due.
+    """
+    disponibili = [s for s in (sopra, sotto) if s.ok]
+    if not disponibili:
+        return None
+    inizio = max(s.prima_data for s in disponibili)  # periodo comune
+    fine = max(s.ultima_data for s in disponibili)
+
+    figura = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.07)
+    layout = _layout_base("")
+    asse_x, asse_y = layout.pop("xaxis"), layout.pop("yaxis")
+    figura.update_layout(**layout)
+    figura.update_xaxes(**asse_x)
+    _aggiungi_recessioni(figura, recessioni or [], inizio, fine, etichetta_recessioni, tutti_i_pannelli=True)
+
+    for riga, s in enumerate((sopra, sotto), start=1):
+        titolo = s.unita + (" (asse invertito)" if riga == 2 and inverti_sotto else "")
+        figura.update_yaxes(asse_y, row=riga, col=1)
+        figura.update_yaxes(ticksuffix=_suffisso(s.unita), title=_titolo_unita(titolo), row=riga, col=1)
+        if not s.ok:
+            continue
+        dati = alleggerisci(s.dati[s.dati.index >= inizio])
+        suffisso = _suffisso(s.unita)
+        figura.add_trace(go.Scatter(
+            x=_date(dati), y=_valori(dati), mode="lines", name=s.nome,
+            line=dict(width=2, color=PALETTE[riga - 1]), meta={"slot": riga},
+            hovertemplate=f"%{{y:.{s.decimali}f}}{suffisso}<extra>{s.nome}</extra>",
+        ), row=riga, col=1)
+
+    if inverti_sotto:
+        figura.update_yaxes(autorange="reversed", row=2, col=1)
+        # Il JavaScript, quando ricalcola la scala, deve sapere quali assi sono capovolti
+        figura.layout.meta = {"assi_invertiti": ["yaxis2"]}
     return figura
 
 

@@ -9,7 +9,7 @@ import pandas as pd
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from plotly.offline import get_plotlyjs_version
 
-from .data import NOMI_FONTI, Serie, tipo_variazione, trova_serie, variazioni
+from .data import NOMI_FONTI, OPERAZIONI, PERIODI_PERFORMANCE, Serie, tipo_variazione, trova_serie, variazioni
 from .regions import REGIONI, Grafico
 
 FUSO_ORARIO = ZoneInfo("Europe/Rome")
@@ -71,6 +71,22 @@ def _scheda_riepilogo(s: Serie, oggi: pd.Timestamp) -> dict:
     return scheda
 
 
+def _riga_performance(s: Serie, oggi: pd.Timestamp) -> dict:
+    """Una riga della tabella di performance: ultimo prezzo e variazioni colorate."""
+    riga = {"nome": s.nome, "id": s.id, "ok": s.ok, "errore": s.errore, "fonte": nome_fonte(s),
+            "nota_fonte": s.nota_fonte}
+    if s.ok:
+        riga.update(
+            valore=numero(s.ultimo_valore, s.decimali), unita=s.unita, data=data_it(s.ultima_data),
+            ritardo=s.in_ritardo(oggi),
+            # segno: serve al CSS per colorare in verde (rialzo) o rosso (ribasso)
+            variazioni=[{"testo": testo_variazione(v, s.unita),
+                         "segno": "" if v is None or round(v, 1) == 0 else ("pos" if v > 0 else "neg")}
+                        for v in variazioni(s, PERIODI_PERFORMANCE).values()],
+        )
+    return riga
+
+
 def _figura_json(grafico: Grafico) -> str | None:
     if grafico.figura is None:
         return None
@@ -87,6 +103,7 @@ def _dati_grafico(grafico: Grafico, serie: dict[str, Serie], oggi: pd.Timestamp)
         "storico": grafico.storico,
         "periodo_iniziale": grafico.periodo_iniziale,
         "largo": grafico.largo,
+        "alto": grafico.alto,
         "json": _figura_json(grafico),
         "ultimi_dati": [{"nome": s.nome, "data": data_it(s.ultima_data), "ritardo": s.in_ritardo(oggi)}
                         for s in usate if s.ok],
@@ -98,7 +115,9 @@ def _riga_stato(s: Serie, oggi: pd.Timestamp) -> dict:
     """Una riga della tabella 'Stato delle serie' in fondo alla pagina."""
     fonte = nome_fonte(s)
     if s.componenti:
-        fonte += ": " + " − ".join(s.componenti)
+        fonte += ": " + f" {OPERAZIONI.get(s.operazione, '−')} ".join(s.componenti)
+        if s.fattore != 1:
+            fonte += f" (× {numero(s.fattore, 0)})"
     return {
         "id": s.id, "nome": s.nome, "fonte": fonte, "unita": s.unita,
         "frequenza": s.frequenza or "—", "dal": data_it(s.prima_data), "ultimo": data_it(s.ultima_data),
@@ -132,6 +151,8 @@ def prepara_contesto(config: dict, serie: dict[str, Serie]) -> dict:
                 sezioni.append({
                     "id": sezione.id, "titolo": sezione.titolo, "descrizione": sezione.descrizione,
                     "grafici": [_dati_grafico(g, serie, oggi) for g in sezione.grafici],
+                    "performance": [_riga_performance(trova_serie(serie, i), oggi)
+                                    for i in sezione.tabella_performance],
                 })
 
         regioni.append({

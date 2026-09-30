@@ -15,9 +15,10 @@ from .sources import FONTI, ErroreFonte
 
 CAMPI_OBBLIGATORI = ["id", "fonte", "nome", "regione", "categoria", "unita", "trasformazione"]
 TRASFORMAZIONI = ["livello", "yoy"]
-FONTE_CALCOLATA = "calcolata"  # serie ottenuta da altre serie (componenti: [A, B] -> A − B)
+FONTE_CALCOLATA = "calcolata"  # serie ottenuta da altre serie (componenti: [A, B] -> A − B oppure A / B)
+OPERAZIONI = {"differenza": "−", "rapporto": "/"}  # operazioni possibili per le serie calcolate
 # Come mostrare il nome della fonte sul sito
-NOMI_FONTI = {"fred": "FRED", "ecb": "BCE", FONTE_CALCOLATA: "Calcolata"}
+NOMI_FONTI = {"fred": "FRED", "ecb": "BCE", "yahoo": "Yahoo Finance", FONTE_CALCOLATA: "Calcolata"}
 
 # Controllo di freschezza: dopo quanti giorni senza nuovi dati una serie è "in ritardo".
 # Per mensili e trimestrali i giorni si contano dalla FINE del periodo
@@ -40,7 +41,9 @@ class Serie:
     riepilogo: bool = False
     decimali: int = 2                    # cifre decimali mostrate sul sito (es. 4 per EUR/USD)
     riserva: dict | None = None          # fonte alternativa se la principale non risponde
-    componenti: list[str] | None = None  # solo per fonte "calcolata": [A, B] -> A − B
+    componenti: list[str] | None = None  # solo per fonte "calcolata": [A, B]
+    operazione: str = "differenza"       # solo per fonte "calcolata": A − B ("differenza") o A / B ("rapporto")
+    fattore: float = 1.0                 # solo per fonte "calcolata": il risultato viene moltiplicato per questo
     dati: pd.Series | None = None  # dati già trasformati (es. in variazione annua)
     errore: str | None = None
     fonte_usata: str | None = None       # es. "fred (riserva)" se si è dovuto usare la riserva
@@ -138,6 +141,10 @@ def carica_config(percorso: Path) -> dict:
             sconosciute = [c for c in componenti if c not in id_serie]
             if sconosciute:
                 raise ValueError(f"Serie {voce['id']}: componenti non presenti in config.yaml: {sconosciute}")
+            if voce.get("operazione", "differenza") not in OPERAZIONI:
+                raise ValueError(f"Serie {voce['id']}: 'operazione' deve essere una tra {list(OPERAZIONI)}")
+            if not isinstance(voce.get("fattore", 1), (int, float)):
+                raise ValueError(f"Serie {voce['id']}: 'fattore' deve essere un numero")
         riserva = voce.get("riserva")
         if riserva is not None:
             if not (isinstance(riserva, dict) and "fonte" in riserva and "id" in riserva):
@@ -161,7 +168,9 @@ def _nuova_serie(voce: dict) -> Serie:
                  riepilogo=bool(voce.get("riepilogo", False)),
                  decimali=int(voce.get("decimali", 2)),
                  riserva=voce.get("riserva"),
-                 componenti=voce.get("componenti"))
+                 componenti=voce.get("componenti"),
+                 operazione=voce.get("operazione", "differenza"),
+                 fattore=float(voce.get("fattore", 1)))
 
 
 def _scarica_da(fonte: str, id_fonte: str, trasformazione: str) -> pd.Series:
@@ -199,23 +208,52 @@ def _scarica_una(serie: Serie) -> None:
     alternativa = NOMI_FONTI.get(riserva["fonte"], riserva["fonte"].upper())
     serie.nota_fonte = (f"{principale} non disponibile ({serie.errore}): "
                         f"usata la riserva {alternativa} {riserva['id']}")
+    # La riserva può essere un dato diverso (es. prezzo spot invece del future) o in un'altra unità
+    if riserva.get("unita") and riserva["unita"] != serie.unita:
+        serie.nota_fonte += f", in {riserva['unita']} invece di {serie.unita}"
+        serie.unita = riserva["unita"]
+    if riserva.get("nota"):
+        serie.nota_fonte += f" ({riserva['nota']})"
     serie.fonte_usata = f"{riserva['fonte']} (riserva)"
     serie.errore = None
 
 
 def _calcola(serie: Serie, risultati: dict[str, Serie]) -> None:
-    """Serie calcolata: componente A meno componente B, solo nelle date in comune."""
-    a, b = (risultati[c] for c in serie.componenti)
-    mancanti = [c.id for c in (a, b) if not c.ok]
+    """Serie calcolata: A − B oppure A / B, solo nelle date in comune.
+
+    Regola: si calcola SOLO se tutte le componenti vengono dalla stessa fonte principale.
+    Se anche una sola è passata alla riserva, il risultato mescolerebbe dati diversi
+    (es. Brent spot FRED − WTI future Yahoo, o unità diverse): la serie diventa
+    "non disponibile" con un messaggio che spiega il motivo.
+    """
+    componenti = [risultati[c] for c in serie.componenti]
+    mancanti = [c.id for c in componenti if not c.ok]
     if mancanti:
         serie.errore = "manca il dato di partenza: " + ", ".join(mancanti)
         return
+    da_riserva = [c for c in componenti if c.nota_fonte]
+    if da_riserva:
+        elenco = ", ".join(f"{c.nome} ({c.id})" for c in da_riserva)
+        serie.errore = (f"non calcolata: {elenco} {'viene' if len(da_riserva) == 1 else 'vengono'} "
+                        "dalla fonte di riserva e non si mescolano fonti diverse "
+                        "(es. prezzo spot e future, o unità diverse)")
+        return
+    fonti = {c.fonte_usata for c in componenti}
+    if len(fonti) > 1:
+        serie.errore = "non calcolata: le componenti vengono da fonti diverse (" + ", ".join(sorted(fonti)) + ")"
+        return
+
+    a, b = componenti
     tabella = pd.concat([a.dati, b.dati], axis=1, join="inner").dropna()
     if tabella.empty:
         serie.errore = "le due serie di partenza non hanno date in comune"
         return
-    differenza = (tabella.iloc[:, 0] - tabella.iloc[:, 1]).rename(serie.id)
-    serie.dati = trasforma(differenza, serie.trasformazione)
+    if serie.operazione == "rapporto":
+        tabella = tabella[tabella.iloc[:, 1] != 0]  # niente divisioni per zero
+        risultato = tabella.iloc[:, 0] / tabella.iloc[:, 1]
+    else:
+        risultato = tabella.iloc[:, 0] - tabella.iloc[:, 1]
+    serie.dati = trasforma((risultato * serie.fattore).rename(serie.id), serie.trasformazione)
     serie.fonte_usata = FONTE_CALCOLATA
 
 
@@ -279,6 +317,14 @@ PERIODI_VARIAZIONE = {
     "1 mese": pd.DateOffset(months=1),
     "1 anno": pd.DateOffset(years=1),
 }
+# Periodi della tabella di performance (commodities): in più "da inizio anno"
+DA_INIZIO_ANNO = "da inizio anno"
+PERIODI_PERFORMANCE = {
+    "1 sett.": pd.DateOffset(weeks=1),
+    "1 mese": pd.DateOffset(months=1),
+    DA_INIZIO_ANNO: DA_INIZIO_ANNO,  # confronto con l'ultimo dato dell'anno precedente
+    "1 anno": pd.DateOffset(years=1),
+}
 
 
 def tipo_variazione(unita: str) -> str:
@@ -295,12 +341,15 @@ def tipo_variazione(unita: str) -> str:
     return "%"
 
 
-def variazioni(serie: Serie) -> dict[str, float | None]:
-    """Calcola la variazione a 1 settimana, 1 mese e 1 anno rispetto all'ultimo dato."""
+def variazioni(serie: Serie, periodi: dict | None = None) -> dict[str, float | None]:
+    """Calcola la variazione rispetto all'ultimo dato (predefinito: 1 settimana, 1 mese, 1 anno).
+
+    `periodi` può essere PERIODI_PERFORMANCE per avere anche la variazione da inizio anno.
+    """
     risultato: dict[str, float | None] = {}
     tipo = tipo_variazione(serie.unita)
 
-    for etichetta, periodo in PERIODI_VARIAZIONE.items():
+    for etichetta, periodo in (periodi or PERIODI_VARIAZIONE).items():
         if not serie.ok:
             risultato[etichetta] = None
             continue
@@ -308,7 +357,11 @@ def variazioni(serie: Serie) -> dict[str, float | None]:
         if etichetta == "1 sett." and serie.frequenza in ("mensile", "trimestrale"):
             risultato[etichetta] = None
             continue
-        data_riferimento = serie.ultima_data - periodo
+        if periodo == DA_INIZIO_ANNO:
+            # Es. ultimo dato 30/09/2026 -> confronto con l'ultimo dato fino al 31/12/2025
+            data_riferimento = pd.Timestamp(year=serie.ultima_data.year - 1, month=12, day=31)
+        else:
+            data_riferimento = serie.ultima_data - periodo
         if data_riferimento < serie.prima_data:
             risultato[etichetta] = None
             continue

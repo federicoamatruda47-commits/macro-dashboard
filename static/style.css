@@ -20,6 +20,8 @@
   --avviso-bordo: #fab219;
   --errore-testo: #a82a2a;
   --ok-testo: #006300;
+  --rialzo: #006300;  --rialzo-sfondo: rgba(0, 131, 0, 0.10);    /* tabella di performance */
+  --ribasso: #a82a2a; --ribasso-sfondo: rgba(227, 73, 72, 0.10);
 
   /* Palette dei grafici (slot 1-8, ordine fisso) */
   --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
@@ -43,6 +45,8 @@
     --avviso-bordo: #fab219;
     --errore-testo: #ff8a8a;
     --ok-testo: #0ca30c;
+    --rialzo: #3fc23f;  --rialzo-sfondo: rgba(12, 163, 12, 0.16);
+    --ribasso: #ff8a8a; --ribasso-sfondo: rgba(230, 103, 103, 0.16);
 
     --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
     --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
@@ -166,6 +170,9 @@ code { font-size: 0.85em; }
 @media (max-width: 600px) {
   .grafico, .scheda-grafico.largo .grafico { height: 360px; } /* più alto: la legenda va su più righe */
 }
+/* Grafici a due pannelli: servono più pixel in verticale */
+.scheda-grafico.alto .grafico { height: 560px; }
+@media (max-width: 600px) { .scheda-grafico.alto .grafico { height: 520px; } }
 .grafico-vuoto {
   display: grid; place-items: center;
   border: 1px dashed var(--griglia); border-radius: 8px;
@@ -186,6 +193,23 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .stato-ok { color: var(--ok-testo); }
 .stato-errore { color: var(--errore-testo); white-space: normal; }
 .stato-ritardo { color: var(--testo-2); }
+
+/* ---- Tabella di performance (commodities) ---- */
+.performance { border: 1px solid var(--bordo); border-radius: 10px; }
+.performance td.unita { color: var(--testo-tenue); font-size: 0.8rem; }
+.performance td.var { font-weight: 600; }
+.performance td.var-pos { color: var(--rialzo); background: var(--rialzo-sfondo); }
+.performance td.var-neg { color: var(--ribasso); background: var(--ribasso-sfondo); }
+.performance td.stato-errore { white-space: normal; }
+.performance tbody tr:last-child td { border-bottom: none; }
+/* Telefono: meno colonne e nome della commodity sempre visibile scorrendo di lato */
+@media (max-width: 600px) {
+  .performance .secondaria { display: none; }
+  .performance th, .performance td { padding: 8px 6px; }
+  .performance th:first-child, .performance td:first-child {
+    position: sticky; left: 0; background: var(--superficie); white-space: normal; min-width: 88px;
+  }
+}
 
 /* ---- Piede ---- */
 .piede { margin-top: 40px; padding-bottom: 32px; color: var(--testo-tenue); font-size: 0.8rem; }

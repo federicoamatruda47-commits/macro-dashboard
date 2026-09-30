@@ -6,9 +6,10 @@
 #
 # Per aggiungere una serie basta copiare un blocco e cambiarne i campi:
 #   id             codice della serie presso la fonte (es. su FRED "DGS10")
-#   fonte          modulo che la scarica: "fred" o "ecb" (in futuro: "bis", "yfinance")
-#                  oppure "calcolata" = differenza tra due altre serie (vedi componenti)
+#   fonte          modulo che la scarica: "fred", "ecb" o "yahoo" (in futuro: "bis")
+#                  oppure "calcolata" = differenza o rapporto tra due altre serie (vedi componenti)
 #                  Per la BCE l'id è "DATASET/CHIAVE", es. FM/D.U2.EUR.4F.KR.DFR.LEV
+#                  Per Yahoo l'id è il ticker, es. CL=F (future continuo sul WTI)
 #   nome           etichetta mostrata sul sito
 #   regione        tab in cui compare (deve esistere nella lista "regioni")
 #   categoria      gruppo tematico (serve a orientarsi e per i confronti futuri)
@@ -20,9 +21,15 @@
 # Campi facoltativi:
 #   riserva        fonte alternativa se la principale non risponde, es.
 #                    riserva: {fonte: fred, id: ECBDFR}
-#                  (si può aggiungere "trasformazione" se diversa da quella principale)
+#                  (si può aggiungere "trasformazione" se diversa da quella principale,
+#                  "unita" se la riserva è in un'altra unità di misura e "nota" per
+#                  spiegare in cosa è diversa, es. "prezzo spot, non future")
 #   componenti     solo per fonte "calcolata": [A, B] -> la serie è A − B,
-#                  calcolata nelle date in cui esistono entrambe
+#                  calcolata nelle date in cui esistono entrambe.
+#                  REGOLA: si calcola solo se A e B vengono dalla stessa fonte principale;
+#                  se anche una sola è passata alla riserva, la serie è "non disponibile".
+#   operazione     solo per fonte "calcolata": "differenza" (A − B, predefinita) o "rapporto" (A / B)
+#   fattore        solo per fonte "calcolata": moltiplica il risultato (es. 1000 per un rapporto piccolo)
 #   decimali       cifre decimali mostrate sul sito (predefinito 2)
 #
 # Nota: una serie scaricata ma non usata da nessun grafico compare comunque
@@ -36,6 +43,10 @@ regioni:
     attiva: true
   - id: eurozona
     nome: Eurozona
+    attiva: true
+  # Non è una regione geografica, ma usa la stessa struttura (dashboard/regions/commodities.py)
+  - id: commodities
+    nome: Commodities
     attiva: true
   - id: asia
     nome: Asia
@@ -427,3 +438,134 @@ serie:
     riepilogo: true
     decimali: 4
     riserva: {fonte: fred, id: DEXUSEU}
+
+  # =================================================================
+  # COMMODITIES (fonte principale Yahoo Finance, riserva FRED dove esiste)
+  # Yahoo = future "continuo" (scadenza più vicina), giornaliero.
+  # Riserve FRED: prezzi spot giornalieri (petrolio, gas USA) oppure medie
+  # MENSILI del Fondo Monetario Internazionale, a volte in un'altra unità.
+  # Oro e argento non hanno una riserva gratuita (FRED non pubblica più l'LBMA).
+  # Verificate il 30/09/2026.
+  # =================================================================
+
+  # --- Energia ------------------------------------------------------
+  - id: CL=F
+    fonte: yahoo
+    nome: Petrolio WTI
+    regione: commodities
+    categoria: energia
+    unita: $/barile
+    trasformazione: livello
+    riepilogo: false
+    riserva: {fonte: fred, id: DCOILWTICO, nota: "prezzo spot giornaliero, non future"}
+  - id: BZ=F
+    fonte: yahoo
+    nome: Petrolio Brent
+    regione: commodities
+    categoria: energia
+    unita: $/barile
+    trasformazione: livello
+    riepilogo: false
+    riserva: {fonte: fred, id: DCOILBRENTEU, nota: "prezzo spot giornaliero, non future"}
+  - id: NG=F
+    fonte: yahoo
+    nome: Gas naturale Henry Hub
+    regione: commodities
+    categoria: energia
+    unita: $/MMBtu
+    trasformazione: livello
+    riepilogo: false
+    decimali: 3
+    riserva: {fonte: fred, id: DHHNGSP, nota: "prezzo spot giornaliero, non future"}
+  - id: TTF=F
+    fonte: yahoo
+    nome: Gas europeo TTF
+    regione: commodities
+    categoria: energia
+    unita: €/MWh
+    trasformazione: livello
+    riepilogo: false
+    riserva: {fonte: fred, id: PNGASEUUSDM, unita: $/MMBtu, nota: "media mensile FMI"}
+
+  # --- Metalli preziosi (nessuna riserva gratuita) -------------------
+  - id: GC=F
+    fonte: yahoo
+    nome: Oro
+    regione: commodities
+    categoria: metalli_preziosi
+    unita: $/oncia
+    trasformazione: livello
+    riepilogo: false
+  - id: SI=F
+    fonte: yahoo
+    nome: Argento
+    regione: commodities
+    categoria: metalli_preziosi
+    unita: $/oncia
+    trasformazione: livello
+    riepilogo: false
+
+  # --- Metalli industriali ------------------------------------------
+  - id: HG=F
+    fonte: yahoo
+    nome: Rame
+    regione: commodities
+    categoria: metalli_industriali
+    unita: $/libbra
+    trasformazione: livello
+    riepilogo: false
+    decimali: 3
+    riserva: {fonte: fred, id: PCOPPUSDM, unita: $/tonnellata, nota: "media mensile FMI"}
+  - id: ALI=F
+    fonte: yahoo
+    nome: Alluminio
+    regione: commodities
+    categoria: metalli_industriali
+    unita: $/tonnellata
+    trasformazione: livello
+    riepilogo: false
+    riserva: {fonte: fred, id: PALUMUSDM, nota: "media mensile FMI"}
+
+  # --- Agricoli -----------------------------------------------------
+  - id: ZW=F
+    fonte: yahoo
+    nome: Grano
+    regione: commodities
+    categoria: agricoli
+    unita: cent/bushel
+    trasformazione: livello
+    riepilogo: false
+    riserva: {fonte: fred, id: PWHEAMTUSDM, unita: $/tonnellata, nota: "media mensile FMI"}
+  - id: ZC=F
+    fonte: yahoo
+    nome: Mais
+    regione: commodities
+    categoria: agricoli
+    unita: cent/bushel
+    trasformazione: livello
+    riepilogo: false
+    riserva: {fonte: fred, id: PMAIZMTUSDM, unita: $/tonnellata, nota: "media mensile FMI"}
+
+  # --- Serie calcolate per i grafici di analisi ----------------------
+  # Calcolate solo se entrambe le componenti vengono da Yahoo (mai spot FRED − future Yahoo)
+  - id: SPREAD_BRENT_WTI
+    fonte: calcolata
+    componenti: [BZ=F, CL=F]
+    nome: Spread Brent-WTI
+    regione: commodities
+    categoria: analisi
+    unita: $/barile
+    trasformazione: livello
+    riepilogo: false
+  - id: RAPPORTO_RAME_ORO
+    fonte: calcolata
+    componenti: [HG=F, GC=F]
+    operazione: rapporto
+    fattore: 1000   # rame ($/libbra) / oro ($/oncia) vale circa 0,0016: ×1000 per leggerlo meglio
+    nome: Rapporto rame/oro (×1000)
+    regione: commodities
+    categoria: analisi
+    unita: rapporto
+    trasformazione: livello
+    riepilogo: false
+    decimali: 3
