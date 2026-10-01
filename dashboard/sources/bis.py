@@ -17,6 +17,7 @@ from .errori import ErroreFonte
 
 URL_DATI = "https://stats.bis.org/api/v1/data/"
 TENTATIVI = 3
+PAUSE_SECONDI = (10, 30)       # attesa dopo il 1° e il 2° tentativo: il vuoto del BIS dura più di qualche secondo (Action del 01/10/2026: 3 vuoti a 2 e 4 secondi)
 TIMEOUT_SECONDI = 60
 INTESTAZIONI = {"User-Agent": "Mozilla/5.0 (dashboard-macro)"}
 
@@ -46,14 +47,14 @@ def scarica(id_serie: str) -> pd.Series:
                     print(f"  BIS {id_serie}: empty response (attempt {tentativo} of {TENTATIVI})"
                           + ("; trying again" if tentativo < TENTATIVI else "; giving up"), flush=True)
                     if tentativo < TENTATIVI:
-                        time.sleep(2 * tentativo)
+                        time.sleep(PAUSE_SECONDI[tentativo - 1])
                     continue
             ultimo_errore = ("series not found at the BIS (wrong code?)" if risposta.status_code == 404
                              else f"HTTP {risposta.status_code}")
             if 400 <= risposta.status_code < 500 and risposta.status_code != 429:
                 break
         if tentativo < TENTATIVI:
-            time.sleep(2 * tentativo)
+            time.sleep(PAUSE_SECONDI[tentativo - 1])
 
     raise ErroreFonte(ultimo_errore)
 
