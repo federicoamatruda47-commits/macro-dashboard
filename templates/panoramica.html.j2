@@ -28,7 +28,6 @@
   <p class="aggiornamento">Updated <strong>{{ aggiornato }}</strong> · {{ totale_serie }} series</p>
   <ul class="chips-stato" aria-label="Data status">
     {% if in_ritardo %}<li><a class="chip chip-avviso" href="{{ radice }}method/#freshness">⚠ {{ in_ritardo|length }} stale {{ 'series' }}</a></li>{% endif %}
-    {% if attivita %}<li><a class="chip chip-avviso" href="{{ radice }}method/#activity">⚠ No commit for {{ attivita.giorni }} days</a></li>{% endif %}
     {% if errori %}<li><a class="chip chip-avviso" href="{{ radice }}method/series/">⚠ {{ errori|length }} unavailable {{ 'series' }}</a></li>{% endif %}
     {% if riserve %}<li><a class="chip" href="{{ radice }}method/#fallback">ⓘ {{ riserve|length }} on fallback sources</a></li>{% endif %}
     {% if not in_ritardo and not errori and not riserve %}<li><a class="chip chip-ok" href="{{ radice }}method/series/">✓ All {{ totale_serie }} series up to date</a></li>{% endif %}

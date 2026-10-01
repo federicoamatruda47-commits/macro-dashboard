@@ -15,7 +15,6 @@
     <li><a href="#sources">Sources</a></li>
     <li><a href="#freshness">Freshness check</a></li>
     <li><a href="#annual-data">Annual data</a></li>
-    <li><a href="#activity">Build activity</a></li>
     <li><a href="#fallback">Fallback sources</a></li>
     <li><a href="#calculated">Calculated series</a></li>
     <li><a href="#weekly-moves">What changed this week</a></li>
@@ -103,15 +102,6 @@
       </tbody>
     </table>
   </div>
-</section>
-
-<section class="blocco" id="activity">
-  <h2>Build activity</h2>
-  <p class="descrizione">The site is rebuilt every day by a scheduled GitHub workflow. GitHub switches off scheduled workflows of public repositories
-    after 60 days without repository activity, silently; its documentation does not say what counts as activity (commits and pushes do, according to
-    user reports; a push made by a workflow itself may not). To notice in time, every build reads the date of the latest commit and shows a warning
-    on every page if more than {{ m.attivita.soglia if m.attivita else 45 }} days have passed.
-    {% if m.attivita %}<strong>Latest commit: {{ m.attivita.ultimo }}, {{ m.attivita.giorni }} days ago.</strong>{% else %}<strong>The date of the latest commit could not be read in this build.</strong>{% endif %}</p>
 </section>
 
 <section class="blocco" id="fallback">

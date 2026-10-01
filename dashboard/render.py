@@ -12,7 +12,7 @@ import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from plotly.offline import get_plotlyjs_version
 
-from . import annuali, attivita, metodo, movimenti
+from . import annuali, metodo, movimenti
 from .data import (FONTE_CALCOLATA, NOMI_FONTI, OPERAZIONI, PERIODI_PERFORMANCE, Serie, tipo_variazione, trova_serie,
                    variazioni)
 from .fonti_url import url_indicatore, url_serie
@@ -335,14 +335,10 @@ def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict, radice_p
     oggi = pd.Timestamp(adesso.date())
     adesso_utc = adesso.astimezone(timezone.utc)
 
-    # Dati annuali per Paese (snapshot nel repository) e attività del repository: solo controlli di stato, nessuna pagina li usa ancora
+    # Dati annuali per Paese (snapshot nel repository): solo controlli di stato, nessuna pagina li usa ancora
     snapshot = {f: annuali.leggi_snapshot(radice_progetto, f) if radice_progetto else None for f in (annuali.FONTE_IMF, annuali.FONTE_BM)}
     stati_annuali = annuali.stati_snapshot(snapshot[annuali.FONTE_IMF], snapshot[annuali.FONTE_BM], oggi.date())
     ritardo_annuali = [_voce_ritardo_annuale(s) for s in stati_annuali if s.in_ritardo]
-    stato_attivita = attivita.valuta(attivita.data_ultimo_commit(radice_progetto), oggi.date()) if radice_progetto else None
-    voce_attivita = ({"giorni": stato_attivita.giorni, "ultimo": f"{stato_attivita.ultimo_commit.day} {stato_attivita.ultimo_commit:%b %Y}",
-                      "soglia": stato_attivita.soglia, "limite": attivita.LIMITE_GITHUB_GIORNI, "in_ritardo": stato_attivita.in_ritardo}
-                     if stato_attivita else None)
 
     nomi_aree = {chiave: voce["nome"] for chiave, voce in config["colori"].items()}  # es. "us" -> United States
     usi_serie: dict[str, list[dict]] = {}   # id serie -> grafici e tabelle che la usano (per Series status)
@@ -438,10 +434,9 @@ def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict, radice_p
             "fallback": metodo.fallback_configurati(config, serie), "calcolate": metodo.serie_calcolate(config, serie),
             "regola_calcolate": metodo.REGOLA_CALCOLATE, "gruppi_note": metodo.raggruppa_note(note, usi_note),
             "movimenti": metodo.descrivi_movimenti(config, serie, classifica_movimenti),
-            "annuali": metodo.snapshot_annuali(stati_annuali), "attivita": voce_attivita,
+            "annuali": metodo.snapshot_annuali(stati_annuali),
         },
         "indicatori_annuali": _righe_indicatori(config, snapshot, stati_annuali),
-        "attivita": voce_attivita if voce_attivita and voce_attivita["in_ritardo"] else None,   # solo se serve avvisare
         "aggiornato": f"{adesso_utc.day} {adesso_utc:%b %Y}, {adesso_utc:%H:%M} UTC",
         "pagine": pagine,
         "errori": [{"id": s.id, "nome": s.nome, "errore": s.errore} for s in serie.values() if not s.ok],
@@ -484,7 +479,7 @@ def genera_sito(config: dict, serie: dict[str, Serie], radice_progetto: Path) ->
     if senza:
         print(f"Warning: {len(senza)} charts have no 'come_leggerlo' line (How to read it), e.g. {', '.join(senza[:4])}...")
     comune = {chiave: contesto[chiave]
-              for chiave in ("aggiornato", "plotly_versione", "versione", "css_colori", "attivita")}
+              for chiave in ("aggiornato", "plotly_versione", "versione", "css_colori")}
 
     def scrivi(id_pagina: str, modello: str, **dati) -> Path:
         menu, sottomenu = costruisci_menu(config, id_pagina)

@@ -36,6 +36,10 @@ class TestFormati(unittest.TestCase):
         self.assertEqual(annuali.formatta_valore(61000000.0), "61000000")
         self.assertEqual(annuali.formatta_valore(-0.0002), "0")        # niente "-0"
         self.assertEqual(annuali.formatta_valore(-8.868156), "-8.868")
+        self.assertEqual(annuali.formatta_valore(1282.9475), "1282.948")             # a metà: per eccesso, come il file dell'FMI (round() darebbe 1282.947)
+        self.assertEqual(annuali.formatta_valore(1.9275), "1.928")
+        self.assertEqual(annuali.formatta_valore(-4.6765), "-4.677")
+        self.assertEqual(annuali.formatta_valore(1e6 + 0.5), "1000001")
         self.assertEqual(annuali.formatta_valore(21231427856677.898), "21231427856678")   # valori enormi: interi, niente rumore binario
 
     def test_leggere_e_riscrivere_non_cambia_il_testo(self):
@@ -226,7 +230,8 @@ FILE_WEO = (
 
 class TestImportatoreFile(unittest.TestCase):
     def test_lettura_del_file_weo(self):
-        dati, ultimo = imf_file.leggi_file_weo(FILE_WEO, {"NGDP_RPCH", "NGDPD"})
+        dati, ultimo, pubblicazione = imf_file.leggi_file_weo(FILE_WEO, {"NGDP_RPCH", "NGDPD"})
+        self.assertIsNone(pubblicazione)               # il formato vecchio non riporta la data
         self.assertEqual(sorted(dati["indicatore"].unique()), ["NGDPD", "NGDP_RPCH"])        # OTHER escluso
         self.assertEqual(sorted(dati["paese"].unique()), ["IND", "ITA"])                      # niente righe di nota
         valore = lambda p, i, a: float(dati[(dati.paese == p) & (dati.indicatore == i) & (dati.anno == a)]["valore"].iloc[0])  # noqa: E731
@@ -238,7 +243,7 @@ class TestImportatoreFile(unittest.TestCase):
     def test_codifiche_diverse(self):
         for codifica in ("utf-16", "utf-8-sig", "cp1252"):
             testo = FILE_WEO.replace("Italy", "Italy ü") if codifica != "cp1252" else FILE_WEO.replace("Italy", "Italy é")
-            dati, _ = imf_file.leggi_file_weo(testo.encode(codifica), {"NGDP_RPCH"})
+            dati, _, _ = imf_file.leggi_file_weo(testo.encode(codifica), {"NGDP_RPCH"})
             self.assertEqual(len(dati), 6, codifica)
 
     def test_file_non_valido(self):
@@ -255,7 +260,7 @@ class TestImportatoreFile(unittest.TestCase):
         for paese, gruppo in dati.groupby("paese"):
             celle = [annuali.formatta_valore(gruppo.set_index("anno")["valore"].get(a, float("nan"))) if a in set(gruppo["anno"]) else "n/a" for a in (2024, 2025, 2026)]
             righe.append(f"1\t{paese}\tNGDP_RPCH\t{paese}\td\tn\tPercent change\t\t\t" + "\t".join(celle) + "\t2025")
-        letti, ultimo = imf_file.leggi_file_weo("\n".join(righe) + "\n", {"NGDP_RPCH"})
+        letti, ultimo, _ = imf_file.leggi_file_weo("\n".join(righe) + "\n", {"NGDP_RPCH"})
         self.assertEqual(annuali.testo_dati_csv(letti), annuali.testo_dati_csv(dati))
         self.assertTrue(annuali.differenze(dati, letti, tolleranza=0.0006).identici)
         self.assertEqual(ultimo, {("ITA", "NGDP_RPCH"): 2025, ("DEU", "NGDP_RPCH"): 2025})
@@ -269,12 +274,12 @@ def risposta(stato=200, testo="", json_=None):
     return r
 
 
-CSV_FMI = ("STRUCTURE[;],STRUCTURE_ID,ACTION,COUNTRY,INDICATOR,FREQUENCY,TIME_PERIOD,OBS_VALUE,LATEST_ACTUAL_ANNUAL_DATA\n"
-           "dataflow,IMF.RES:WEO(9.0.0),R,ITA,NGDP_RPCH,A,2024,0.783024,2025\n"
-           "dataflow,IMF.RES:WEO(9.0.0),R,ITA,NGDP_RPCH,A,2025,0.539615,2025\n"
-           "dataflow,IMF.RES:WEO(9.0.0),R,IND,NGDP_RPCH,A,2024,6.5,FY2024/25\n"
-           "dataflow,IMF.RES:WEO(9.0.0),R,IND,NGDP_RPCH,A,2025,,FY2024/25\n"
-           "dataflow,IMF.RES:WEO(9.0.0),R,G001,NGDP_RPCH,A,2025,3.2,\n")
+CSV_FMI = ("STRUCTURE[;],STRUCTURE_ID,ACTION,COUNTRY,INDICATOR,FREQUENCY,TIME_PERIOD,OBS_VALUE,LATEST_ACTUAL_ANNUAL_DATA,SCALE\n"
+           "dataflow,IMF.RES:WEO(9.0.0),R,ITA,NGDP_RPCH,A,2024,0.783024,2025,0\n"
+           "dataflow,IMF.RES:WEO(9.0.0),R,ITA,NGDP_RPCH,A,2025,0.539615,2025,0\n"
+           "dataflow,IMF.RES:WEO(9.0.0),R,IND,NGDP_RPCH,A,2024,6.5,FY2024/25,0\n"
+           "dataflow,IMF.RES:WEO(9.0.0),R,IND,NGDP_RPCH,A,2025,,FY2024/25,0\n"
+           "dataflow,IMF.RES:WEO(9.0.0),R,G001,NGDP_RPCH,A,2025,3.2,,0\n")
 
 
 class TestApiFmi(unittest.TestCase):
@@ -282,12 +287,26 @@ class TestApiFmi(unittest.TestCase):
         with mock.patch.object(imf.requests, "get", return_value=risposta(testo=CSV_FMI)) as chiamata:
             tabella = imf.scarica_indicatore("NGDP_RPCH")
         self.assertEqual(chiamata.call_args.args[0], imf.URL_DATI + "*.NGDP_RPCH.A")
-        self.assertEqual(chiamata.call_args.kwargs["params"]["attributes"], "LATEST_ACTUAL_ANNUAL_DATA")     # poche colonne, non le ~60 predefinite
+        self.assertEqual(chiamata.call_args.kwargs["params"]["attributes"], "LATEST_ACTUAL_ANNUAL_DATA,SCALE")     # poche colonne, non le ~60 predefinite
         self.assertEqual(len(tabella), 4)                                                                      # il valore vuoto è scartato
         effettivi = tabella.drop_duplicates("paese").set_index("paese")["ultimo_effettivo"].map(annuali.anno_effettivo)
         self.assertEqual(effettivi["ITA"], 2025)
         self.assertEqual(effettivi["IND"], 2024)                                                               # FY2024/25
         self.assertTrue(pd.isna(effettivi["G001"]))                                                            # aggregato senza ultimo anno
+
+    def test_i_valori_sono_nella_scala_dell_fmi(self):
+        """L'API dà l'unità grezza e l'esponente SCALE (9 = miliardi, 6 = milioni): lo snapshot usa la scala del file dell'FMI."""
+        csv_scala = ("COUNTRY,INDICATOR,FREQUENCY,TIME_PERIOD,OBS_VALUE,LATEST_ACTUAL_ANNUAL_DATA,SCALE\n"
+                     "ITA,NGDPD,A,2025,2550110691000,2024,9\n"
+                     "ABW,NGDPD,A,2025,4000000000,2024,9\n")
+        with mock.patch.object(imf.requests, "get", return_value=risposta(testo=csv_scala)):
+            tabella = imf.scarica_indicatore("NGDPD")
+        self.assertAlmostEqual(tabella.set_index("paese").loc["ITA", "valore"], 2550.110691)
+        self.assertEqual(annuali.formatta_valore(tabella.set_index("paese").loc["ITA", "valore"]), "2550.111")
+        csv_milioni = csv_scala.replace("NGDPD", "LP").replace("2550110691000,2024,9", "58934357,2024,6").replace("4000000000,2024,9", "81163,2024,6")
+        with mock.patch.object(imf.requests, "get", return_value=risposta(testo=csv_milioni)):
+            tabella = imf.scarica_indicatore("LP")
+        self.assertEqual(annuali.formatta_valore(tabella.set_index("paese").loc["ABW", "valore"]), "0.081")    # 81.163 persone = 0,081 milioni, come nel file
 
     def test_errori_diventano_errore_fonte(self):
         with mock.patch.object(imf.requests, "get", return_value=risposta(stato=404)), self.assertRaises(ErroreFonte):

@@ -20,6 +20,7 @@ import json
 import re
 from dataclasses import dataclass, field
 from datetime import date
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
 import pandas as pd
@@ -129,11 +130,14 @@ def indicatori_di(catalogo: list[Indicatore], fonte: str) -> list[Indicatore]:
 def formatta_valore(valore: float) -> str:
     """Valore come testo, sempre uguale per lo stesso numero: 3 decimali senza zeri inutili; da un milione in su solo l'intero
     (a 13 cifre i decimali sono rumore dei numeri in virgola mobile, e cambierebbero a ogni lettura e scrittura del file).
-    Leggere il testo e riscriverlo dà lo stesso testo: i diff mostrano solo i valori cambiati davvero."""
-    numero = float(valore)
+    Si arrotonda "per eccesso a metà" (1282.9475 -> 1282.948) sulla rappresentazione decimale più breve del numero: è l'arrotondamento
+    del file del WEO, così lo snapshot dell'API e quello del file coincidono (con round() di Python, che arrotonda al pari, 93 valori su 95.000
+    differivano di 0,001). Leggere il testo e riscriverlo dà lo stesso testo: i diff mostrano solo i valori cambiati davvero."""
+    numero = Decimal(repr(float(valore)))
     if abs(numero) >= SOGLIA_INTERI:
-        return str(int(round(numero)))
-    testo = f"{round(numero, DECIMALI_SNAPSHOT):.{DECIMALI_SNAPSHOT}f}".rstrip("0").rstrip(".")
+        return str(int(numero.quantize(Decimal(1), rounding=ROUND_HALF_UP)))
+    testo = f"{numero.quantize(Decimal(1).scaleb(-DECIMALI_SNAPSHOT), rounding=ROUND_HALF_UP):f}"
+    testo = testo.rstrip("0").rstrip(".") if "." in testo else testo
     return "0" if testo in ("-0", "") else testo
 
 

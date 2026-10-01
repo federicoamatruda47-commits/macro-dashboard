@@ -5,8 +5,12 @@ uscita ad aprile e ottobre) si scaricano a mano con `python tools/aggiorna_weo.p
 (vedi dashboard/annuali.py). Si chiama poco di proposito: una richiesta per indicatore, due volte l'anno, avviata da una persona
 (i termini d'uso dell'FMI vietano lo scarico automatico "in massa").
 
-Si usa l'endpoint SDMX 3.0 con `attributes=LATEST_ACTUAL_ANNUAL_DATA`: restituisce solo 6 colonne (paese, indicatore, frequenza, anno,
-valore, ultimo anno effettivo) invece delle ~60 dell'endpoint 2.1: circa 0,6 MB per indicatore invece di ~20 MB.
+Si usa l'endpoint SDMX 3.0 con `attributes=LATEST_ACTUAL_ANNUAL_DATA,SCALE`: restituisce solo 7 colonne (paese, indicatore, frequenza, anno,
+valore, ultimo anno effettivo, scala) invece delle ~60 dell'endpoint 2.1: circa 0,6 MB per indicatore invece di ~20 MB.
+
+SCALA (scoperta confrontando con il file vero del WEO, 01/10/2026): l'API dà i valori nell'unità grezza (PIL in dollari: 2.550.110.691.000; popolazione in persone)
+e l'attributo SCALE dice l'esponente (9 = miliardi, 6 = milioni, 0 = unità); il file e il sito dell'FMI li mostrano già divisi (2.550,111 miliardi; 58,934 milioni).
+Lo snapshot usa la scala dell'FMI (miliardi, milioni), come il file: per questo si divide per 10^SCALE.
 Provato il 01/10/2026 anche dai computer di GitHub Actions.
 
 Dettagli verificati sui dati:
@@ -51,17 +55,18 @@ def _richiedi(chiave: str, attributi: str) -> str:
 
 
 def scarica_indicatore(codice: str) -> pd.DataFrame:
-    """Un indicatore WEO per tutti i Paesi: colonne paese, anno (int), valore (float), ultimo_effettivo (testo come lo scrive l'FMI)."""
-    testo = _richiedi(f"*.{codice}.A", "LATEST_ACTUAL_ANNUAL_DATA")
+    """Un indicatore WEO per tutti i Paesi: colonne paese, anno (int), valore (float, nella scala dell'FMI: miliardi, milioni...), ultimo_effettivo (testo come lo scrive l'FMI)."""
+    testo = _richiedi(f"*.{codice}.A", "LATEST_ACTUAL_ANNUAL_DATA,SCALE")
     if not testo.strip():
         raise ErroreFonte("the IMF returned no data")
     tabella = pd.read_csv(io.StringIO(testo), dtype=str, keep_default_na=False)
-    attese = {"COUNTRY", "INDICATOR", "TIME_PERIOD", "OBS_VALUE", "LATEST_ACTUAL_ANNUAL_DATA"}
+    attese = {"COUNTRY", "INDICATOR", "TIME_PERIOD", "OBS_VALUE", "LATEST_ACTUAL_ANNUAL_DATA", "SCALE"}
     if not attese <= set(tabella.columns):
         raise ErroreFonte("unexpected IMF response format")
     if set(tabella["INDICATOR"]) != {codice}:
         raise ErroreFonte(f"the IMF returned a different indicator than {codice}")
-    valori = pd.to_numeric(tabella["OBS_VALUE"], errors="coerce")
+    scala = pd.to_numeric(tabella["SCALE"], errors="coerce").fillna(0)         # esponente: 9 = miliardi, 6 = milioni, 0 = unità
+    valori = pd.to_numeric(tabella["OBS_VALUE"], errors="coerce") / (10.0 ** scala)
     risultato = pd.DataFrame({
         "paese": tabella["COUNTRY"], "anno": pd.to_numeric(tabella["TIME_PERIOD"], errors="coerce"),
         "valore": valori, "ultimo_effettivo": tabella["LATEST_ACTUAL_ANNUAL_DATA"],
