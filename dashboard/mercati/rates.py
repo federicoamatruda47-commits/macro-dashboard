@@ -180,7 +180,9 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                     confronto("jp-inflazione", "Headline, core and core-core CPI (% y/y)", [(trova_serie(serie, i).nome, i) for i in CPI_GIAPPONE],
                               ["japan-cpi-sources", "target-boj"],
                               "Japan's CPI in three versions: total, \"core\" (without fresh food) and \"core-core\" (also without energy). "
-                              "Japanese inflation stayed close to zero or negative for many years, which is why the BoJ's 2% target has been a long-running aim.",
+                              "Japanese inflation stayed close to zero or negative for many years, which is why the BoJ's 2% target was a long-running aim. "
+                              "Headline inflation then stayed above 2% from April 2022 to the end of 2025, and in 2024 the BoJ ended negative interest rates "
+                              "and began raising its policy rate; in 2026 inflation has mostly been below 2% again.",
                               periodo_iniziale="10Y", largo=True, riferimento=(2, "")),
                 ]),
     ]
