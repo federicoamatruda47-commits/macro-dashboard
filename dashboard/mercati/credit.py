@@ -63,7 +63,9 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                             [BTP_BUND, OAT_BUND], cepr, "CEPR recession", periodo_iniziale="Max", largo=True,
                             note=["monthly-sovereign-yields", "bands-cepr"],
                             come_leggerlo="The extra yield Italy and France pay over Germany on 10-year bonds, a common gauge of how risky investors consider each country's debt. "
-                                          "It rose sharply during the euro-area debt crisis of 2011-2012 and has widened again at times of stress."),
+                                          "It rose sharply during the euro-area debt crisis of 2011-2012 and has widened again at times of stress, "
+                                          "as for Italy in 2018 and France in 2024. Monthly averages smooth out short spikes; "
+                                          "the daily chart below shows them better."),
                     storico("eur-spread-tutti", "All euro-area government bonds minus AAA, 10 years (daily)",
                             [TUTTI_MENO_AAA], cepr, "CEPR recession", periodo_iniziale="Max", largo=True,
                             note=["ea-all-minus-aaa", "bands-cepr"],
