@@ -45,7 +45,7 @@
   {% for r in p.regioni %}
   <h3 class="titolo-gruppo">{{ r.nome }}</h3>
   <ul class="elenco-paesi">
-    {% for c in r.paesi %}<li><a href="country.html?c={{ c.c }}" data-c="{{ c.c }}" data-nome="{{ c.nome }}" data-regione="{{ c.regione }}">{{ c.nome }}</a>{% if not c.fmi %} <span class="etichetta-fonte" title="World Bank data only">WB only</span>{% endif %}</li>{% endfor %}
+    {% for c in r.paesi %}<li><a href="country.html?c={{ c.c }}" data-c="{{ c.c }}" data-nome="{{ c.nome }}" data-nome-fonte="{{ c.nome_fonte }}" data-regione="{{ c.regione }}">{{ c.nome }}</a>{% if not c.fmi %} <span class="etichetta-fonte" title="World Bank data only">WB only</span>{% endif %}</li>{% endfor %}
   </ul>
   {% endfor %}
 </section>

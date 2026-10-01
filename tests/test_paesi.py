@@ -289,8 +289,11 @@ class TestContenutoPagina(unittest.TestCase):
         c = paesi.carica_contenuto(RADICE / "contenuti" / "paese.yaml", self.catalogo, self.note)
         testi = [g["come_leggerlo"] for s in c["sezioni"] for g in s["grafici"]] + [c["outlook"]["come_leggerlo"]]
         import re
+        from datetime import date
+        limite = date.today().year - 1       # anni chiusi da almeno due anni: nessun anno dall'anno scorso in poi (nel 2026: niente 2025 né dopo)
         for testo in testi:
-            self.assertNotRegex(testo, r"\b(20(2[5-9]|3\d))\b", testo)                       # nessun anno dal 2025 in poi
+            anni = [int(a) for a in re.findall(r"\b(19\d\d|20\d\d)\b", testo)]
+            self.assertTrue(all(a < limite for a in anni), f"anno recente (>= {limite}) in: {testo}")
             self.assertNotRegex(testo.lower(), r"\b(th|nd|rd|st) of \d+|ranks?\b|ranking of", testo)
         anni_citati = sorted({a for t in testi for a in re.findall(r"\b(19\d\d|20\d\d)\b", t)})
         self.assertEqual(anni_citati, ["2020", "2021", "2022", "2024"])                      # Italia 2020-21, Italia 2022, Grecia 2024
@@ -313,3 +316,40 @@ class TestContenutoPagina(unittest.TestCase):
             prova(lambda c: c["sezioni"][0]["grafici"][0].update(note=["nota-inesistente"]))
             prova(lambda c: c["sezioni"][0]["grafici"].append(dict(c["sezioni"][0]["grafici"][0])))            # id ripetuto
             prova(lambda c: c.update(numeri_chiave=[{"id": "non_esiste", "nome": "x"}]))
+
+
+class TestNomiDeiPaesi(unittest.TestCase):
+    """Regola dei nomi (CLAUDE.md): nomi brevi in inglese; il nome originale della fonte resta in config accanto a quello mostrato."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.bm = annuali.leggi_snapshot(RADICE, "wb")
+        cls.imf = annuali.leggi_snapshot(RADICE, "imf")
+        if cls.bm is None or cls.imf is None:
+            raise unittest.SkipTest("snapshot non presente")
+        cls.config = yaml.safe_load((RADICE / "config.yaml").read_text(encoding="utf-8"))
+        cls.nomi_wb = dict(zip(cls.bm.paesi["paese"], cls.bm.paesi["nome"]))
+
+    def test_il_nome_originale_e_sempre_quello_della_fonte(self):
+        for codice, voce in self.config["nomi_paesi"].items():
+            self.assertEqual(voce["nome_fonte"], self.nomi_wb[codice], f"{codice}: il nome originale in config non è più quello della Banca Mondiale")
+            self.assertNotEqual(voce["nome"], voce["nome_fonte"], f"{codice}: se il nome non cambia non serve la voce")
+        for chiave, voce in self.config["paesi"].items():
+            if voce.get("nome_fonte"):
+                self.assertEqual(voce["nome_fonte"], self.nomi_wb[voce["iso3"]], chiave)
+
+    def test_nomi_brevi_senza_virgole(self):
+        for p in paesi.elenco_paesi(self.imf, self.bm, self.config):
+            if p["c"] in ("TWN", "XKX", "PSE"):
+                continue                       # nome della fonte, senza interpretazioni
+            self.assertNotIn(",", p["nome"], f"{p['c']}: nome da accorciare o da mettere in nomi_paesi: {p['nome']!r}")
+            self.assertNotRegex(p["nome"], r"\bRep\.|\bFed\.|\bIslamic\b|\bSAR\b", p["c"])
+
+    def test_nome_della_fonte_per_taiwan_kosovo_e_cisgiordania(self):
+        per_codice = {p["c"]: p for p in paesi.elenco_paesi(self.imf, self.bm, self.config)}
+        self.assertEqual(per_codice["TWN"]["nome"], "Taiwan Province of China")
+        for codice in ("TWN", "XKX", "PSE"):
+            self.assertEqual(per_codice[codice]["nome"], per_codice[codice]["nome_fonte"])
+        self.assertEqual(per_codice["XKX"]["nome"], self.nomi_wb["XKX"])
+        self.assertEqual(per_codice["KOR"]["nome_fonte"], "Korea, Rep.")
+        self.assertEqual(per_codice["KOR"]["nome"], "South Korea")

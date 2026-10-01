@@ -252,29 +252,33 @@ paesi:
   fr: {iso3: FRA, nome: France, mercati: [IRS/M.FR.L.L40.CI.0000.EUR.N.Z, SPREAD_OAT_BUND, ^FCHI], vai: [markets/rates, markets/credit, markets/equities]}
   jp: {iso3: JPN, nome: Japan, mercati: [WS_CBPOL/D.JP, JGB_10Y, ^N225, JPY=X], vai: [markets/rates, markets/equities, markets/fx]}
   cn: {iso3: CHN, nome: China, mercati: [WS_CBPOL/D.CN, 510300.SS, CNY=X], vai: [markets/rates, markets/equities, markets/fx]}
-  kr: {iso3: KOR, nome: South Korea, mercati: [WS_CBPOL/D.KR, ^KS11, KRW=X], vai: [markets/rates, markets/equities, markets/fx]}
+  kr: {iso3: KOR, nome: South Korea, nome_fonte: "Korea, Rep.", mercati: [WS_CBPOL/D.KR, ^KS11, KRW=X], vai: [markets/rates, markets/equities, markets/fx]}
 
 # Nomi più semplici da cercare di quelli della Banca Mondiale ("Korea, Dem. People's Rep." -> North Korea): codice ISO3 -> nome sul sito
+# REGOLA DEI NOMI (anche in CLAUDE.md): nomi brevi e comuni in inglese ("Egypt", non "Egypt, Arab Rep."); per Taiwan, Kosovo e Cisgiordania e Gaza il nome
+# della fonte, senza interpretazioni nostre. Ogni nome cambiato tiene accanto il nome ORIGINALE della fonte (nome_fonte): un test controlla che sia
+# ancora quello della Banca Mondiale. Nella pagina si cerca per entrambi.
 nomi_paesi:
-  BHS: The Bahamas
-  COD: Democratic Republic of the Congo
-  COG: Republic of the Congo
-  EGY: Egypt
-  FSM: Micronesia
-  GMB: The Gambia
-  HKG: Hong Kong
-  IRN: Iran
-  MAC: Macao
-  PRK: North Korea
-  RUS: Russia
-  SVK: Slovakia
-  SYR: Syria
-  VEN: Venezuela
-  YEM: Yemen
+  BHS: {nome: The Bahamas, nome_fonte: "Bahamas, The"}
+  COD: {nome: Democratic Republic of the Congo, nome_fonte: "Congo, Dem. Rep."}
+  COG: {nome: Republic of the Congo, nome_fonte: "Congo, Rep."}
+  EGY: {nome: Egypt, nome_fonte: "Egypt, Arab Rep."}
+  FSM: {nome: Micronesia, nome_fonte: "Micronesia, Fed. Sts."}
+  GMB: {nome: The Gambia, nome_fonte: "Gambia, The"}
+  HKG: {nome: Hong Kong, nome_fonte: "Hong Kong SAR, China"}
+  IRN: {nome: Iran, nome_fonte: "Iran, Islamic Rep."}
+  MAC: {nome: Macao, nome_fonte: "Macao SAR, China"}
+  PRK: {nome: North Korea, nome_fonte: "Korea, Dem. People's Rep."}
+  RUS: {nome: Russia, nome_fonte: Russian Federation}
+  SVK: {nome: Slovakia, nome_fonte: Slovak Republic}
+  SOM: {nome: Somalia, nome_fonte: "Somalia, Fed. Rep."}
+  SYR: {nome: Syria, nome_fonte: Syrian Arab Republic}
+  VEN: {nome: Venezuela, nome_fonte: "Venezuela, RB"}
+  YEM: {nome: Yemen, nome_fonte: "Yemen, Rep."}
 
 # Paesi che la Banca Mondiale non ha nel suo elenco: nome (come lo scrive l'FMI) e regione (nella pagina del Paese compaiono solo i dati FMI).
 paesi_aggiuntivi:
-  TWN: {nome: Taiwan Province of China, regione: East Asia & Pacific}
+  TWN: {nome: Taiwan Province of China, nome_fonte: Taiwan Province of China, regione: East Asia & Pacific}
 
 # Recessioni disegnate come bande grigie, per le regioni senza una serie scaricabile.
 # (Per gli USA si usa la serie FRED USREC, più in basso.)

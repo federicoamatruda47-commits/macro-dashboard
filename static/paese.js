@@ -44,6 +44,7 @@
   // ----------------------------------------------------------------------
   const voci = Array.from(document.querySelectorAll("#paese-elenco a[data-c]")).map((a) => ({
     c: a.dataset.c, nome: a.dataset.nome, regione: a.dataset.regione, chiave: norma(a.dataset.nome),
+    chiaveFonte: norma(a.dataset.nomeFonte || a.dataset.nome),    // si cerca anche per il nome originale della fonte ("Korea, Rep.")
   }));
   const perCodice = new Map(voci.map((v) => [v.c, v]));
   const alfabetico = voci.slice().sort((a, b) => a.chiave.localeCompare(b.chiave));
@@ -64,7 +65,7 @@
   function cerca(q) {
     q = norma(q.trim());
     if (!q) return [];
-    const trovati = voci.filter((v) => v.chiave.includes(q) || v.c.toLowerCase().startsWith(q));
+    const trovati = voci.filter((v) => v.chiave.includes(q) || v.chiaveFonte.includes(q) || v.c.toLowerCase().startsWith(q));
     trovati.sort((a, b) => (b.chiave.startsWith(q) - a.chiave.startsWith(q)) || (b.c.toLowerCase() === q) - (a.c.toLowerCase() === q) || a.chiave.localeCompare(b.chiave));
     return trovati.slice(0, 12);
   }

@@ -80,7 +80,8 @@ sezioni:
         decimali: 1
         fonte: wb
         come_leggerlo: >-
-          Number of residents, from the World Bank. Population changes slowly, so the line is usually smooth.
+          Number of residents, from the World Bank. Population changes slowly, so the line is usually smooth. Sharp drops or jumps usually reflect
+          wars, large migrations or census revisions.
         note: []
 
   - id: prices
@@ -143,7 +144,7 @@ sezioni:
         fonte: imf
         come_leggerlo: >-
           Government revenue minus spending, as a share of GDP: below zero is a deficit. The line is the primary balance, which leaves out interest
-          payments. Greece ran an overall surplus of 1.2% of GDP in 2024 and 4.7% before interest.
+          payments. Greece, for example, ran a small overall surplus in 2024 and a much larger one before interest.
         note: [weo-estimates, fiscal-year]
       - id: government_debt
         titolo: Government debt

@@ -36,6 +36,7 @@ class PaeseConfig:
 
     chiave: str                       # chiave del campo `paese` delle serie (us, jp...)
     nome: str
+    nome_fonte: str | None = None     # nome originale della fonte (Banca Mondiale), se il nome mostrato è diverso
     iso3: str | None = None
     pagina: str | None = None         # id della pagina di livello A (economies/usa)
     mercati: tuple[str, ...] = ()     # serie del riquadro Markets
@@ -63,7 +64,7 @@ def carica_paesi(config: dict) -> dict[str, PaeseConfig]:
         for vai in voce.get("vai", []):
             if vai not in pagine:
                 raise ValueError(f"paesi.{chiave}: la pagina '{vai}' non è nel blocco 'pagine'")
-        risultato[chiave] = PaeseConfig(chiave, voce["nome"], iso3, voce.get("pagina"), tuple(voce.get("mercati", [])), tuple(voce.get("vai", [])))
+        risultato[chiave] = PaeseConfig(chiave, voce["nome"], voce.get("nome_fonte"), iso3, voce.get("pagina"), tuple(voce.get("mercati", [])), tuple(voce.get("vai", [])))
     return risultato
 
 
@@ -128,14 +129,16 @@ def elenco_paesi(imf: annuali.Snapshot | None, bm: annuali.Snapshot | None, conf
     codici_bm = bm.codici_paesi() if bm else set()
     nomi_wb = dict(zip(bm.paesi["paese"], bm.paesi["nome"])) if bm is not None and bm.paesi is not None else {}
     regioni_wb = dict(zip(bm.paesi["paese"], bm.paesi["regione"])) if bm is not None and bm.paesi is not None else {}
-    nomi_config = {**config.get("nomi_paesi", {}), **{p.iso3: p.nome for p in carica_paesi(config).values() if p.iso3}}
+    nomi_config = {c: v["nome"] for c, v in config.get("nomi_paesi", {}).items()}
+    nomi_config.update({p.iso3: p.nome for p in carica_paesi(config).values() if p.iso3})
     extra = config.get("paesi_aggiuntivi", {})
     elenco = []
     for codice in sorted(codici_imf | codici_bm):
         voce = extra.get(codice, {})
-        nome = nomi_config.get(codice) or voce.get("nome") or nomi_wb.get(codice) or codice
+        nome_fonte = voce.get("nome") or nomi_wb.get(codice) or codice          # il nome come lo scrive la fonte
+        nome = nomi_config.get(codice) or nome_fonte
         regione = (voce.get("regione") or regioni_wb.get(codice) or "").strip()
-        elenco.append({"c": codice, "nome": nome, "regione": regione, "fmi": codice in codici_imf, "bm": codice in codici_bm})
+        elenco.append({"c": codice, "nome": nome, "nome_fonte": nome_fonte, "regione": regione, "fmi": codice in codici_imf, "bm": codice in codici_bm})
     return sorted(elenco, key=lambda p: (p["nome"].casefold(), p["c"]))
 
 
