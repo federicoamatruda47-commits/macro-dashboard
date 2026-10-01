@@ -50,12 +50,13 @@
 regioni:
   - id: usa
     nome: United States
-    descrizione: Monetary policy, the Treasury curve, real rates, inflation, credit, equities and financial conditions.
+    descrizione: The US labour market. The rest of this page has moved to the Markets pages; a full US economy page is coming.
     attiva: true
+    numeri_chiave: ["UNRATE"]
   - id: eurozona
     nome: Euro area
-    descrizione: ECB policy rate, the AAA curve (Bund proxy), sovereign spreads, HICP inflation, credit, equities and EUR/USD.
     attiva: true
+    senza_pagina: true
   # Le materie prime non sono più una pagina "regione" (ora sono la pagina markets/commodities, vedi "pagine"),
   # ma le loro serie appartengono ancora a questa regione. "senza_pagina" = non si genera una pagina per questa voce.
   - id: commodities
@@ -65,27 +66,26 @@ regioni:
   # Asia (fase 3): tre paesi, nessuna banda di recessione (nessuna fonte ufficiale e automatica)
   - id: giappone
     nome: Japan
-    descrizione: BoJ policy rate, JGB yields, inflation, the yen and the Nikkei.
     attiva: true
+    senza_pagina: true
   - id: cina
     nome: China
-    descrizione: Loan Prime Rate, inflation, the yuan, the CSI 300 and the Hang Seng.
     attiva: true
+    senza_pagina: true
   - id: corea
     nome: South Korea
-    descrizione: BoK base rate, the 10-year yield, inflation, the won and the KOSPI.
     attiva: true
+    senza_pagina: true
   - id: globale
     nome: Global comparison
-    descrizione: Policy rates, 10-year yields, inflation, currencies and equities of five economies on the same chart.
     attiva: true
+    senza_pagina: true
 
 # Menu in cima a ogni pagina (provvisorio, come "regioni"): "pagina" = id di una regione (o "home");
 # "figli" = voce con una seconda riga di link. La voce con "figli" porta alla prima pagina figlia.
 menu:
   - {titolo: Home, pagina: home}
-  - {titolo: Countries, figli: [usa, eurozona, giappone, cina, corea]}
-  - {pagina: globale}
+  - {pagina: usa}
   - {titolo: Markets, figli: [markets, markets/rates, markets/credit, markets/equities, markets/fx, markets/commodities]}
   - {titolo: Method & sources, figli: [method, method/series]}
 
@@ -109,8 +109,9 @@ pagine:
     nome: Rates & curves
     gruppo: markets
     stato: attiva
-    descrizione: Policy rates, government yield curves, 10-year yields and the slope of the curve across economies.
-    numeri_chiave: ["DFF", "FM/D.U2.EUR.4F.KR.DFR.LEV", "DGS10", "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y", "JGB_10Y", "T10Y2Y"]
+    descrizione: Policy rates, government yield curves, 10-year yields, the slope of the curve, inflation and real rates across economies.
+    numeri_chiave: ["DFF", "FM/D.U2.EUR.4F.KR.DFR.LEV", "DGS10", "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y", "JGB_10Y", "T10Y2Y",
+                    "CPIAUCSL", "HICP/M.U2.N.000000.4D0.ANR"]
   - id: markets/credit
     nome: Credit
     gruppo: markets
@@ -279,7 +280,7 @@ serie:
   # --- Inflazione (indici di prezzo trasformati in variazione annua) -
   - id: CPIAUCSL
     fonte: fred
-    nome: "CPI headline"
+    nome: "US CPI headline"
     regione: usa
     paese: us
     categoria: inflazione
@@ -288,7 +289,7 @@ serie:
     riepilogo: true
   - id: CPILFESL
     fonte: fred
-    nome: "CPI core"
+    nome: "US CPI core"
     regione: usa
     paese: us
     categoria: inflazione
@@ -297,7 +298,7 @@ serie:
     riepilogo: true
   - id: PCEPILFE
     fonte: fred
-    nome: "PCE core"
+    nome: "US PCE core"
     regione: usa
     paese: us
     categoria: inflazione
@@ -538,7 +539,7 @@ serie:
   # Il vecchio dataset "ICP" è fermo a dicembre 2025.
   - id: HICP/M.U2.N.000000.4D0.ANR
     fonte: ecb
-    nome: "HICP headline"
+    nome: "Euro-area HICP headline"
     regione: eurozona
     paese: ea
     categoria: inflazione
@@ -548,7 +549,7 @@ serie:
     riserva: {fonte: fred, id: CP0000EZCCM086NEST, trasformazione: yoy}
   - id: HICP/M.U2.N.XEF000.4D0.ANR
     fonte: ecb
-    nome: "HICP core"
+    nome: "Euro-area HICP core"
     regione: eurozona
     paese: ea
     categoria: inflazione

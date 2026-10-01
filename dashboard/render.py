@@ -305,7 +305,8 @@ def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict) -> dict:
             "riserve": [{"id": s.id, "nome": s.nome, "nota": s.nota_fonte} for s in usate if s.nota_fonte],
         }
 
-    regioni = [costruisci_voce(r, REGIONI.get(r["id"]), [s.id for s in serie.values() if s.regione == r["id"] and s.riepilogo], False)
+    regioni = [costruisci_voce(r, REGIONI.get(r["id"]),
+                               r.get("numeri_chiave", [s.id for s in serie.values() if s.regione == r["id"] and s.riepilogo]), False)
                for r in config["regioni"] if not r.get("senza_pagina")]
     pagine = [costruisci_voce(p, PAGINE_MERCATI.get(p["id"]), p.get("numeri_chiave", []), bool(p.get("ytd")))
               for p in config.get("pagine", []) if p.get("tipo") != "hub" and p.get("stato") == "attiva"]

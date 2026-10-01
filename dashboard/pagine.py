@@ -11,7 +11,8 @@ HOME = "home"
 PAGINA_METODO = "method"
 PAGINA_SERIE = "method/series"
 # Pagine che hanno cambiato indirizzo: il vecchio indirizzo resta come pagina che rimanda al nuovo
-REINDIRIZZAMENTI = {"commodities": "markets/commodities"}
+REINDIRIZZAMENTI = {"commodities": "markets/commodities", "eurozona": "markets", "giappone": "markets",
+                    "cina": "markets", "corea": "markets", "globale": "markets/rates"}
 
 
 def percorso(id_pagina: str) -> str:
