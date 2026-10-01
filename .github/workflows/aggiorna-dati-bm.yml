@@ -29,9 +29,6 @@ on:
         description: "Solo prova: esegue tutto ma non crea il ramo né la pull request"
         type: boolean
         default: false
-  push:                        # PROVA TEMPORANEA dello step 10a (prova solo il flusso, senza creare nulla): da togliere prima del merge
-    branches: [ristrutturazione/step-10a]
-    paths: [".github/workflows/aggiorna-dati-bm.yml"]
 
 permissions:
   contents: write
@@ -45,8 +42,8 @@ jobs:
   aggiorna:
     runs-on: ubuntu-24.04
     env:
-      # Solo prova (push di prova o avvio a mano con "prova"): niente ramo e niente pull request
-      PROVA: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.prova) }}
+      # Solo prova (avvio a mano con "prova" spuntato): esegue tutto ma niente ramo e niente pull request
+      PROVA: ${{ github.event_name == 'workflow_dispatch' && inputs.prova }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v7
