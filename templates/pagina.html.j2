@@ -10,6 +10,11 @@
   <h1>{{ r.nome }}</h1>
   {% if r.descrizione %}<p class="descrizione">{{ r.descrizione }}</p>{% endif %}
   <p class="aggiornamento">Updated <strong>{{ aggiornato }}</strong></p>
+  {% if r.attiva and r.ancore|length > 1 %}
+  <ul class="chips" aria-label="On this page">
+    {% for a in r.ancore %}<li><a href="#{{ a.id }}">{{ a.titolo }}</a></li>{% endfor %}
+  </ul>
+  {% endif %}
 </section>
 
 {{ avvisi(r.errori, r.in_ritardo, r.riserve, r.totale_serie, " series used on this page", radice) }}
@@ -25,8 +30,8 @@
 
 {# ---- Sezioni con i grafici ---- #}
 {% for sez in r.sezioni %}
-<section class="blocco" id="{{ r.id }}-{{ sez.id }}" aria-labelledby="titolo-{{ r.id }}-{{ sez.id }}">
-  <h2 id="titolo-{{ r.id }}-{{ sez.id }}">{{ sez.titolo }}</h2>
+<section class="blocco" id="{{ r.slug }}-{{ sez.id }}" aria-labelledby="titolo-{{ r.slug }}-{{ sez.id }}">
+  <h2 id="titolo-{{ r.slug }}-{{ sez.id }}">{{ sez.titolo }}</h2>
   {% if sez.descrizione %}<p class="descrizione">{{ sez.descrizione }}</p>{% endif %}
   {% if sez.performance %}{{ tabella_performance(sez) }}{% endif %}
   {% if sez.grafici %}

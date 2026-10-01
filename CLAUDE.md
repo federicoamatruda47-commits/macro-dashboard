@@ -20,7 +20,12 @@ Il sito sta passando da 7 tab in una pagina sola a più pagine (Overview, Market
 **Piano approvato e stato degli step: [docs/ristrutturazione.md](docs/ristrutturazione.md)** (leggerlo a inizio sessione e aggiornare
 la tabella "Stato" a ogni fine step). Un ramo per step (`ristrutturazione/step-N`); a fine step riepilogo e **attesa dell'ok dell'utente
 prima del merge**. Prima di dichiarare finito uno step: `python tools/inventario.py controlla` (nessun grafico o serie perso/doppio;
-mappa in `docs/mappa-grafici.yaml`). Quando la ristrutturazione sarà finita, le sezioni "Struttura" e "Regole" qui sotto vanno riscritte.
+mappa in `docs/mappa-grafici.yaml`). **Righe "How to read it" (`come_leggerlo`, regole dell'utente del 01/10/2026, valgono per tutto lo step 4 e oltre):** linguaggio semplice, una o due frasi,
+comprensibili a chi non è del settore; prudenti e fattuali: descrivono relazioni storiche ("historically", "has tended to"), mai previsioni o certezze,
+e citano le eccezioni importanti quando servono (es. oro e tassi reali dopo il 2022). **Alla fine di ogni pagina dello step 4 si mostra all'utente una tabella
+con tutte le righe "How to read it" di quella pagina, da rivedere prima del merge.** Le pagine nuove stanno in `dashboard/mercati/` (registro in `__init__.py`)
+e nel blocco `pagine:` di `config.yaml`.
+Quando la ristrutturazione sarà finita, le sezioni "Struttura" e "Regole" qui sotto vanno riscritte.
 
 ## Regole del progetto
 - **Testi del sito in INGLESE** (decisione del 01/10/2026): numeri `1,234.5` (punto decimale), date `30 Sep 2026`, scadenze `10Y`, unità `bp`/`pp`,

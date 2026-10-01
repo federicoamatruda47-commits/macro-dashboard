@@ -15,7 +15,7 @@
   <h2 id="pagine">Pages</h2>
   <div class="griglia-kpi griglia-pagine">
     {% for p in regioni %}
-    <a class="scheda-pagina" href="{{ p.id }}/">
+    <a class="scheda-pagina" href="{{ p.href }}">
       <h3>{{ p.nome }}{% if not p.attiva %} <span class="presto">coming soon</span>{% endif %}</h3>
       <p>{{ p.descrizione }}</p>
       <p class="kpi-data">{{ p.n_grafici }} charts</p>
