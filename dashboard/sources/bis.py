@@ -21,6 +21,10 @@ TIMEOUT_SECONDI = 60
 INTESTAZIONI = {"User-Agent": "Mozilla/5.0 (dashboard-macro)"}
 
 
+class _RispostaVuota(ErroreFonte):
+    """Il BIS ha risposto 200 ma senza dati (corpo vuoto o solo l'intestazione): capita a volte e di solito passa al tentativo dopo."""
+
+
 def scarica(id_serie: str) -> pd.Series:
     """Scarica tutto lo storico di una serie BIS. In caso di problemi solleva ErroreFonte."""
     if "/" not in id_serie:
@@ -35,7 +39,15 @@ def scarica(id_serie: str) -> pd.Series:
             ultimo_errore = f"network error ({type(errore).__name__})"
         else:
             if risposta.status_code == 200:
-                return _converti_in_serie(risposta.text, id_serie)
+                try:
+                    return _converti_in_serie(risposta.text, id_serie)
+                except _RispostaVuota as errore:
+                    ultimo_errore = str(errore)
+                    print(f"  BIS {id_serie}: empty response (attempt {tentativo} of {TENTATIVI})"
+                          + ("; trying again" if tentativo < TENTATIVI else "; giving up"), flush=True)
+                    if tentativo < TENTATIVI:
+                        time.sleep(2 * tentativo)
+                    continue
             ultimo_errore = ("series not found at the BIS (wrong code?)" if risposta.status_code == 404
                              else f"HTTP {risposta.status_code}")
             if 400 <= risposta.status_code < 500 and risposta.status_code != 429:
@@ -48,7 +60,7 @@ def scarica(id_serie: str) -> pd.Series:
 
 def _converti_in_serie(testo_csv: str, id_serie: str) -> pd.Series:
     if not testo_csv.strip():
-        raise ErroreFonte("the BIS returned no data")
+        raise _RispostaVuota("the BIS returned no data")
     tabella = pd.read_csv(io.StringIO(testo_csv))
     tabella.columns = [c.upper() for c in tabella.columns]
     if "TIME_PERIOD" not in tabella or "OBS_VALUE" not in tabella:
@@ -62,5 +74,5 @@ def _converti_in_serie(testo_csv: str, id_serie: str) -> pd.Series:
     serie = pd.Series(valori.to_numpy(), index=pd.DatetimeIndex(pd.to_datetime(tabella["TIME_PERIOD"])),
                       name=id_serie).dropna().sort_index()
     if serie.empty:
-        raise ErroreFonte("the series contains no numeric values")
+        raise _RispostaVuota("the series contains no numeric values")
     return serie
