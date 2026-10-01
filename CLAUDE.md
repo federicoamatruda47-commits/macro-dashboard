@@ -66,7 +66,7 @@ dashboard/
     yahoo.py             Yahoo Finance via yfinance (non ufficiale), id = ticker (es. CL=F); riusabile per borse e cambi
     bis.py               API BIS (stats.bis.org), senza chiave; id = "DATASET/CHIAVE" (es. WS_CBPOL/D.JP tassi di policy, WS_LONG_CPI/M.JP.771 inflazione a/a)
     mof_giappone.py      CSV del Ministero delle Finanze giapponese (JGB giornalieri); id = JGB_2Y, JGB_10Y, JGB_30Y
-    statjp.py            Statistics Bureau of Japan via DBnomics (CPI core); id = "CPIm/733" (senza freschi) o "CPIm/740" (senza freschi né energia)
+    statjp.py            Statistics Bureau of Japan via DBnomics (CPI core); id = "CPIm/001" (totale), "CPIm/733" (senza freschi) o "CPIm/740" (senza freschi né energia)
     errori.py            ErroreFonte
   data.py                classe Serie, lettura config, download con riserva, serie calcolate (A − B o A / B, stessa fonte),
                          trasformazioni (livello / yoy), variazioni 1s/1m/1a (+ da inizio anno), controllo di freschezza
@@ -149,7 +149,7 @@ python -m http.server 8000 --directory site   # anteprima su http://localhost:80
   (dal 20/08/2019; prima tasso ufficiale sui prestiti), US il punto medio dell'obiettivo Fed, XM il tasso sui depositi BCE.
   `WS_LONG_CPI/M.<PAESE>.771` = inflazione annua mensile (JP e KR fino a luglio, CN/US/XM fino ad agosto). L'unità 628 sono gli indici.
 - **Giappone**: JGB giornalieri dal Ministero delle Finanze (`jgbcme_all.csv` + `jgbcme.csv` del mese; 2A dal 1974, 10A dal 1986, 30A dal 1999). Riserva FRED solo per il 10A
-  (`IRLTLT01JPM156N`, mensile). Core CPI: DBnomics `STATJP/CPIm/733` e `/740` (indici dal 1970, ultimo agosto; la variazione annua si calcola con `yoy`).
+  (`IRLTLT01JPM156N`, mensile). CPI: DBnomics `STATJP/CPIm/001` (totale), `/733` e `/740` (core, core-core): indici dal 1970, ultimo agosto, variazione annua con `yoy`. Pagina Giappone = tutto Statistics Bureau; il BIS (`WS_LONG_CPI/M.JP.771`, un mese indietro) resta solo nel Confronto globale, per una fonte uniforme tra Paesi.
   FRED/OCSE per CPI Giappone e Cina sono **fermi** (2021 e 2025): non usarli.
 - **Corea**: rendimento 10A solo mensile (FRED `IRLTLT01KRM156N`). Il 3A giornaliero esiste solo su ECOS (Bank of Korea),
   che richiede la registrazione con numero di telefono coreano: non usata. La chiave `sample` di ECOS restituisce al massimo 10 righe.

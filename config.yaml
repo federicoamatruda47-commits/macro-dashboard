@@ -627,13 +627,13 @@ serie:
     trasformazione: livello
     riepilogo: false
     decimali: 3
-  - id: WS_LONG_CPI/M.JP.771
-    fonte: bis
-    nome: Inflazione CPI Giappone
+  - id: CPIm/001
+    fonte: statjp
+    nome: CPI totale Giappone
     regione: giappone
     categoria: inflazione
     unita: "% a/a"
-    trasformazione: livello
+    trasformazione: yoy
     riepilogo: true
   - id: CPIm/733
     fonte: statjp
@@ -782,6 +782,14 @@ serie:
     unita: "%"
     trasformazione: livello
     riepilogo: true
+  - id: WS_LONG_CPI/M.JP.771
+    fonte: bis
+    nome: Inflazione CPI Giappone
+    regione: globale
+    categoria: inflazione
+    unita: "% a/a"
+    trasformazione: livello
+    riepilogo: false
   - id: WS_LONG_CPI/M.US.771
     fonte: bis
     nome: Inflazione CPI USA

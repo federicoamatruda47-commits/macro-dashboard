@@ -13,7 +13,7 @@ A static macroeconomic dashboard covering the US, the Eurozone, commodities, Jap
 | **United States** | Fed funds rate, Treasury yield curve (2Y, 10Y), 10Y-2Y and 10Y-3M spreads, 10Y real yield (TIPS) and breakeven inflation, CPI and core PCE, credit spreads (Baa-Treasury, High Yield OAS), VIX, broad dollar index, unemployment. NBER recessions shaded. |
 | **Eurozone** | ECB deposit facility rate, AAA euro yield curve (Bund proxy), sovereign spreads (BTP/OAT vs Bund), HICP headline and core, euro high-yield spread, EUR/USD. CEPR recessions shaded. |
 | **Commodities** | Performance table, energy (WTI, Brent, Henry Hub, TTF), precious metals (gold, silver), industrial metals (copper, aluminium), agriculturals (wheat, corn), and commodities vs US rates charts. |
-| **Japan** | BoJ policy rate, daily JGB yields (2Y, 10Y, 30Y), CPI headline, core and core-core, USD/JPY, Nikkei 225. |
+| **Japan** | BoJ policy rate, daily JGB yields (2Y, 10Y, 30Y), CPI headline, core and core-core (all from the Statistics Bureau), USD/JPY, Nikkei 225. |
 | **China** | Loan Prime Rate (1Y), CPI, USD/CNY, CSI 300 (via an ETF) and Hang Seng. |
 | **South Korea** | BoK base rate, 10Y yield (monthly), CPI, USD/KRW, KOSPI. |
 | **Global comparison** | Policy rates of the US, Eurozone, Japan, China and Korea on one chart; 10Y yields; CPI inflation; currencies vs the dollar and equity indices rebased to 100 at the start of the selected period. |
@@ -31,7 +31,7 @@ Each tab opens with a summary of the latest value and the 1-week, 1-month and 1-
 | [Yahoo Finance](https://finance.yahoo.com/) via `yfinance` (unofficial) | Commodity continuous futures, equity indices, USD exchange rates | Not an official API and may break. Contract rollovers cause small price jumps (noted under the charts). No free fallback for gold and silver or for the indices. The CSI 300 index has no history on Yahoo: the ETF `510300.SS` is used instead (from 2012). |
 | [BIS](https://stats.bis.org/) (no key) | Central bank policy rates of all five economies; CPI inflation (year on year) of the Asian countries and the global comparison | The BIS publishes Korea about one month late, so that series has a custom 45-day freshness threshold. China is the 1Y Loan Prime Rate, not an overnight rate. |
 | [Japanese Ministry of Finance](https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/) (no key) | Daily JGB yields | CSV files in Shift-JIS; the history file is joined with the current-month file. |
-| [Statistics Bureau of Japan](https://www.stat.go.jp/english/) via [DBnomics](https://db.nomics.world/) (no key) | Japanese core and core-core CPI indices | DBnomics is a free aggregator, not the statistics office itself. |
+| [Statistics Bureau of Japan](https://www.stat.go.jp/english/) via [DBnomics](https://db.nomics.world/) (no key) | Japanese CPI indices (headline, core, core-core); the Japan tab uses them, the global comparison uses BIS for uniformity | DBnomics is a free aggregator, not the statistics office itself. |
 
 CEPR recession dates have no API and are maintained by hand in `config.yaml`.
 

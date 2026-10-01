@@ -6,8 +6,7 @@ from .modello import Sezione
 
 POLICY = "WS_CBPOL/D.JP"
 JGB_2A, JGB_10A, JGB_30A = "JGB_2Y", "JGB_10Y", "JGB_30Y"
-CPI = "WS_LONG_CPI/M.JP.771"
-CPI_CORE, CPI_CORE_CORE = "CPIm/733", "CPIm/740"
+CPI, CPI_CORE, CPI_CORE_CORE = "CPIm/001", "CPIm/733", "CPIm/740"
 CAMBIO = "JPY=X"
 NIKKEI = "^N225"
 
@@ -39,9 +38,10 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                     storico("jp-inflazione", "CPI totale, core e core-core (% annua)",
                             [CPI, CPI_CORE, CPI_CORE_CORE], riferimento=(2, ""), periodo_iniziale="10A",
                             largo=True,
-                            nota="Linea tratteggiata: obiettivo della BoJ al 2%. Il CPI totale arriva dal BIS "
-                                 "(un mese di ritardo in più); core e core-core dallo Statistics Bureau of "
-                                 "Japan (via DBnomics), di cui la variazione annua è calcolata sull'indice."),
+                            nota="Linea tratteggiata: obiettivo della BoJ al 2%. Tutte e tre le serie vengono dallo "
+                                 "Statistics Bureau of Japan (via DBnomics): la variazione annua è calcolata "
+                                 "sull'indice. Nel Confronto globale il Giappone usa invece i dati BIS, "
+                                 "per avere la stessa fonte per tutti i Paesi."),
                 ]),
         Sezione("cambio", "Cambio", grafici=[
             storico("jp-cambio", "USD/JPY (yen per 1 dollaro)", [CAMBIO], periodo_iniziale="10A", largo=True,
