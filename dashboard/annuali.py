@@ -76,6 +76,7 @@ class Snapshot:
     meta: dict = field(default_factory=dict)
     paesi: pd.DataFrame | None = None    # solo Banca Mondiale: colonne paese, nome, regione, tipo
     fiscale: set[tuple[str, str]] = field(default_factory=set)   # coppie (paese, codice) con anni fiscali (l'anno 2024 è il 2024/25)
+    _indice: dict | None = field(default=None, repr=False, compare=False)
 
     def codici_paesi(self) -> set[str]:
         """I codici dei veri Paesi presenti nei dati (esclusi gli aggregati: World, gruppi di reddito, G001...)."""
@@ -85,8 +86,12 @@ class Snapshot:
         return {p for p in presenti if re.fullmatch(r"[A-Z]{3}", p)}   # FMI: gli aggregati hanno codici come G001 o GX123
 
     def serie(self, paese: str, codice: str) -> pd.Series:
-        """Valori di un indicatore per un Paese, indicizzati per anno."""
-        righe = self.dati[(self.dati["paese"] == paese) & (self.dati["indicatore"] == codice)]
+        """Valori di un indicatore per un Paese, indicizzati per anno (vuota se non ci sono)."""
+        if self._indice is None:   # una sola passata sui dati: poi ogni ricerca è un accesso a un dizionario
+            self._indice = {chiave: gruppo for chiave, gruppo in self.dati.groupby(["paese", "indicatore"], sort=False)}
+        righe = self._indice.get((paese, codice))
+        if righe is None:
+            return pd.Series(dtype=float, name=codice)
         return pd.Series(righe["valore"].to_numpy(), index=righe["anno"].to_numpy(), name=codice)
 
     def e_stima(self, paese: str, codice: str, anno: int) -> bool | None:

@@ -254,6 +254,24 @@ paesi:
   cn: {iso3: CHN, nome: China, mercati: [WS_CBPOL/D.CN, 510300.SS, CNY=X], vai: [markets/rates, markets/equities, markets/fx]}
   kr: {iso3: KOR, nome: South Korea, mercati: [WS_CBPOL/D.KR, ^KS11, KRW=X], vai: [markets/rates, markets/equities, markets/fx]}
 
+# Nomi più semplici da cercare di quelli della Banca Mondiale ("Korea, Dem. People's Rep." -> North Korea): codice ISO3 -> nome sul sito
+nomi_paesi:
+  BHS: The Bahamas
+  COD: Democratic Republic of the Congo
+  COG: Republic of the Congo
+  EGY: Egypt
+  FSM: Micronesia
+  GMB: The Gambia
+  HKG: Hong Kong
+  IRN: Iran
+  MAC: Macao
+  PRK: North Korea
+  RUS: Russia
+  SVK: Slovakia
+  SYR: Syria
+  VEN: Venezuela
+  YEM: Yemen
+
 # Paesi che la Banca Mondiale non ha nel suo elenco: nome (come lo scrive l'FMI) e regione (nella pagina del Paese compaiono solo i dati FMI).
 paesi_aggiuntivi:
   TWN: {nome: Taiwan Province of China, regione: East Asia & Pacific}
