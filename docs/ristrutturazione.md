@@ -15,8 +15,8 @@ Piano approvato dall'utente il 01/10/2026, con le scelte della sezione 0 e due a
 | 4b | Mercati: FX | **fatto e in `main`** |
 | 4c | Mercati: Credit | **fatto e in `main`** |
 | 4d | Mercati: Equities (con colonna "Last", vedi sotto) | **fatto e in `main`** |
-| 4e-1 | Mercati: Rates & curves, parte 1 (tassi di policy, curve, rendimenti a 10 anni, pendenza e inversioni) | **fatto sul ramo** `ristrutturazione/step-4e1`, in attesa dell'ok per il merge |
-| 4e-2 | Mercati: Rates & curves, parte 2 (inflazione e tassi reali) | da fare |
+| 4e-1 | Mercati: Rates & curves, parte 1 (tassi di policy, curve, rendimenti a 10 anni, pendenza e inversioni) | **fatto e in `main`** |
+| 4e-2 | Mercati: Rates & curves, parte 2 (inflazione e tassi reali) | **fatto sul ramo** `ristrutturazione/step-4e2`, in attesa dell'ok per il merge |
 | 5 | Economies (hub + 5 segnaposto + UNRATE in USA); `regioni` → `pagine` nel config; via le vecchie pagine e il Confronto globale | da fare |
 | 6 | Overview (14 numeri chiave con sparkline, "What changed this week", schede, avvisi); diventa `/` | da fare |
 | 7 | Rifinitura: peso pagine, link rotti, README e screenshot, CLAUDE.md, codice morto (opz.: nomi interni in inglese) | da fare |
@@ -323,3 +323,8 @@ Il workflow GitHub non cambia (pubblica già tutta `site/`).
   "Government yield curves" (`usa-curva-oggi`, `eur-curva-oggi`), "10-year yields compared" (`gl-rendimenti`), "Curve slope and inversions" (nuovo `mk-rates-slope` con area rossa delle inversioni, `usa-spread`) e "Yields by country" (`usa-rendimenti`, `eur-rendimenti`, `jp-jgb`).
   Assorbiti: `usa-dff` + `eur-dfr` in `mk-rates-fed-ecb`; `jp-policy`, `cn-lpr`, `kr-policy` in `gl-policy`; `kr-ktb` in `gl-rendimenti`; `eur-pendenza` in `mk-rates-slope`. Tolte dalle pagine dei Paesi le sezioni di tassi, curve e rendimenti: restano solo
   inflazione, tassi reali (USA) e disoccupazione, che si spostano nello step 4e-2 e nello step 5. Nuove note `fed-ecb-rates`, `curve-snapshot`, `aaa-bund-proxy`.
+- 01/10/2026: step 4e-1 unito in `main`, con i due ritocchi (verificati in `main`): eccezione dell'inversione 2022-2024 (USREC: nessuna recessione NBER dopo aprile 2020 fino ad agosto 2026; 10Y-2Y negativo da aprile 2022 a settembre 2024, 10Y-3M da ottobre 2022 a ottobre 2025,
+  e per questo la riga di `usa-spread` dice "10Y-2Y until 2024, 10Y-3M until 2025") e yield curve control della BoJ 2016-2024 nella riga JGB.
+- 01/10/2026: step 4e-2 sul ramo `ristrutturazione/step-4e2`: `/markets/rates/` ora ha anche "Inflation and real rates" (`gl-inflazione`, `usa-reali`) e "Inflation by country" (`usa-inflazione`, `eur-inflazione`, `jp-inflazione`), 8 numeri chiave (con CPI USA e HICP area euro), tutti con "How to read it".
+  `cn-inflazione` e `kr-inflazione` assorbiti da `gl-inflazione`. Le pagine Euro area, Japan, China, South Korea, Global comparison sono rimaste senza grafici: non si generano più (`senza_pagina: true`) e i vecchi indirizzi rimandano a `markets/` (Global comparison a `markets/rates/`).
+  Resta temporaneamente la pagina `usa` (solo disoccupazione, in menu come "United States") fino allo step 5. Rinominate cinque serie di inflazione con il prefisso US / Euro-area. **Tutti i grafici di Markets sono fatti: lo step 4 è completo.** `markets/rates` pesa 2,15 MB (da ridurre allo step 7).

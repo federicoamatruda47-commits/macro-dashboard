@@ -24,19 +24,6 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
         return Grafico(id=id_grafico, titolo=titolo, figura=figura, serie_ids=list(ids), **opzioni_grafico)
 
     return [
-        Sezione("tassi-reali", "Real rates and expected inflation",
-                "Yield on the inflation-indexed Treasury (TIPS) and the inflation expected by the market "
-                "(breakeven = nominal minus real). Data from 2003.",
-                grafici=[
-                    storico("usa-reali", "10Y real yield and 10Y breakeven", ["DFII10", "T10YIE"],
-                            periodo_iniziale="Max", largo=True, note=["usa-tips-breakeven"]),
-                ]),
-        Sezione("inflazione", "Inflation", "Change in prices compared with a year earlier.", grafici=[
-            storico("usa-inflazione", "Headline CPI, core CPI and core PCE (% y/y)",
-                    ["CPIAUCSL", "CPILFESL", "PCEPILFE"], riferimento=(2, ""),
-                    periodo_iniziale="10Y", largo=True,
-                    note=["target-fed", "bands-nber"]),
-        ]),
         Sezione("lavoro", "Labour", grafici=[
             storico("usa-disoccupazione", "Unemployment rate", ["UNRATE"], periodo_iniziale="Max",
                     largo=True),
