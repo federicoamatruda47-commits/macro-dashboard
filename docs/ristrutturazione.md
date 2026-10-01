@@ -9,7 +9,7 @@ Piano approvato dall'utente il 01/10/2026, con le scelte della sezione 0 e due a
 |---|---|---|
 | 0 | Rete di sicurezza: inventario dei 56 grafici e delle serie + controllo automatico "nulla è perso / nulla è doppio" | **fatto e in `main`** |
 | 1 | Motore multipagina (base template, menu a 2 righe, link relativi); le 7 tab diventano 7 pagine, stesso contenuto | **fatto e in `main`** |
-| 2 | Inglese (testi, numeri, unità, date), campo `paese`, palette fissa per Paese, campo "Come leggerlo" | **fatto sul ramo** `ristrutturazione/step-2`, in attesa dell'ok per il merge |
+| 2 | Inglese (testi, numeri, unità, date), campo `paese`, palette fissa per Paese, campo "Come leggerlo" | **fatto e in `main`** |
 | 3 | Footer dei grafici (fonte + link + note), registro `contenuti/note.yaml`, pagine Method e Series status | da fare |
 | 4a | Mercati: Commodities | da fare |
 | 4b | Mercati: FX | da fare |
@@ -277,8 +277,11 @@ Il workflow GitHub non cambia (pubblica già tutta `site/`).
 - 01/10/2026: step 1 unito in `main`.
 - 01/10/2026: step 2 completato sul ramo `ristrutturazione/step-2`. Sito tutto in inglese (testi, nomi serie e unità in `config.yaml`, messaggi d'errore delle fonti, numeri `1,234.5`,
   date `30 Sep 2026`, `bp`/`pp`, `1Y 5Y 10Y Max`, orario di aggiornamento in UTC; via il locale italiano di Plotly). Colori: blocco `colori:` in `config.yaml` + campi `paese`/`colore` su tutte le 94 serie;
-  gli 8 colori dei Paesi sono stati cercati con un'ottimizzazione e passano tutte le 28 coppie (daltonismo ΔE ≥ 8,3; vista normale ≥ 15,2) in chiaro e scuro con `tools/valida_palette.py`
-  (porting Python del validatore della skill dataviz: Node non è installato). Contrasto sotto 3:1 per alcuni colori (kr in chiaro; us, jp, uk in scuro): serve la legenda sempre visibile, che c'è.
+  gli 8 colori dei Paesi sono stati cercati con un'ottimizzazione e passano `tools/valida_palette.py --pairs all` in chiaro e scuro (porting Python del validatore della skill dataviz: Node non è installato).
+  Dopo la richiesta dell'utente (prima del merge) sono stati rifatti con contrasto ≥ 3:1 con lo sfondo in entrambi i temi (minimo 3,08 chiaro, 3,06 scuro): nessuna linea più spessa necessaria.
+  Distanze peggiori (ΔE OKLab×100): daltonismo protan 9,0 / deutan 8,1 chiaro, 8,4 / 8,4 scuro (soglia 8); vista normale 15,5 chiaro, 15,3 scuro (soglia 15); tritan 4,5 / 3,1 (solo informativo, raro).
+  Colori: us #2e4aa6/#5d89ff · ea #c27d00/#ca8412 · it #2ea46c/#3bad75 · jp #bf1000/#d5301c · cn #de37a5/#c3118e · kr #8b59f9/#7942e2 · uk #5183c1/#3a6ca8 · fr #1a6937/#2f7a47 (chiaro/scuro).
+  L'avviso "manca come_leggerlo" è solo un `print` nel log della build: nelle pagine non compare (verificato).
   Le materie prime usano un colore per gruppo (energia, metalli preziosi, metalli industriali, agricoli: alias di colori dei Paesi che non compaiono mai con loro). Stessa serie colorata uguale in ogni grafico;
   più serie dello stesso colore nello stesso grafico = stile di linea diverso (fino a 6). Campo `come_leggerlo` aggiunto al modello e mostrato sotto i grafici; la build avvisa per i 56 grafici che ancora non ce l'hanno
   (le righe si scrivono pagina per pagina nello step 4). `slot`/`--s1…--s8`/`PALETTE` eliminati.

@@ -108,18 +108,19 @@ recessioni:
 
 # Colori fissi dei grafici: ogni Paese (e ogni gruppo di materie prime) ha SEMPRE lo stesso colore, in tutte le pagine.
 # "chiaro" e "scuro" sono lo stesso colore regolato per i due temi. Gli 8 colori dei Paesi sono stati verificati con
-# tools/valida_palette.py (tutte le 28 coppie: distinguibili anche con daltonismo; da rilanciare se si cambia un colore).
+# tools/valida_palette.py (tutte le 28 coppie: distinguibili anche con daltonismo; contrasto con lo sfondo almeno 3:1 in entrambi
+# i temi; da rilanciare se si cambia un colore).
 # "alias: us" = stesso colore di un'altra voce. "mondo" è il colore neutro del benchmark (indice mondiale).
 # In un grafico, più serie con lo stesso colore si distinguono dallo stile della linea (piena, tratteggiata, puntinata).
 colori:
-  us: {nome: United States,  gruppo: paese, chiaro: "#014cd3", scuro: "#0c54db"}
-  ea: {nome: Euro area,      gruppo: paese, chiaro: "#e45301", scuro: "#e75608"}
-  it: {nome: Italy,          gruppo: paese, chiaro: "#519257", scuro: "#519357"}
-  jp: {nome: Japan,          gruppo: paese, chiaro: "#8c3748", scuro: "#9e4756"}
-  cn: {nome: China,          gruppo: paese, chiaro: "#dd4f9e", scuro: "#e153a1"}
-  kr: {nome: South Korea,    gruppo: paese, chiaro: "#45b9e8", scuro: "#229fcd"}
-  uk: {nome: United Kingdom, gruppo: paese, chiaro: "#9b1da2", scuro: "#a225a8"}
-  fr: {nome: France,         gruppo: paese, chiaro: "#8d80fa", scuro: "#8173ec"}
+  us: {nome: United States,  gruppo: paese, chiaro: "#2e4aa6", scuro: "#5d89ff"}
+  ea: {nome: Euro area,      gruppo: paese, chiaro: "#c27d00", scuro: "#ca8412"}
+  it: {nome: Italy,          gruppo: paese, chiaro: "#2ea46c", scuro: "#3bad75"}
+  jp: {nome: Japan,          gruppo: paese, chiaro: "#bf1000", scuro: "#d5301c"}
+  cn: {nome: China,          gruppo: paese, chiaro: "#de37a5", scuro: "#c3118e"}
+  kr: {nome: South Korea,    gruppo: paese, chiaro: "#8b59f9", scuro: "#7942e2"}
+  uk: {nome: United Kingdom, gruppo: paese, chiaro: "#5183c1", scuro: "#3a6ca8"}
+  fr: {nome: France,         gruppo: paese, chiaro: "#1a6937", scuro: "#2f7a47"}
   energia:             {nome: Energy,            gruppo: materia_prima, alias: ea}
   metalli_preziosi:    {nome: Precious metals,   gruppo: materia_prima, alias: uk}
   metalli_industriali: {nome: Industrial metals, gruppo: materia_prima, alias: kr}
