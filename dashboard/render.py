@@ -388,9 +388,6 @@ def _pagina_paese(config: dict, serie: dict[str, Serie], note: dict, elenco: lis
             "schede": [_scheda_riepilogo(trova_serie(serie, i), oggi) for i in paese.mercati],
             "link": [{"nome": nomi_pagina[v], "href": posixpath.relpath(v, paesi.ID_HUB_ECONOMIES) + "/"} for v in paese.vai],
         })
-    regioni: dict[str, list[dict]] = {}
-    for p in elenco:
-        regioni.setdefault(p["regione"] or "Other", []).append(p)
     spec = {
         "colori": {p.iso3: p.chiave for p in configurati.values() if p.iso3},
         "numeri_chiave": contenuto["numeri_chiave"], "sezioni": sezioni, "outlook": outlook, "indicatori": paesi.metadati_indicatori(catalogo),
@@ -399,8 +396,7 @@ def _pagina_paese(config: dict, serie: dict[str, Serie], note: dict, elenco: lis
                             if p.iso3 and paesi.pagina_completa_del_paese(p.iso3, config)},
         "fonte_imf": {"nome": f"IMF World Economic Outlook, {edizione}", "url": url_indicatore("imf", "NGDP_RPCH")},
     }
-    return {"elenco": elenco, "regioni": [{"nome": r, "paesi": v} for r, v in sorted(regioni.items(), key=lambda x: (x[0] == "Other", x[0]))],
-            "n_paesi": len(elenco), "edizione": edizione, "wdi": wdi, "wgi": wgi, "mercati": mercati, "spec": spec, "sezioni": sezioni, "outlook": outlook}
+    return {"elenco": elenco, "n_paesi": len(elenco), "edizione": edizione, "wdi": wdi, "wgi": wgi, "mercati": mercati, "spec": spec, "sezioni": sezioni, "outlook": outlook}
 
 
 def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict, radice_progetto: Path | None = None,
@@ -566,6 +562,8 @@ def genera_sito(config: dict, serie: dict[str, Serie], radice_progetto: Path) ->
     elenco_paesi = paesi.elenco_paesi(snapshot[annuali.FONTE_IMF], snapshot[annuali.FONTE_BM], config)
     dati_paesi = paesi.scrivi_dati(cartella_site, snapshot[annuali.FONTE_IMF], snapshot[annuali.FONTE_BM], catalogo, elenco_paesi)
     contesto = prepara_contesto(config, serie, carica_note(radice_progetto), radice_progetto, snapshot, set(dati_paesi), elenco_paesi)
+    # Riquadri dei Paesi (hub Economies e country.html: lo stesso componente, gli stessi numeri; ultimi valori = quelli di ultimi-valori.json)
+    riquadri = paesi.riquadri_paesi(elenco_paesi, paesi.ultimi_valori(dati_paesi), config, paesi.ID_HUB_ECONOMIES, set(dati_paesi)) if dati_paesi else None
     # Regola del sito: ogni grafico ha una riga "How to read it" (si scrive pagina per pagina durante la ristrutturazione)
     senza = [g["id"] for r in contesto["pagine"] for s in r["sezioni"] for g in s["grafici"] if not g["come_leggerlo"]]
     if senza:
@@ -597,13 +595,10 @@ def genera_sito(config: dict, serie: dict[str, Serie], radice_progetto: Path) ->
                    "etichetta": None if indirizzo(p) and p.get("stato") == "dopo" else etichette.get(p.get("stato")),
                    "href": indirizzo(p)}
                   for p in config["pagine"] if p.get("gruppo") == hub["id"]]
-        if hub["id"] == paesi.ID_HUB_ECONOMIES and dati_paesi:
-            figlie.append({"nome": "Country explorer", "etichetta": None, "href": "country.html",
-                           "descrizione": f"Annual data for {len(dati_paesi)} countries from the IMF and the World Bank: growth, prices, jobs, public finances, "
-                                          "the external position and governance. Search any country."})
-        scrivi(hub["id"], "hub.html.j2", pagina=hub, figlie=figlie, **avvisi)
+        scrivi(hub["id"], "hub.html.j2", pagina=hub, figlie=figlie,
+              riquadri=riquadri if hub["id"] == paesi.ID_HUB_ECONOMIES else None, **avvisi)
     if contesto["pagina_paese"]:   # economies/country.html: una pagina sola per tutti i Paesi (il Paese è nell'indirizzo: ?c=ITA)
-        scrivi(paesi.ID_HUB_ECONOMIES, "paese.html.j2", nome_file="country.html", p=contesto["pagina_paese"], **avvisi)
+        scrivi(paesi.ID_HUB_ECONOMIES, "paese.html.j2", nome_file="country.html", p=contesto["pagina_paese"], riquadri=riquadri, **avvisi)
     for vecchio, nuovo in REINDIRIZZAMENTI.items():
         scrivi_reindirizzamento(cartella_site, vecchio, nuovo, ambiente)
     scrivi(PAGINA_METODO, "metodo.html.j2", m=contesto["metodo"], **avvisi)

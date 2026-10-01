@@ -1,6 +1,6 @@
 /* =====================================================================
    Pagina del Paese (economies/country.html?c=ISO3).
-   1. selettore con ricerca (nome o codice ISO3), pulsanti Previous/Next, tastiera;
+   1. selettore con ricerca (nome, nome della fonte, nomi alternativi o codice ISO3: la ricerca è quella di elenco-paesi.js), pulsanti Previous/Next, tastiera;
    2. l'indirizzo segue il Paese (?c=ITA, tasto Indietro incluso); codice non valido = messaggio con il selettore;
    3. i dati di ogni Paese stanno in dati/<ISO3>.json (generati da dashboard/paesi.py); qui si disegnano schede, grafici (Plotly) e tabella "IMF outlook";
    4. dopo l'ultimo anno effettivo (stima o proiezione dell'FMI) linee tratteggiate e barre chiare;
@@ -46,12 +46,10 @@
   // ----------------------------------------------------------------------
   // Elenco dei Paesi (sono link normali nell'HTML: senza JavaScript restano utilizzabili)
   // ----------------------------------------------------------------------
-  const voci = Array.from(document.querySelectorAll("#paese-elenco a[data-c]")).map((a) => ({
-    c: a.dataset.c, nome: a.dataset.nome, regione: a.dataset.regione, chiave: norma(a.dataset.nome),
-    chiaveFonte: norma(a.dataset.nomeFonte || a.dataset.nome),    // si cerca anche per il nome originale della fonte ("Korea, Rep.")
-  }));
+  const voci = ElencoPaesi.voci(document.getElementById("paese-elenco"));    // i riquadri del componente `ricerca_paesi`
+  voci.forEach((v) => { v.chiaveNome = ElencoPaesi.norma(v.nome); });
   const perCodice = new Map(voci.map((v) => [v.c, v]));
-  const alfabetico = voci.slice().sort((a, b) => a.chiave.localeCompare(b.chiave));
+  const alfabetico = voci.slice().sort((a, b) => a.chiaveNome.localeCompare(b.chiaveNome));
 
   let corrente = null;       // codice mostrato
   let sequenza = 0;          // per ignorare le risposte arrivate in ritardo
@@ -66,13 +64,7 @@
   function chiudiLista() {
     lista.hidden = true; campo.setAttribute("aria-expanded", "false"); campo.removeAttribute("aria-activedescendant"); attivo = -1;
   }
-  function cerca(q) {
-    q = norma(q.trim());
-    if (!q) return [];
-    const trovati = voci.filter((v) => v.chiave.includes(q) || v.chiaveFonte.includes(q) || v.c.toLowerCase().startsWith(q));
-    trovati.sort((a, b) => (b.chiave.startsWith(q) - a.chiave.startsWith(q)) || (b.c.toLowerCase() === q) - (a.c.toLowerCase() === q) || a.chiave.localeCompare(b.chiave));
-    return trovati.slice(0, 12);
-  }
+  const cerca = (q) => ElencoPaesi.cerca(voci, q, 12);
   function mostraLista() {
     risultati = cerca(campo.value);
     lista.innerHTML = "";
@@ -123,13 +115,13 @@
   }
   $("paese-prec").addEventListener("click", () => vicino(-1));
   $("paese-succ").addEventListener("click", () => vicino(1));
-  $("selettore").hidden = false;
-
-  // I link dell'elenco restano link veri (aprono la pagina del Paese), ma senza ricaricare la pagina
-  document.querySelectorAll("#paese-elenco a[data-c]").forEach((a) => {
+  // I riquadri restano link veri (aprono la pagina del Paese), ma senza ricaricare la pagina; quelli di "Featured" (senza data-c) portano dove dice il loro link
+  voci.forEach((v) => {
+    const a = v.li.querySelector("a.ep-link");
+    if (!a || !/country\.html\?c=/.test(a.getAttribute("href"))) return;       // un Paese con pagina completa di livello A si apre come link normale
     a.addEventListener("click", (e) => {
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
-      e.preventDefault(); mostra(a.dataset.c, { push: true });
+      e.preventDefault(); mostra(v.c, { push: true });
     });
   });
 
@@ -140,6 +132,7 @@
     corrente = null;
     $("paese-contenuto").hidden = true;
     $("paese-elenco").hidden = false;
+    $("selettore").hidden = true;          // senza un Paese aperto la ricerca è quella del componente "elenco"
     const errore = $("paese-errore");
     errore.hidden = !messaggio;
     errore.innerHTML = messaggio || "";
@@ -153,7 +146,7 @@
   async function mostra(codice, opzioni) {
     opzioni = opzioni || {};
     const voce = perCodice.get(codice);
-    if (!voce) { mostraStatoIniziale("We have no data for “" + esc(codice) + "”. Search for a country above or choose one from the list."); return; }
+    if (!voce) { mostraStatoIniziale("We have no data for “" + esc(codice) + "”. Search for a country or choose one from the list below."); return; }
     const mia = ++sequenza;
     $("paese-contenuto").setAttribute("aria-busy", "true");
     let dati = cache.get(codice);
@@ -184,7 +177,7 @@
   window.addEventListener("popstate", () => {
     const c = parametro();
     if (c && perCodice.has(c)) mostra(c, {});
-    else mostraStatoIniziale(c ? "We have no data for “" + esc(c) + "”. Search for a country above or choose one from the list." : "");
+    else mostraStatoIniziale(c ? "We have no data for “" + esc(c) + "”. Search for a country or choose one from the list below." : "");
   });
 
   function parametro() {
@@ -202,6 +195,7 @@
 
   function disegnaPaese(voce, d) {
     $("paese-elenco").hidden = true;
+    $("selettore").hidden = false;
     $("paese-errore").hidden = true;
     $("paese-contenuto").hidden = false;
     $("paese-titolo").textContent = voce.nome;
@@ -531,5 +525,5 @@
   const iniziale = parametro();
   if (iniziale === null) mostraStatoIniziale("");
   else if (perCodice.has(iniziale)) mostra(iniziale, { replace: true, conHash: true });          // ?c=ita diventa ?c=ITA
-  else mostraStatoIniziale("We have no data for “" + esc(iniziale) + "”. Search for a country above or choose one from the list.");
+  else mostraStatoIniziale("We have no data for “" + esc(iniziale) + "”. Search for a country or choose one from the list below.");
 })();

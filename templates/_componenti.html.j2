@@ -151,3 +151,58 @@
   </footer>
 </article>
 {% endmacro %}
+
+
+{# ---- Ricerca + riquadri dei Paesi (UN solo componente: hub Economies, country.html senza parametro, in futuro l'elenco della mappa).
+     `r` = dashboard.paesi.riquadri_paesi. L'HTML è completo: senza JavaScript restano link con i numeri; static/elenco-paesi.js aggiunge solo filtro e contatore. ---- #}
+{% macro riquadro_paese(t, con_codice) %}
+{% set numeri = not t.senza_numeri %}
+<li class="ep-riquadro{% if not t.href %} ep-senza-link{% endif %}"{% if con_codice %} data-c="{{ t.c }}" data-nome="{{ t.nome }}" data-nome-fonte="{{ t.nome_fonte }}" data-regione="{{ t.regione }}" data-chiavi="{{ t.chiavi }}"{% endif %}>
+  {% if t.href %}<a class="ep-link" href="{{ t.href }}">{% else %}<div class="ep-link">{% endif %}
+    <span class="ep-testa"><span class="ep-nome">{{ t.nome }}</span>{% if t.c %}<span class="ep-codice">{{ t.c }}</span>{% endif %}</span>
+    {% if t.etichetta %}<span class="presto ep-presto">{{ t.etichetta }}</span>{% endif %}
+    {% if t.c and not t.fmi %}<span class="etichetta-fonte" title="World Bank data only">WB only</span>{% endif %}
+    {% if numeri %}
+    <span class="ep-numeri">
+      {% for etichetta, v in (("Real growth", t.crescita), ("Inflation", t.inflazione)) %}
+      <span class="ep-riga"><span class="ep-etichetta">{{ etichetta }}</span>
+        {% if v %}<span class="ep-valore">{{ v.testo }} <span class="ep-anno">{{ v.anno }}</span></span>{% else %}<span class="ep-valore ep-nd" title="No data">—</span>{% endif %}</span>
+      {% endfor %}
+    </span>
+    {% endif %}
+  {% if t.href %}</a>{% else %}</div>{% endif %}
+</li>
+{% endmacro %}
+
+{% macro ricerca_paesi(r) %}
+<div class="ep" data-elenco-paesi>
+  <div class="ep-barra" hidden>
+    <label class="ep-etichetta-campo" for="ep-cerca">Search countries</label>
+    <div class="ep-campo">
+      <input id="ep-cerca" class="ep-cerca" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search a country or a code (Turkey, ITA…)">
+      <button type="button" class="ep-pulisci" aria-label="Clear search" hidden>✕</button>
+    </div>
+    <p class="ep-conteggio" role="status" aria-live="polite" data-totale="{{ r.n_paesi }}">{{ r.n_paesi }} countries</p>
+  </div>
+  <noscript><p class="descrizione">Search needs JavaScript; every country below is a link.</p></noscript>
+  <p class="descrizione ep-nota">Each box shows the latest <em>actual</em> year of real GDP growth and of inflation (average consumer prices); the year is written next to the value
+    and is not the same for every country. Source: IMF World Economic Outlook, or World Bank for the countries the IMF does not cover (“WB only”).</p>
+  {% if r.in_evidenza %}
+  <section class="ep-evidenza" aria-labelledby="ep-titolo-evidenza">
+    <h2 id="ep-titolo-evidenza">Featured</h2>
+    <ul class="ep-griglia">{% for t in r.in_evidenza %}{{ riquadro_paese(t, false) }}{% endfor %}</ul>
+  </section>
+  {% endif %}
+  <nav class="ep-salti" aria-label="Jump to a region">
+    <span>Jump to:</span>
+    {% for g in r.regioni %}<a href="#ep-regione-{{ loop.index }}">{{ g.nome }}</a>{% endfor %}
+  </nav>
+  {% for g in r.regioni %}
+  <section class="ep-regione" aria-labelledby="ep-regione-{{ loop.index }}">
+    <h2 id="ep-regione-{{ loop.index }}">{{ g.nome }} <span class="ep-n" data-totale="{{ g.paesi|length }}">({{ g.paesi|length }})</span></h2>
+    <ul class="ep-griglia">{% for t in g.paesi %}{{ riquadro_paese(t, true) }}{% endfor %}</ul>
+  </section>
+  {% endfor %}
+  <p class="ep-nessuno" hidden>No country matches “<span class="ep-query"></span>”. <button type="button" class="pulsante-paese ep-pulisci-testo">Clear search</button></p>
+</div>
+{% endmacro %}

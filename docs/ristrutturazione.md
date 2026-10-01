@@ -313,6 +313,7 @@ Il campo `paese` sulle serie **esiste già** (chiavi `us`, `ea`, `it`, `uk`, `jp
 - **Step 10b: pagine** (dopo l'ok sul 10a).
   Modello di pagina con sezioni fisse (Output & growth, Prices, Labour, Public finances, External, Governance, IMF outlook); pagina `economies/country.html?c=ISO3` (un solo file dati compresso, < 1 MB, JavaScript che legge il parametro `c`, `noscript` con link alla scelta; hub e Overview rimandano ad essa); blocco `paesi:` e link "→ Economy" sotto i grafici Markets; note nel registro (ILO modellato, WGI, stime FMI, "non inclusi"); righe "How to read it" e **tabella da rivedere prima del merge**.
   *Verifica*: tutti i Paesi si aprono dall'URL diretto, peso della pagina, `inventario.py`, `controlla_link.py` (anche i link con `?c=`), nessun link morto da Markets.
+- **Step 10c: ridisegno dell'hub Economies** (proposta approvata il 01/10/2026: vedi la sezione "Step 10c" qui sotto; fatto sul ramo, in attesa del merge; si fa prima di riempire le pagine A, così le pagine nuove entrano già nel posto giusto).
 - **Step 11: Stati Uniti** (`economies/usa`): PIL, inflazione, lavoro (disoccupazione, occupazione 25-54), debito e deficit PA dal FMI + grafico aggiuntivo federale FRED, partite correnti (NETFI/GDP), popolazione, prezzi delle case (FHFA), Michigan solo se la licenza lo consente, previsioni FMI, riquadro Markets. Riga "How to read it" per grafico e **tabella da rivedere prima del merge**.
 - **Step 12: Italia ed Area euro**: Eurostat con `EA21` (nota sul passaggio a 21 paesi), HICP BCE, ESI, prezzi delle case, deficit e debito. **Grafico sulla sostenibilità del debito italiano**: variazione annua del debito/PIL scomposta in **saldo primario + effetto r−g + aggiustamento stock-flussi (residuo)**, tutte le componenti da Eurostat (serie, codici e prova sui dati nella sezione "Sostenibilità del debito italiano" di economies-fonti.md; formula e definizioni da scrivere nella nota del registro e nella riga "How to read it"; test sulla scomposizione: le componenti sommano alla variazione del debito/PIL).
   *Formula nella nota del registro*: **Δd = −saldo primario + (i − g)/(1 + g) · d₋₁ + SFA**, con d = debito/PIL, i = interessi dell'anno / debito di fine anno precedente, g = crescita del PIL nominale; si calcola da valori **in milioni di euro** (debito, saldo, interessi, PIL) e si esprime in % del PIL solo alla fine.
@@ -321,6 +322,96 @@ Il campo `paese` sulle serie **esiste già** (chiavi `us`, `ea`, `it`, `uk`, `jp
 - **Step 14: mappa interattiva** nell'Overview, con elenco e ricerca dei Paesi (vedi sopra).
 
 Ogni step: un ramo, tabella delle righe "How to read it" da rivedere, test + `build.py` + `inventario.py` + `controlla_link.py`, **attesa dell'ok prima del merge**.
+
+### Step 10c: hub Economies con ricerca e riquadri dei Paesi (proposta, ramo `ristrutturazione/step-10c`)
+
+**Oggi**: l'hub `economies/` ha 9 schede (USA, Italy, Euro area, UK, Compare, Japan, China, South Korea, Country explorer), quasi tutte "coming soon", e la ricerca vive solo in `country.html`
+(selettore a tendina in `paese.js` + elenco di link per regione, senza numeri). **Obiettivo**: l'hub diventa l'indice di tutta la sezione: ricerca fissa, "Featured", poi i 218 Paesi per regione con due numeri ciascuno.
+
+**Dati misurati** (build del 01/10/2026): 218 Paesi in 7 regioni della Banca Mondiale (Europe & Central Asia 58, Sub-Saharan Africa 48, Latin America & Caribbean 42, East Asia & Pacific 38,
+Middle East/North Africa/Afghanistan/Pakistan 23, South Asia 6, North America 3). `ultimi-valori.json` ha già `gdp_growth` (215 Paesi) e `inflation_average` (197), ciascuno `[valore, anno effettivo]`;
+mancano la crescita per VGB, GIB, PRK e l'inflazione per 21 Paesi: il riquadro scrive "—" (mai un valore inventato). Gli anni effettivi della crescita vanno dal 2010 al 2025 (2024 per 104 Paesi, 2025 per 75): **l'anno sta sempre accanto al valore**.
+
+**Un solo componente** (nessuna terza versione): macro Jinja `ricerca_paesi` in `templates/_componenti.html.j2` + `static/elenco-paesi.js`. Il macro scrive **HTML già completo** (barra di ricerca, "Featured" facoltativo, regioni, riquadri-link con i numeri),
+quindi non serve scaricare altri file e senza JavaScript restano link normali. Il JavaScript fa solo tre cose: filtra, aggiorna il contatore, nasconde le regioni vuote. La funzione di ricerca (`ElencoPaesi.cerca`: nome, nome originale della fonte, ISO3; normalizza gli accenti) è **la stessa** che oggi sta in `paese.js` e che userà il selettore a tendina di `country.html?c=`: si sposta nel nuovo file e `paese.js` la chiama.
+Usi: (1) hub `economies/`; (2) `country.html` **senza** `c` (sostituisce "All countries": il selettore a tendina con Previous/Next resta solo con un Paese aperto, così non ci sono due barre di ricerca); (3) elenco accanto alla mappa (step 14), con la variante `compatta` e un evento `elenco:scelta` per evidenziare il Paese sulla mappa.
+Il testo e i numeri dei riquadri sono prodotti da una funzione pura in `dashboard/paesi.py` (`riquadri_paesi`, testata): stessa regola dei link di sempre (`destinazione`: pagina A solo se `completa: true`, altrimenti `country.html?c=ISO3`; l'area euro, senza ISO3, resta una scheda "coming soon" senza link).
+
+**Wireframe desktop** (larghezza ~1100 px; la barra resta in vista sotto il menu durante lo scorrimento):
+```
+┌ menu a due righe (come ora) ─────────────────────────────────────────────┐
+│ Economies                                                                │
+│ Annual data for 218 countries… · Updated 01 Oct 2026                     │
+├──────────────────────────────────────────────────────────────────────────┤
+│ [ 🔍 Search a country or a code (ITA, JPN…)            ✕ ]   218 countries│  ← fissa
+├──────────────────────────────────────────────────────────────────────────┤
+│ FEATURED                                                                 │
+│ ┌United States┐ ┌Euro area┐ ┌Italy────┐ ┌United Kingdom┐ ┌China─┐ ┌Japan┐│
+│ │USA          │ │soon     │ │ITA      │ │GBR           │ │CHN   │ │JPN  ││
+│ │Growth 2.1%  │ │         │ │Gr. 0.5% │ │Gr. 1.3% 2025 │ │…     │ │…    ││
+│ │ 2025        │ │         │ │Infl. …  │ │Infl. …       │ │      │ │     ││
+│ └─────────────┘ └─────────┘ └─────────┘ └──────────────┘ └──────┘ └─────┘│
+│ ┌Compare (coming soon)┐                                                  │
+│ REGIONS:  North America · Latin America · Europe · Middle East · …  (salti)
+│ EUROPE & CENTRAL ASIA (58)                                               │
+│ ┌Albania───┐ ┌Andorra───┐ ┌Armenia───┐ ┌Austria───┐ ┌Azerbaijan┐ …       │
+│ │ALB       │ │AND       │ │ARM       │ │AUT       │ │AZE       │        │
+│ │Growth 4.0%│ │Gr. 3.9%  │ │Gr. 7.2%  │ │Gr. 0.6%  │ │Gr. 4.2%  │        │
+│ │ (2024)   │ │ (2025)   │ │ (2025)   │ │ (2025)   │ │ (2024)   │        │
+│ │Infl. 2.2%│ │…         │ │…         │ │…         │ │…         │        │
+│ └──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘        │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+Griglia a 5-6 colonne (`auto-fill, minmax(168px, 1fr)`). Riquadro: nome (grassetto, fino a 2 righe), codice ISO3 in piccolo, "Real growth 2.1% · 2025", "Inflation 3.0% · 2025" (inflazione = media annua dei prezzi al consumo, come nella pagina del Paese); "WB only" per i Paesi senza dati FMI (come oggi). Tutto il riquadro è il link (area di tocco ≥ 44 px).
+
+**Wireframe telefono (375 px; gutter 16 px, contenuto 343 px)**:
+```
+┌───────────────────────────┐
+│ ☰ menu (come ora)         │
+│ Economies                 │
+│ Annual data for 218…      │
+├───────────────────────────┤  ← sotto il menu, fissa
+│ [🔍 Search a country   ✕ ]│
+│ 218 countries             │
+├───────────────────────────┤
+│ FEATURED                  │
+│ ┌United States┐┌Euro area┐│  2 colonne (~165 px)
+│ │USA  Gr. 2.1%││soon     ││
+│ │     (2025)  ││         ││
+│ └─────────────┘└─────────┘│
+│ ┌Italy────────┐┌UK───────┐│
+│ ┌China────────┐┌Japan────┐│
+│ ┌Compare──────┐           │
+│ Jump to: North America ·… │  ← catene di salto: vanno a capo, non scorrono
+│ EUROPE & CENTRAL ASIA (58)│
+│ ┌Albania──────┐┌Andorra──┐│
+│ …                         │
+└───────────────────────────┘
+```
+Rischio: menu a due righe + barra di ricerca fissi occupano parte dello schermo basso del telefono. **Regola**: si misura nel browser a 375×667; se menu + barra superano ~150 px, sul telefono resta fissa solo la barra (il menu scorre via). Nessuno scorrimento orizzontale: nomi lunghi vanno a capo (`overflow-wrap: anywhere`), le catene di salto vanno a capo e non scorrono.
+
+**Comportamento della ricerca**: filtra mentre si scrive (nome mostrato, nome originale della fonte — "Korea, Rep." trova South Korea —, ISO3; accenti ignorati); con una ricerca attiva "Featured" e le catene di salto si nascondono (altrimenti USA comparirebbe due volte), le regioni senza risultati spariscono, il contatore dice "12 of 218 countries" (`aria-live`); nessun risultato = "No country matches “xyz”" con il pulsante "Clear"; Esc o ✕ svuotano; Invio apre il primo risultato; l'ordine resta quello per regione e alfabetico. Senza JavaScript: la barra non compare, i riquadri sono link e i numeri sono nell'HTML (`<noscript>` spiega che la ricerca ne ha bisogno).
+
+**Bandiere — raccomandazione: senza.** (1) Le emoji delle bandiere **non si vedono su Windows** (Chrome/Edge mostrano le due lettere del codice): inutilizzabili per un sito pubblico. (2) Le bandiere SVG a licenza libera esistono (per esempio la raccolta *flag-icons*, MIT), ma ne servirebbero 218 file, di peso molto diverso (le bandiere con stemma sono molto più pesanti di quelle a strisce; ordine di grandezza da misurare se le vuoi: da qualche centinaio di KB a oltre 1 MB in totale), oppure 218 richieste in più con `loading="lazy"`. (3) **Regola già nostra**: per Taiwan, Kosovo, Cisgiordania e Gaza, Hong Kong, Macao, Groenlandia ecc. usiamo il nome della fonte "senza interpretazioni nostre"; una bandiera è un'interpretazione in più (quale per la Cisgiordania e Gaza? per Taiwan?) e porterebbe una discussione che non serve a un sito di dati. Il codice ISO3 in piccolo dà già un riconoscimento rapido. Se in seguito le vuoi, si aggiunge in un unico punto (il macro) con un elenco esplicito di eccezioni.
+
+**Peso stimato**: ogni riquadro ~330 byte di HTML → ~70 KB grezzi, ~12-15 KB compressi per l'hub (oggi ~2 KB) e circa +3 KB per `country.html` (che ha già l'elenco: 13 KB); `elenco-paesi.js` ~3 KB; nessun nuovo file di dati né richiesta di rete. Si misura con `gzip` a fine lavoro e si scrive nel registro.
+
+**File toccati**: `dashboard/paesi.py` (`riquadri_paesi`), `dashboard/render.py` (l'hub Economies riceve `riquadri`; `ultimi_valori` passa dalla scrittura dei dati alla build senza rileggere il JSON), `templates/_componenti.html.j2` (macro), `templates/hub.html.j2`, `templates/paese.html.j2` (sostituisce "All countries"), `static/elenco-paesi.js` (nuovo), `static/paese.js` (usa `ElencoPaesi.cerca`, legge i riquadri al posto dell'elenco), `static/style.css`, `config.yaml` (campo `in_evidenza: true` sulle voci del blocco `paesi:` o sulle pagine dell'hub per l'elenco Featured e il loro ordine), `tests/test_paesi.py`, `tools/controlla_link.py` (controlla anche i link dei riquadri), `CLAUDE.md`, `docs/mappa-grafici.yaml` solo se cambia qualche promessa (non dovrebbe).
+
+**Featured**: USA, Euro area, Italy, UK, China, Japan, poi Compare. Per la regola dei link, finché le pagine A non sono `completa: true`, USA/Italy/UK portano a `country.html?c=ISO3` (con i numeri), non alle pagine vuote "coming soon" di oggi; quando una pagina A è finita il link cambia da solo. L'area euro e Compare restano schede "coming soon" senza link. South Korea esce dall'evidenza (resta nella sua regione).
+La vecchia scheda "Country explorer" sparisce dall'hub (lo è l'hub); `country.html` senza parametro continua a esistere (vecchi link, mappa).
+
+**Test**: `riquadri_paesi` (regola dei link, "—" quando manca un valore, anno accanto al valore, nome originale della fonte, ordine per regione e alfabetico, nessun Paese perso né doppio: 218), un test che i riquadri dell'hub e di `country.html` vengono dalla stessa funzione, `inventario.py sito` e `controlla_link.py` invariati o estesi.
+
+**Verifica nel browser** (preview, desktop e 375 px, chiaro e scuro): ricerca per nome, per nome della fonte ("Korea, Rep."), per ISO3 ("jpn"), per accenti, nessun risultato, Esc/✕; contatore; clic su un riquadro normale, su un Featured (USA → `country.html?c=USA`) e su una scheda senza link (non cliccabile); barra fissa durante lo scorrimento (altezza misurata); nessuno scorrimento orizzontale a 375 px (`scrollWidth`); cambio del tema con ricerca attiva (colori leggibili, contrasto ≥ 3:1 sul bordo, ≥ 4,5:1 sul testo); `country.html` senza `c` (stesso componente) e con `c=ITA` (selettore a tendina che usa la stessa ricerca); JavaScript disattivato (elenco di link); console senza errori; peso.
+
+**Domande aperte** (con la mia scelta predefinita se non rispondi):
+1. Featured: USA, Italy e UK portano a `country.html?c=` finché non sono `completa` (regola esistente), invece che alle pagine A vuote. **Predefinito: sì.**
+2. Ordine delle regioni: dalla più "vicina" al resto (North America, Latin America & Caribbean, Europe & Central Asia, Middle East…, Sub-Saharan Africa, South Asia, East Asia & Pacific) o alfabetico? **Predefinito: l'ordine geografico qui sopra.**
+3. Bandiere: **predefinito: nessuna**.
+
+**Approvazione e aggiunte dell'utente (01/10/2026)**: risposte 1 sì, 2 ordine geografico, 3 nessuna bandiera. Aggiunte: (1) ricerca senza accenti (Curacao = Curaçao) e **nomi alternativi** in `config.yaml` (`nomi_alternativi:`: Turkey/Türkiye, Ivory Coast, Czech Republic, Burma, Holland...) con un test che li trova tutti; (2) numeri dei riquadri in colore neutro, niente verde/rosso; (3) **la scheda "Euro area coming soon" resta solo fino allo step 12**: se lo step slitta si toglie da `hub_economies.in_evidenza` (promemoria scritto anche nel config). Stessa regola per **"Compare coming soon"**: resta solo fino allo step 13 (pagina `economies/compare`); se lo step slitta si toglie da `hub_economies.pagine_in_evidenza` (promemoria nel config).
+Scelte in fase di codice: la variante `compatta` e l'evento `elenco:scelta` per la mappa **non** sono stati scritti (nessun uso oggi): si aggiungono nello step 14; il macro, la ricerca condivisa (`ElencoPaesi.cerca`) e le chiavi di ricerca già ci sono. La regola del telefono si è applicata: testata (129 px) + barra (83 px) = 212 px su 812 (26%), quindi sul telefono resta fissa solo la barra.
 
 ### Punti aperti: chiusi dall'utente il 01/10/2026
 - **WGI**: solo il punteggio 0-100 con l'intervallo al 90%; **nessun rango** calcolato (e nessuna dicitura "rank").
@@ -428,4 +519,6 @@ Ogni step: un ramo, tabella delle righe "How to read it" da rivedere, test + `bu
   Fatto: `dashboard/paesi.py`, `contenuti/paese.yaml`, `templates/paese.html.j2`, `static/paese.js`, 5 note nel registro, blocco `paesi:` (link e riquadro Markets), `nomi_paesi:` (North Korea, Egypt...), link "→ Economy" sotto i grafici Markets, schede dell'hub (Japan, China, South Korea, Country explorer), controlli in `inventario.py sito` e `controlla_link.py` (anche `?c=`). Test: 92 (30 nuovi in `tests/test_paesi.py`, 7 in `test_annuali.py`).
   Scoperte: i Paesi sono 218 (non 194; KOS e WBG unificati con XKX e PSE); senza proiezioni sono Eritrea, Sri Lanka, Siria e Cisgiordania e Gaza (Macao le ha, tranne il saldo primario); peso: country.html 13 KB compressi, `paese.js` 9 KB, un file di dati al massimo 2,8 KB, `ultimi-valori.json` 7,9 KB (con Plotly 0,40 MB: ~0,43 MB alla prima visita). Verificato nel browser: ITA, USA, JPN, SYR, IND (anno fiscale), CUB (solo Banca Mondiale), TWN (solo FMI), `?c=XYZ`, nessun parametro, ricerca e tastiera, 375 px senza scorrimento orizzontale.
 - 01/10/2026: step 10b, ultime modifiche prima del merge: righe Population e Government balance (Grecia senza cifre) riscritte; il test sugli anni delle righe calcola il limite dall'anno corrente (anno corrente − 1); regola dei nomi dei Paesi in CLAUDE.md con `nome_fonte` in config (test: coincide con la Banca Mondiale); **scala logaritmica simmetrica dell'inflazione** (attiva con almeno un anno sopra il 100% nella finestra visibile, ricalcolata a ogni periodo, pulsanti Linear/Log e nota sempre coerenti, scelta manuale valida fino al cambio di Paese, tooltip con i valori veri; verificata su VEN, LBN, ARG, TUR e su JPN con scala forzata). Bug trovato e corretto: i pulsanti dei periodi (e il cambio di tema) cancellavano il grafico perché `disegnaGrafico` svuotava il contenitore prima di `Plotly.react`.
-
+- 01/10/2026: step 10c (ridisegno dell'hub Economies) sul ramo `ristrutturazione/step-10c`: **solo proposta** nella sezione "Step 10c" (wireframe desktop e 375 px, componente unico `ricerca_paesi` + `elenco-paesi.js`, riquadri con crescita e inflazione dell'ultimo anno effettivo da `ultimi-valori.json`, bandiere sconsigliate con i motivi, peso stimato, verifiche, 3 domande aperte). Nessun codice scritto; attesa dell'ok dell'utente.
+- 01/10/2026: step 10c completato sul ramo `ristrutturazione/step-10c` (non ancora unito). Fatto: macro `ricerca_paesi` + `static/elenco-paesi.js` (ricerca condivisa con il selettore di `country.html?c=`), `paesi.riquadri_paesi/chiave_ricerca/chiavi_paese` con 15 test nuovi (110 test in tutto, 3 saltati), blocchi `nomi_alternativi` e `hub_economies` in `config.yaml`, hub e `country.html` senza `c` con lo stesso componente, `tools/inventario.py` aggiornato (riquadri; hub e `country.html` elencano gli stessi 218 Paesi). **Pesi misurati (gzip)**: hub `economies/` 160 KB grezzi, **14 KB compressi** (prima ~2 KB); `country.html` 205 KB grezzi, **21 KB compressi** (prima 13 KB: +8 KB, più della stima di 3: i riquadri hanno due numeri e l'anno); `elenco-paesi.js` 2 KB; `style.css` 6 KB. Verifica nel browser (desktop e 375 px, chiaro e scuro): ricerca "tur" (3 risultati: Turkiye, Turkmenistan, Turks and Caicos), tutti gli alias e "Curaçao" trovati, clic su Featured (USA -> `country.html?c=USA`) e su un riquadro di regione, Invio sul primo risultato, tasto Indietro, codice non valido, nessuno scorrimento orizzontale a 375 px (`scrollWidth` 375), console senza errori; contrasti ≥ 4,5:1 per i testi e ≥ 3:1 per il bordo del campo (corretti `--testo-tenue` -> `--testo-2` per anno e codice). Screenshot in `docs/schermate-10c/`. Scoperta: `inventario.py sito` cercava il vecchio markup dell'elenco di `country.html`.
+- 01/10/2026: step 10c, ultime richieste prima del merge: scheda "Compare" con la regola dell'Euro area (fino allo step 13), `docs/schermate-*/` in `.gitignore`, prova senza JavaScript (barra di ricerca nascosta, riquadri e regioni come link).

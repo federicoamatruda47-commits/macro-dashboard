@@ -13,6 +13,7 @@ Un link non porta mai a una pagina "in-arrivo" o incompleta, né a un codice che
 import json
 import posixpath
 import re
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -124,7 +125,7 @@ def link_economia_per_serie(serie_paesi: list[str], config: dict, da_pagina: str
 # ---------------------------------------------------------------------
 
 def elenco_paesi(imf: annuali.Snapshot | None, bm: annuali.Snapshot | None, config: dict) -> list[dict]:
-    """Tutti i Paesi della pagina, in ordine alfabetico: {c, nome, regione, fmi, bm}. I Paesi sono quelli dell'FMI e della Banca Mondiale insieme."""
+    """Tutti i Paesi della pagina, in ordine alfabetico: {c, nome, nome_fonte, alias, regione, fmi, bm}. I Paesi sono quelli dell'FMI e della Banca Mondiale insieme."""
     codici_imf = imf.codici_paesi() if imf else set()
     codici_bm = bm.codici_paesi() if bm else set()
     nomi_wb = dict(zip(bm.paesi["paese"], bm.paesi["nome"])) if bm is not None and bm.paesi is not None else {}
@@ -132,14 +133,100 @@ def elenco_paesi(imf: annuali.Snapshot | None, bm: annuali.Snapshot | None, conf
     nomi_config = {c: v["nome"] for c, v in config.get("nomi_paesi", {}).items()}
     nomi_config.update({p.iso3: p.nome for p in carica_paesi(config).values() if p.iso3})
     extra = config.get("paesi_aggiuntivi", {})
+    alternativi = config.get("nomi_alternativi", {})
     elenco = []
     for codice in sorted(codici_imf | codici_bm):
         voce = extra.get(codice, {})
         nome_fonte = voce.get("nome") or nomi_wb.get(codice) or codice          # il nome come lo scrive la fonte
         nome = nomi_config.get(codice) or nome_fonte
         regione = (voce.get("regione") or regioni_wb.get(codice) or "").strip()
-        elenco.append({"c": codice, "nome": nome, "nome_fonte": nome_fonte, "regione": regione, "fmi": codice in codici_imf, "bm": codice in codici_bm})
+        elenco.append({"c": codice, "nome": nome, "nome_fonte": nome_fonte, "alias": list(alternativi.get(codice, [])), "regione": regione, "fmi": codice in codici_imf, "bm": codice in codici_bm})
     return sorted(elenco, key=lambda p: (p["nome"].casefold(), p["c"]))
+
+
+# ---------------------------------------------------------------------
+# Riquadri dei Paesi (hub Economies, country.html senza parametro; in futuro l'elenco della mappa): HTML già pronto, la ricerca lavora su `chiavi`
+# ---------------------------------------------------------------------
+
+def chiave_ricerca(testo: str) -> str:
+    """Testo normalizzato per la ricerca: senza accenti, minuscolo, spazi ai bordi tolti. static/elenco-paesi.js fa la stessa cosa sul testo digitato."""
+    senza_accenti = "".join(c for c in unicodedata.normalize("NFD", str(testo)) if not unicodedata.combining(c))
+    return senza_accenti.casefold().strip()
+
+
+def chiavi_paese(p: dict) -> str:
+    """Le chiavi di ricerca di un Paese: codice ISO3, nome mostrato, nome originale della fonte, nomi alternativi; separate da '|', senza duplicati."""
+    chiavi: list[str] = []
+    for testo in [p["c"], p["nome"], p.get("nome_fonte") or "", *p.get("alias", [])]:
+        chiave = chiave_ricerca(testo)
+        if chiave and chiave not in chiavi:
+            chiavi.append(chiave)
+    return "|".join(chiavi)
+
+
+def _valore_riquadro(ultimi: dict, indicatore: str, codice: str) -> dict | None:
+    """{testo, anno} dell'ultimo anno effettivo, o None se il Paese non ha il dato (il riquadro scrive "—")."""
+    voce = ultimi.get(indicatore, {}).get(codice)
+    if not voce:
+        return None
+    valore = round(float(voce[0]), 1) + 0.0            # + 0.0: niente "-0.0"
+    return {"testo": f"{valore:,.1f}%", "anno": int(voce[1])}
+
+
+def riquadri_paesi(elenco: list[dict], ultimi: dict, config: dict, da_pagina: str, codici_con_dati: set[str]) -> dict:
+    """Riquadri per il componente `ricerca_paesi`: {"in_evidenza": [...], "regioni": [{"nome", "paesi": [...]}], "n_paesi"}.
+
+    Ogni riquadro: c, nome, nome_fonte, regione, fmi, href, crescita, inflazione ({testo, anno} o None), chiavi (ricerca).
+    Il link segue `destinazione` (pagina di livello A solo se completa, altrimenti country.html?c=ISO3); senza destinazione valida il riquadro non è un link.
+    Il blocco `hub_economies` di config.yaml dà l'ordine delle regioni e l'elenco "Featured"."""
+    hub = config.get("hub_economies", {})
+    configurati = carica_paesi(config)
+    per_iso3 = {p.iso3: p for p in configurati.values() if p.iso3}
+
+    def href_di(codice: str) -> str | None:
+        if codice not in codici_con_dati:
+            return None
+        paese = per_iso3.get(codice)
+        if paese:
+            return destinazione(paese.chiave, config, da_pagina, codici_con_dati)
+        return f"{_relativo(PAGINA_PAESE, da_pagina)}?c={codice}"
+
+    riquadri = {}
+    for p in elenco:
+        riquadri[p["c"]] = {
+            "c": p["c"], "nome": p["nome"], "nome_fonte": p["nome_fonte"], "regione": p["regione"], "fmi": p["fmi"], "href": href_di(p["c"]),
+            "crescita": _valore_riquadro(ultimi, "gdp_growth", p["c"]), "inflazione": _valore_riquadro(ultimi, "inflation_average", p["c"]),
+            "chiavi": chiavi_paese(p), "etichetta": None,
+        }
+
+    in_evidenza = []
+    for chiave in hub.get("in_evidenza", []):
+        paese = configurati.get(chiave)
+        if paese is None:
+            raise ValueError(f"hub_economies.in_evidenza: '{chiave}' non è nel blocco 'paesi'")
+        if paese.iso3 and paese.iso3 in riquadri:
+            in_evidenza.append({**riquadri[paese.iso3], "href": destinazione(chiave, config, da_pagina, codici_con_dati)})
+        else:      # senza dati (area euro): scheda "coming soon" senza link finché la pagina di livello A non è completa
+            completa = pagina_completa(config, paese.pagina)
+            in_evidenza.append({"c": None, "nome": paese.nome, "nome_fonte": None, "regione": "", "fmi": True,
+                                "href": _relativo(paese.pagina, da_pagina) + "/" if completa else None,
+                                "crescita": None, "inflazione": None, "chiavi": "", "etichetta": None if completa else "coming soon", "senza_numeri": True})
+    pagine = {p["id"]: p for p in config.get("pagine", [])}
+    for id_pagina in hub.get("pagine_in_evidenza", []):
+        pagina = pagine.get(id_pagina)
+        if pagina is None:
+            raise ValueError(f"hub_economies.pagine_in_evidenza: la pagina '{id_pagina}' non è nel blocco 'pagine'")
+        completa = pagina_completa(config, id_pagina)
+        in_evidenza.append({"c": None, "nome": pagina["nome"], "nome_fonte": None, "regione": "", "fmi": True,
+                            "href": _relativo(id_pagina, da_pagina) + "/" if completa else None,
+                            "crescita": None, "inflazione": None, "chiavi": "", "etichetta": None if completa else "coming soon", "senza_numeri": True})
+
+    ordine = hub.get("regioni", [])
+    per_regione: dict[str, list[dict]] = {}
+    for p in elenco:                                   # `elenco` è già in ordine alfabetico
+        per_regione.setdefault(p["regione"] or "Other", []).append(riquadri[p["c"]])
+    nomi = [r for r in ordine if r in per_regione] + sorted(r for r in per_regione if r not in ordine)
+    return {"in_evidenza": in_evidenza, "regioni": [{"nome": r, "paesi": per_regione[r]} for r in nomi], "n_paesi": len(elenco)}
 
 
 def _cifre(valore: float) -> float:

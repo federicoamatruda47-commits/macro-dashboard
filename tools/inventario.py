@@ -118,7 +118,7 @@ def controlla_pagina_paese() -> list[str]:
     if not pagina.exists():
         return ["Manca economies/country.html"]
     html = pagina.read_text(encoding="utf-8")
-    codici = re.findall(r'<a href="country\.html\?c=([A-Z]{3})" data-c=', html)
+    codici = re.findall(r'<li class="ep-riquadro[^"]*" data-c="([A-Z]{3})"', html)      # riquadri del componente ricerca_paesi (solo quelli delle regioni)
     file_dati = {f.stem for f in cartella.glob("*.json")} - {"ultimi-valori"}
     for codice in sorted(set(codici) - file_dati):
         problemi.append(f"Paese nell'elenco senza file di dati: {codice}")
@@ -126,10 +126,15 @@ def controlla_pagina_paese() -> list[str]:
         problemi.append(f"File di dati senza Paese nell'elenco: {codice}")
     if len(codici) != len(set(codici)):
         problemi.append("Paesi ripetuti nell'elenco di country.html")
+    hub = RADICE / "site" / "economies" / "index.html"          # l'hub Economies usa lo stesso componente: stessi Paesi
+    if hub.exists() and sorted(re.findall(r'<li class="ep-riquadro[^"]*" data-c="([A-Z]{3})"', hub.read_text(encoding="utf-8"))) != sorted(codici):
+        problemi.append("L'hub Economies e country.html non elencano gli stessi Paesi")
     compresso = lambda f: len(gzip.compress(f.read_bytes(), 6))  # noqa: E731
     pesi = {f.stem: compresso(f) for f in cartella.glob("*.json")}
     massimo = max((v for k, v in pesi.items() if k != "ultimi-valori"), default=0)
     pagina_gz, js_gz = compresso(pagina), compresso(RADICE / "site" / "paese.js")
+    hub_gz = compresso(hub) if hub.exists() else 0
+    print(f"  hub economies/   {hub.stat().st_size / 1e6:6.2f} MB ({hub_gz / 1e3:.0f} KB compressi)" if hub.exists() else "  hub economies/   assente")
     print(f"  country.html     {pagina.stat().st_size / 1e6:6.2f} MB ({pagina_gz / 1e3:.0f} KB compressi) · paese.js {js_gz / 1e3:.0f} KB compressi · "
           f"{len(file_dati)} file di dati, il più grande {massimo / 1e3:.1f} KB compressi · ultimi-valori.json {pesi.get('ultimi-valori', 0) / 1e3:.1f} KB compressi")
     if pagina_gz > 60_000:
