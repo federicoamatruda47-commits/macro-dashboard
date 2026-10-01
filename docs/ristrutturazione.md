@@ -17,8 +17,8 @@ Piano approvato dall'utente il 01/10/2026, con le scelte della sezione 0 e due a
 | 4d | Mercati: Equities (con colonna "Last", vedi sotto) | **fatto e in `main`** |
 | 4e-1 | Mercati: Rates & curves, parte 1 (tassi di policy, curve, rendimenti a 10 anni, pendenza e inversioni) | **fatto e in `main`** |
 | 4e-2 | Mercati: Rates & curves, parte 2 (inflazione e tassi reali) | **fatto e in `main`** (con lo step 4 completo) |
-| 5 | Economies (hub + 5 segnaposto + UNRATE in USA); `regioni` → `pagine` nel config; via le vecchie pagine e il Confronto globale | **fatto sul ramo** `ristrutturazione/step-5`, in attesa dell'ok per il merge |
-| 6 | Overview (14 numeri chiave con sparkline, "What changed this week", schede, avvisi); diventa `/` | da fare |
+| 5 | Economies (hub + 5 segnaposto + UNRATE in USA); `regioni` → `pagine` nel config; via le vecchie pagine e il Confronto globale | **fatto e in `main`** |
+| 6 | Overview (14 numeri chiave con sparkline, "What changed this week", schede, avvisi); diventa `/` | **in corso**: proposta di dettaglio del calcolo dei movimenti in attesa di approvazione (nessun codice ancora) |
 | 7 | Rifinitura: peso pagine, link rotti, README e screenshot, CLAUDE.md, codice morto (opz.: nomi interni in inglese) | da fare |
 
 Flusso di lavoro: un ramo per step (`ristrutturazione/step-N`); a fine step riepilogo all'utente e **attesa dell'ok prima del merge** su `main`
@@ -334,3 +334,6 @@ Il workflow GitHub non cambia (pubblica già tutta `site/`).
   e schede "later" per Japan, China, South Korea. Stati delle pagine nel blocco `pagine`: `attiva`, `in-arrivo` (pagina vuota), `dopo` (solo scheda). Rimosso il blocco `regioni`, il pacchetto `dashboard/regions/` (il modello è ora `dashboard/modello.py`),
   i campi `regione` e `riepilogo` delle serie (le serie hanno `paese`; la pagina Series status mostra l'"area" dal nome del Paese) e le pagine Home provvisoria "Countries"/"Global comparison". Aggiunte le voci colore `de` (Germany) e `global` come etichette.
   Vecchi indirizzi: `usa/` → `economies/usa/`; `eurozona/`, `giappone/`, `cina/`, `corea/` → `markets/`; `globale/` → `markets/rates/`; `commodities/` → `markets/commodities/`.
+- 01/10/2026: step 5 unito in `main` (riga della disoccupazione con la definizione corretta di forza lavoro, verificata in `main`; riga del Giappone approvata dall'utente nella versione verificata sui dati).
+- 01/10/2026: step 6 avviato sul ramo `ristrutturazione/step-6`. Prima del codice, proposta di dettaglio del calcolo "What changed this week" con un prototipo su dati reali (fuori dal progetto): 66 serie candidate giornaliere/settimanali, 18 sopra 1,5× in una settimana volatile per i tassi;
+  con al massimo una serie per gruppo restano 8 gruppi su 21 sopra 1,5× (primi: Real yield 10Y TIPS 3,0×, AAA 3M −2,6×, JGB 2Y 2,5×, HY USA 2,5×, spread euro vs AAA 2,2×).
