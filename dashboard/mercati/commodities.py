@@ -70,7 +70,7 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                     prezzo("com-gas-eu", "TTF natural gas (Europe)", [GAS_EU], periodo_iniziale="Max",
                            note=["ttf-history"],
                            come_leggerlo="TTF is the benchmark price of natural gas in Europe, in euro per megawatt-hour. Europe relies on imports, "
-                                         "so its price has tended to react strongly to supply disruptions, as in 2022."),
+                                         "so its price has tended to react strongly to supply disruptions, as in 2022 when pipeline gas from Russia was cut."),
                 ]),
         Sezione("metalli-preziosi", "Precious metals",
                 "Gold and silver: safe-haven assets and stores of value. There is no free fallback "
