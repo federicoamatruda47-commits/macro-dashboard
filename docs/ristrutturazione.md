@@ -288,7 +288,7 @@ Il workflow GitHub non cambia (pubblica già tutta `site/`).
 - 01/10/2026: step 2 unito in `main` (con i colori a contrasto ≥ 3:1).
 - 01/10/2026: step 3 completato sul ramo `ristrutturazione/step-3`. Nuove pagine `/method/` ("Sources & method": come funziona, fonti con numero di serie, controllo di freschezza con soglie e serie in ritardo adesso, fonti di riserva
   configurate e in uso, serie calcolate e loro stato, Known limits) e `/method/series/` (tutte le 94 serie con link alla fonte, frequenza, storico, ultimo dato, stato, grafici che le usano). Menu: voce "Method & sources" con seconda riga.
-  Registro `contenuti/note.yaml` (48 note raggruppate, ognuna con ancora `method/#note-<id>` e l'elenco dei grafici che la richiamano); i grafici usano `note=["id", ...]` al posto di `nota="..."`.
+  Registro `contenuti/note.yaml` (49 note raggruppate, ognuna con ancora `method/#note-<id>` e l'elenco dei grafici che la richiamano); i grafici usano `note=["id", ...]` al posto di `nota="..."`.
   Sotto ogni grafico: "How to read it" (quando c'è), `Source: <fonte> ↗ (N series) · Notes: <titoli>`, `Latest data`. Link alla serie costruiti in `dashboard/fonti_url.py` (FRED, BCE, BIS, DBnomics, Yahoo, MoF verificati a mano/con richieste).
   Le tabelle "Stato delle serie" per pagina sono sparite (ora c'è Series status); le sezioni "Data not included" di Cina e Corea sono note nel registro. Verifiche: `controlla`, `sito` (56/56), `controlla_link.py` (435 link interni ok), verifica a frasi che nessuna vecchia nota sia sparita
   (le righe "Source: BIS, daily data" sono sostituite dal piè con la fonte; è stata aggiunta la nota `index-daily-closes`).
