@@ -120,7 +120,9 @@ python -m http.server 8000 --directory site   # anteprima su http://localhost:80
 - Yahoo, future continui giornalieri: `CL=F` WTI e `NG=F` Henry Hub (dal 2000), `BZ=F` Brent (dal 2007), `TTF=F` gas
   europeo in €/MWh (dal 2017), `GC=F` oro, `SI=F` argento, `HG=F` rame in $/libbra (dal 2000), `ALI=F` alluminio COMEX
   (dal 2014, volume quasi zero ma prezzo aggiornato e coerente con l'FMI), `ZW=F` grano e `ZC=F` mais in cent/bushel (dal 2000).
-- Il dato del giorno Yahoo può essere un prezzo non ancora definitivo (la build gira alle 13:30 UTC, a mercato aperto).
+- Yahoo: `yahoo.py` scarta l'ultima candela se la seduta non è finita (fine seduta dai metadati Yahoo; per i future, che dichiarano 23:59,
+  si usa 17:00 ora di New York). La build gira alle **23:30 UTC** lun-sab, dopo la chiusura dei future USA (21-22 UTC), del TTF e delle borse asiatiche;
+  i dati BCE sono già usciti, FRED può avere il giorno D con un giorno di ritardo rispetto a Yahoo (normale).
 - Riserve FRED: spot giornalieri `DCOILWTICO`, `DCOILBRENTEU`, `DHHNGSP` (stessa unità, ma spot ≠ future: a settembre 2026
   il Brent spot era circa 11 $ sopra il future); medie mensili FMI `PNGASEUUSDM` ($/MMBtu), `PCOPPUSDM`, `PALUMUSDM`,
   `PWHEAMTUSDM`, `PMAIZMTUSDM` ($/tonnellata), dal 1992, circa 2 mesi di ritardo.

@@ -12,7 +12,7 @@ name: Aggiorna dashboard
 
 on:
   schedule:
-    - cron: "30 13 * * 1-6"  # ogni giorno lun-sab alle 13:30 UTC (dopo i dati FRED del mattino USA)
+    - cron: "30 23 * * 1-6"  # lun-sab alle 23:30 UTC (01:30 italiane): future USA chiusi dalle 21-22 UTC, borse asiatiche chiuse
   workflow_dispatch:          # permette di avviarlo a mano dalla scheda "Actions"
   push:
     branches: [main]          # e a ogni modifica del codice
@@ -28,7 +28,7 @@ concurrency:
 
 jobs:
   genera:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
 
@@ -51,7 +51,7 @@ jobs:
 
   pubblica:
     needs: genera
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}

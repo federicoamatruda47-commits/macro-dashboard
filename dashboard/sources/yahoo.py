@@ -24,6 +24,11 @@ from .errori import ErroreFonte
 
 TENTATIVI = 3  # quante volte riprovare se Yahoo non risponde
 
+# I future americani trattano quasi 24 ore: Yahoo dichiara "fine seduta 23:59", che non ci serve.
+# Se la fine seduta dichiarata è così tarda usiamo la pausa giornaliera di CME (17:00 a New York).
+CHIUSURA_FUTURE = pd.Timedelta(hours=17)
+LIMITE_SEDUTA_CONTINUA = pd.Timedelta(hours=23)
+
 # yfinance scrive i propri errori sul terminale: li raccogliamo noi in ErroreFonte
 logging.getLogger("yfinance").setLevel(logging.CRITICAL)
 
@@ -38,13 +43,15 @@ def scarica(ticker: str) -> pd.Series:
 
     for tentativo in range(1, TENTATIVI + 1):
         try:
+            titolo = yf.Ticker(ticker)
             # auto_adjust=False: prezzi così come sono (per i future non ci sono dividendi da correggere)
-            tabella = yf.Ticker(ticker).history(period="max", interval="1d", auto_adjust=False)
+            tabella = titolo.history(period="max", interval="1d", auto_adjust=False)
         except Exception as errore:  # yfinance può sollevare errori di tipi diversi
             ultimo_errore = f"Yahoo non risponde ({type(errore).__name__})"
         else:
             if tabella is not None and not tabella.empty and "Close" in tabella:
-                return _pulisci(tabella["Close"], ticker)
+                chiusure = _solo_giornate_chiuse(tabella["Close"], _fine_seduta(titolo))
+                return _pulisci(chiusure, ticker)
             # Tabella vuota: ticker inesistente oppure richiesta bloccata da Yahoo
             ultimo_errore = "Yahoo non ha restituito dati (ticker errato o richiesta bloccata)"
 
@@ -52,6 +59,30 @@ def scarica(ticker: str) -> pd.Series:
             time.sleep(3 * tentativo)  # attesa crescente: 3s, 6s
 
     raise ErroreFonte(ultimo_errore)
+
+
+def _fine_seduta(titolo: "yf.Ticker") -> pd.Timedelta:
+    """Ora (locale della borsa, contata dalla mezzanotte) in cui finisce la seduta giornaliera."""
+    try:
+        fine = titolo.get_history_metadata()["currentTradingPeriod"]["regular"]["end"]
+        durata = pd.Timedelta(hours=fine.hour, minutes=fine.minute)
+    except Exception:  # metadati mancanti: ripieghiamo sulla regola dei future
+        return CHIUSURA_FUTURE
+    return CHIUSURA_FUTURE if durata >= LIMITE_SEDUTA_CONTINUA else durata
+
+
+def _solo_giornate_chiuse(chiusure: pd.Series, fine_seduta: pd.Timedelta, adesso=None) -> pd.Series:
+    """Scarta l'ultima candela se la sua seduta non è ancora finita (prezzo non definitivo).
+
+    Il confronto si fa nel fuso orario della borsa (quello dell'indice di Yahoo).
+    `adesso` serve solo per le prove; di norma è l'ora attuale.
+    """
+    fuso = chiusure.index.tz
+    if fuso is None or chiusure.empty:
+        return chiusure
+    adesso = pd.Timestamp.now(tz=fuso) if adesso is None else adesso.tz_convert(fuso)
+    fine_ultima_seduta = chiusure.index[-1].normalize() + fine_seduta
+    return chiusure.iloc[:-1] if adesso < fine_ultima_seduta else chiusure
 
 
 def _pulisci(chiusure: pd.Series, ticker: str) -> pd.Series:
