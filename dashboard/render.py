@@ -1,5 +1,6 @@
 """Costruzione del sito statico: prende serie e grafici e scrive la cartella site/."""
 
+import posixpath
 import shutil
 import sys
 from datetime import datetime, timezone
@@ -307,6 +308,16 @@ def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict) -> dict:
                for r in config["regioni"] if not r.get("senza_pagina")]
     pagine = [costruisci_voce(p, PAGINE_MERCATI.get(p["id"]), p.get("numeri_chiave", []), bool(p.get("ytd")))
               for p in config.get("pagine", []) if p.get("tipo") != "hub" and p.get("stato") == "attiva"]
+    # Pagina precedente e successiva dentro lo stesso gruppo (nell'ordine di config.yaml), solo tra quelle attive
+    voci_pagine = {p["id"]: p for p in config.get("pagine", [])}
+    for i, pagina in enumerate(pagine):
+        gruppo = voci_pagine[pagina["id"]].get("gruppo")
+        fratelli = [q for q in pagine if voci_pagine[q["id"]].get("gruppo") == gruppo]
+        posizione = fratelli.index(pagina)
+        for chiave, indice in (("precedente", posizione - 1), ("successivo", posizione + 1)):
+            if 0 <= indice < len(fratelli):
+                vicina = fratelli[indice]
+                pagina[chiave] = {"nome": vicina["nome"], "href": posixpath.relpath(vicina["id"], pagina["id"]) + "/"}
 
     stato = []
     for s in serie.values():

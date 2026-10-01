@@ -42,6 +42,12 @@
 </section>
 {% endfor %}
 
+{% if r.precedente or r.successivo %}
+<nav class="pagina-vicina" aria-label="Neighbouring pages">
+  {% if r.precedente %}<a class="precedente" href="{{ r.precedente.href }}">‹ <span>Previous</span> {{ r.precedente.nome }}</a>{% else %}<span></span>{% endif %}
+  {% if r.successivo %}<a class="successivo" href="{{ r.successivo.href }}"><span>Next</span> {{ r.successivo.nome }} ›</a>{% endif %}
+</nav>
+{% endif %}
 <p class="descrizione">Every series on this site, with its source and status: <a href="{{ radice }}method/series/">Series status</a>.
   Sources, rules and known limits: <a href="{{ radice }}method/">Sources &amp; method</a>.</p>
 {% endif %}

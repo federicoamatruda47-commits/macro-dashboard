@@ -6,7 +6,6 @@ from .modello import Sezione
 
 LPR_1A = "WS_CBPOL/D.CN"
 CPI = "WS_LONG_CPI/M.CN.771"
-CAMBIO = "CNY=X"
 CSI300 = "510300.SS"
 HANG_SENG = "^HSI"
 
@@ -29,11 +28,6 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                             periodo_iniziale="10Y", largo=True,
                             note=["zero-line-china"]),
                 ]),
-        Sezione("cambio", "Exchange rate", grafici=[
-            storico("cn-cambio", "USD/CNY (yuan per 1 dollar)", [CAMBIO], periodo_iniziale="10Y", largo=True,
-                    mostra_unita=True,
-                    note=["usdcny"]),
-        ]),
         Sezione("borsa", "Equities",
                 "Chinese equities are represented by the CSI 300 (Shanghai and Shenzhen); Hong Kong has a "
                 "separate market, measured by the Hang Seng.",

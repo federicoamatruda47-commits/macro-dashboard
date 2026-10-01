@@ -86,7 +86,7 @@ menu:
   - {titolo: Home, pagina: home}
   - {titolo: Countries, figli: [usa, eurozona, giappone, cina, corea]}
   - {pagina: globale}
-  - {titolo: Markets, figli: [markets, markets/commodities]}
+  - {titolo: Markets, figli: [markets, markets/fx, markets/commodities]}
   - {titolo: Method & sources, figli: [method, method/series]}
 
 # Le NUOVE pagine del sito (ristrutturazione, vedi docs/ristrutturazione.md). Una pagina per voce, all'indirizzo site/<id>/.
@@ -123,8 +123,9 @@ pagine:
   - id: markets/fx
     nome: FX
     gruppo: markets
-    stato: in-arrivo
-    descrizione: Major currencies against the dollar and the broad dollar index.
+    stato: attiva
+    descrizione: The euro, yen, yuan and won against the US dollar, and the broad dollar index.
+    numeri_chiave: ["EXR/D.USD.EUR.SP00.A", "JPY=X", "CNY=X", "KRW=X", "DTWEXBGS"]
   - id: markets/commodities
     nome: Commodities
     gruppo: markets

@@ -7,7 +7,6 @@ from .modello import Sezione
 POLICY = "WS_CBPOL/D.KR"
 KTB_10A = "IRLTLT01KRM156N"
 CPI = "WS_LONG_CPI/M.KR.771"
-CAMBIO = "KRW=X"
 KOSPI = "^KS11"
 
 
@@ -34,11 +33,6 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                             periodo_iniziale="10Y", largo=True,
                             note=["target-bok"]),
                 ]),
-        Sezione("cambio", "Exchange rate", grafici=[
-            storico("kr-cambio", "USD/KRW (won per 1 dollar)", [CAMBIO], periodo_iniziale="10Y", largo=True,
-                    mostra_unita=True,
-                    note=["usdkrw"]),
-        ]),
         Sezione("borsa", "Equities", grafici=[
             storico("kr-kospi", "KOSPI", [KOSPI], periodo_iniziale="10Y", largo=True,
                             note=["index-daily-closes"]),

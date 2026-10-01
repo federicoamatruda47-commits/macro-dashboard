@@ -248,6 +248,13 @@ note:
     gruppo: fx
     titolo: USD/KRW quotation
     testo: "Up = the won weakens. If Yahoo does not respond FRED is used."
+  broad-dollar-index:
+    gruppo: fx
+    titolo: Broad dollar index
+    testo: >-
+      The Federal Reserve's nominal broad dollar index (series DTWEXBGS on FRED), January 2006 = 100: the dollar against
+      the currencies of the United States' main trading partners, weighted by trade. It is published weekly with a few
+      days of delay and starts in 2006.
   currencies-base100:
     gruppo: fx
     titolo: Currencies base 100

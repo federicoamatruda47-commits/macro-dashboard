@@ -7,7 +7,6 @@ from .modello import Sezione
 POLICY = "WS_CBPOL/D.JP"
 JGB_2A, JGB_10A, JGB_30A = "JGB_2Y", "JGB_10Y", "JGB_30Y"
 CPI, CPI_CORE, CPI_CORE_CORE = "CPIm/001", "CPIm/733", "CPIm/740"
-CAMBIO = "JPY=X"
 NIKKEI = "^N225"
 
 
@@ -38,11 +37,6 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                             largo=True,
                             note=["japan-cpi-sources", "target-boj"]),
                 ]),
-        Sezione("cambio", "Exchange rate", grafici=[
-            storico("jp-cambio", "USD/JPY (yen per 1 dollar)", [CAMBIO], periodo_iniziale="10Y", largo=True,
-                    mostra_unita=True,
-                    note=["usdjpy"]),
-        ]),
         Sezione("borsa", "Equities", grafici=[
             storico("jp-nikkei", "Nikkei 225", [NIKKEI], periodo_iniziale="10Y", largo=True,
                             note=["index-daily-closes"]),

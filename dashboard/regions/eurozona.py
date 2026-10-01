@@ -21,7 +21,6 @@ TUTTI_10A = "YC/B.U2.EUR.4F.G_N_C.SV_C_YM.SR_10Y"
 HICP = "HICP/M.U2.N.000000.4D0.ANR"
 HICP_CORE = "HICP/M.U2.N.XEF000.4D0.ANR"
 HY_EURO = "BAMLHE00EHYIOAS"
-EURUSD = "EXR/D.USD.EUR.SP00.A"
 
 # Azioni (Yahoo Finance): le definizioni stanno in config.yaml, qui solo gli id
 EURO_STOXX_50, DAX, CAC_40, FTSE_MIB, BANCHE = "^STOXX50E", "^GDAXIP", "^FCHI", "FTSEMIB.MI", "EXV1.DE"
@@ -110,8 +109,4 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                             periodo_iniziale="5Y", largo=True,
                             note=["rebase-base100", "price-no-dividends", "dax-price-index", "ea-banks-etf"]),
                 ]),
-        Sezione("cambio", "Exchange rate", grafici=[
-            storico("eur-eurusd", "EUR/USD (dollars per 1 euro)", [EURUSD], periodo_iniziale="10Y", largo=True,
-                    note=["eurusd-ecb", "bands-cepr"]),
-        ]),
     ]
