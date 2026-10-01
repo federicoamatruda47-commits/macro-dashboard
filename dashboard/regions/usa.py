@@ -95,8 +95,6 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                 ]),
         Sezione("condizioni", "Financial conditions and labour", grafici=[
             storico("usa-vix", "VIX (expected volatility of the S&P 500)", ["VIXCLS"], periodo_iniziale="5Y"),
-            storico("usa-dollaro", "Broad dollar (nominal index, Jan 2006 = 100)", ["DTWEXBGS"],
-                    periodo_iniziale="Max"),
             storico("usa-disoccupazione", "Unemployment rate", ["UNRATE"], periodo_iniziale="Max",
                     largo=True),
         ]),

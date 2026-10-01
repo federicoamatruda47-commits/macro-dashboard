@@ -14,10 +14,6 @@ DECENNALI = [("US", "DGS10"), ("Euro area (AAA)", "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.
 INFLAZIONE = [("US", "WS_LONG_CPI/M.US.771"), ("Euro area", "WS_LONG_CPI/M.XM.771"),
               ("Japan", "WS_LONG_CPI/M.JP.771"), ("China", "WS_LONG_CPI/M.CN.771"),
               ("South Korea", "WS_LONG_CPI/M.KR.771")]
-# Valute: (nome, id, invertita). Il cambio EUR/USD è quotato "dollari per euro", gli altri "valuta per dollaro":
-# questi ultimi si invertono, così per ogni linea "sale" = la valuta si rafforza sul dollaro
-VALUTE = [("Euro", "EXR/D.USD.EUR.SP00.A", False), ("Yen", "JPY=X", True),
-          ("Yuan", "CNY=X", True), ("Won", "KRW=X", True)]
 # Borse: (nome, indice in valuta locale, stesso indice convertito in USD). L'S&P 500 è già in dollari.
 # Gli indici sono definiti una volta sola in config.yaml; le versioni in USD sono serie calcolate
 # (indice / cambio "valuta per dollaro") e vengono dalla stessa fonte, Yahoo.
@@ -37,12 +33,6 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
         figura = charts.linee_storiche(rinominate(elenco), riferimento=riferimento)
         return Grafico(id=id_grafico, titolo=titolo, figura=figura,
                        serie_ids=[i for _, i in elenco], **opzioni_grafico)
-
-    def base100(id_grafico, titolo, elenco, **opzioni_grafico) -> Grafico:
-        """Confronto a base 100: la ribasatura all'inizio del periodo scelto la fa il JavaScript."""
-        voci = [(charts.con_nome(trova_serie(serie, i), nome), invertita) for nome, i, invertita in elenco]
-        return Grafico(id=id_grafico, titolo=titolo, figura=charts.linee_base100(voci),
-                       serie_ids=[i for _, i, _ in elenco], **opzioni_grafico)
 
     def borse() -> Grafico:
         """Borse a base 100 con interruttore valuta locale / USD: le linee delle due versioni stanno nella
@@ -85,14 +75,6 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                     storico("gl-inflazione", "CPI inflation compared (% y/y)", INFLAZIONE,
                             riferimento=(2, ""), periodo_iniziale="10Y", largo=True,
                             note=["target-generic"]),
-                ]),
-        Sezione("valute", "Currencies against the dollar",
-                "How much each currency is worth in dollars, rebased to 100 at the start of the period chosen "
-                "with the 1Y / 5Y / 10Y / Max buttons.",
-                grafici=[
-                    base100("gl-valute", "Currencies against the dollar (base 100)", VALUTE,
-                            periodo_iniziale="5Y", largo=True,
-                            note=["rebase-base100", "currencies-base100"]),
                 ]),
         Sezione("borse", "Equities",
                 "Equity indices, in local currency or converted to dollars, rebased to 100 at the start "

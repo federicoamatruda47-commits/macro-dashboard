@@ -11,8 +11,8 @@ Piano approvato dall'utente il 01/10/2026, con le scelte della sezione 0 e due a
 | 1 | Motore multipagina (base template, menu a 2 righe, link relativi); le 7 tab diventano 7 pagine, stesso contenuto | **fatto e in `main`** |
 | 2 | Inglese (testi, numeri, unità, date), campo `paese`, palette fissa per Paese, campo "Come leggerlo" | **fatto e in `main`** |
 | 3 | Footer dei grafici (fonte + link + note), registro `contenuti/note.yaml`, pagine Method e Series status | **fatto e in `main`** |
-| 4a | Mercati: Commodities | **fatto sul ramo** `ristrutturazione/step-4a`, in attesa dell'ok per il merge |
-| 4b | Mercati: FX | da fare |
+| 4a | Mercati: Commodities | **fatto e in `main`** |
+| 4b | Mercati: FX | **fatto sul ramo** `ristrutturazione/step-4b`, in attesa dell'ok per il merge |
 | 4c | Mercati: Credit | da fare |
 | 4d | Mercati: Equities (con colonna "Last", vedi sotto) | da fare |
 | 4e | Mercati: Rates & curves | da fare |
@@ -304,3 +304,7 @@ Il workflow GitHub non cambia (pubblica già tutta `site/`).
   Il vecchio `/commodities/` resta come pagina che rimanda al nuovo (anche con `#chart-...`). La regione `commodities` resta nel config solo come appartenenza delle serie (`senza_pagina: true`).
   I colori dei gruppi di materie prime sono stati cambiati per non confonderli con il blu degli USA (energia = rosso del Giappone, preziosi = ambra dell'area euro, industriali = viola della Corea, agricoli = verde dell'Italia).
   Nel piano al posto di `dashboard/pagine/` si usa `dashboard/mercati/` (e `dashboard/economie/` allo step 5) perché `dashboard/pagine.py` è già il modulo del menu.
+- 01/10/2026: step 4a unito in `main` (righe TTF e Wheat ritoccate come chiesto; un primo merge aveva perso la modifica Wheat per un problema di fine riga e l'ho corretta con un commit successivo su `main`).
+- 01/10/2026: step 4b (FX) sul ramo `ristrutturazione/step-4b`: pagina `/markets/fx/` (`dashboard/mercati/fx.py`) con 5 numeri chiave, sezioni "Currencies compared" (`gl-valute`), "Exchange rates in levels" (EUR/USD, USD/JPY, USD/CNY, USD/KRW in griglia 2×2) e "The broad dollar" (`usa-dollaro`), ognuno con "How to read it".
+  I 6 grafici sono stati tolti dalle pagine dei Paesi (sezioni "Exchange rate" di Giappone, Cina, Corea, Eurozona; sezione "Currencies" del Confronto globale; `usa-dollaro` da USA). Decisione: i 4 cambi non hanno più le bande CEPR (EUR/USD le aveva): sono rapporti tra due economie;
+  l'indice del dollaro mantiene le bande NBER. Nuova nota `broad-dollar-index`. Navigazione "Previous / Next" tra pagine attive dello stesso hub (precedente/successiva: `FX ‹ › Commodities`).

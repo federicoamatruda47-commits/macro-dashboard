@@ -269,3 +269,9 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .nota-voce .usi { display: block; margin-top: 4px; color: var(--testo-tenue); font-size: 0.8rem; }
 .nota-voce:target { border-color: var(--accento); }
 .scheda-in-arrivo { opacity: 0.7; }
+
+/* ---- Pagina precedente / successiva ---- */
+.pagina-vicina { display: flex; justify-content: space-between; gap: 12px; margin-top: 32px; padding-top: 14px; border-top: 1px solid var(--griglia); }
+.pagina-vicina a { color: var(--accento); font-weight: 600; text-decoration: none; }
+.pagina-vicina a span { color: var(--testo-tenue); font-weight: 400; margin: 0 4px; }
+.pagina-vicina a:hover { text-decoration: underline; }
