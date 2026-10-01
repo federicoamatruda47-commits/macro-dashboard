@@ -18,8 +18,8 @@ Piano approvato dall'utente il 01/10/2026, con le scelte della sezione 0 e due a
 | 4e-1 | Mercati: Rates & curves, parte 1 (tassi di policy, curve, rendimenti a 10 anni, pendenza e inversioni) | **fatto e in `main`** |
 | 4e-2 | Mercati: Rates & curves, parte 2 (inflazione e tassi reali) | **fatto e in `main`** (con lo step 4 completo) |
 | 5 | Economies (hub + 5 segnaposto + UNRATE in USA); `regioni` → `pagine` nel config; via le vecchie pagine e il Confronto globale | **fatto e in `main`** |
-| 6 | Overview (14 numeri chiave con sparkline, "What changed this week", schede, avvisi); diventa `/` | **fatto sul ramo** `ristrutturazione/step-6`, in attesa dell'ok per il merge |
-| 7 | Rifinitura: peso pagine, link rotti, README e screenshot, CLAUDE.md, codice morto (opz.: nomi interni in inglese) | da fare |
+| 6 | Overview (14 numeri chiave con sparkline, "What changed this week", schede, avvisi); diventa `/` | **fatto e in `main`** |
+| 7 | Rifinitura: peso pagine, link rotti, README e screenshot, CLAUDE.md, codice morto (opz.: nomi interni in inglese) | **quasi fatto sul ramo** `ristrutturazione/step-7` (vedi registro), in attesa di ok |
 
 Flusso di lavoro: un ramo per step (`ristrutturazione/step-N`); a fine step riepilogo all'utente e **attesa dell'ok prima del merge** su `main`
 (il merge pubblica il sito tramite GitHub Actions). Il merge si fa a fine di ogni step (non tutto alla fine), con `git push origin main`. Nessun commit/push fuori da questo flusso senza richiesta.
@@ -342,3 +342,9 @@ Il workflow GitHub non cambia (pubblica già tutta `site/`).
   template `panoramica.html.j2` (home), sezione "What changed this week" in `/method/`. Test: `tests/test_movimenti.py` (19 test su dati inventati + 3 episodi storici con `PROVE_CON_RETE=1`: WTI settimana al 9/3/2020 −34% = −8,1×, VIX settimana al 27/2/2020 +152% = +8,1×).
   Scoperta dai test sui dati veri: il VIX, in settimane già turbolente (al 13/3/2020, +38%), vale solo 1,8× perché si muove molto anche in settimane normali (deviazione standard ~21%): lo dice anche la pagina Method.
   Risultato di oggi: 9 serie su 54 sopra 2×; in lista: US 10Y real yield +28 bp 3,0×, Euro AAA 3M −14 bp 2,6×, Japan 2Y +10 bp 2,5×, US high-yield spread +40 bp 2,5×, Euro-area spread vs AAA 10Y +6 bp 2,2×. Il test in CI non è ancora nel workflow GitHub (da decidere).
+- 01/10/2026: step 6 unito in `main`; test aggiunti al workflow prima della build (verificato: un test rosso su un ramo di prova ferma il job e non pubblica; ramo di prova cancellato).
+- 01/10/2026: step 7 sul ramo `ristrutturazione/step-7` (non ancora unito). Fatto: bundle `plotly-basic` al posto di `plotly` (da 1,47 MB a 0,40 MB di JavaScript, tutti i 45 grafici disegnano, anche due pannelli e curve);
+  peso misurato compresso (come lo scarica il browser): rates 0,47 MB, equities 0,49 MB, commodities 0,23 MB → sotto 1 MB, quindi niente caricamento a parte dei dati; icona della scheda (nessun 404); controllo "ogni grafico è nella pagina promessa dalla mappa" in `tools/inventario.py sito`;
+  README riscritto, screenshot `docs/dashboard.jpg`, CLAUDE.md riscritto (struttura, regole, flusso); nessun codice morto trovato (solo `valida_palette.peggiore`, helper di ricerca palette, tenuto).
+  Controllo link esterni: 84, 57 rispondono 200; i link FRED sono andati in timeout (il sito risponde lentamente ai bot, formato standard); 4 link Yahoo (`^GDAXIP`, `510300.SS`, `EXV1.DE`, `KRW=X`) rispondono 404 alle richieste automatiche
+  (Yahoo reindirizza al consenso privacy nel browser): DA VERIFICARE A MANO. Non fatto: tema chiaro/scuro con interruttore (mai implementato), nomi interni in inglese (opzionale).

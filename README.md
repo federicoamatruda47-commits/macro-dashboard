@@ -1,73 +1,80 @@
 # Macro Dashboard
 
-A static macroeconomic dashboard covering the US, the Eurozone, commodities, Japan, China, South Korea and a global comparison, rebuilt every day and published on GitHub Pages.
+A static macroeconomic dashboard — rates, yield curves, inflation, credit, equities, currencies and commodities — rebuilt every day and published on GitHub Pages. Every chart comes with a plain-language "How to read it" line, a link to its source and notes on the known limits of the data.
 
-**Live site: [federicoamatruda47-commits.github.io/macro-dashboard](https://federicoamatruda47-commits.github.io/macro-dashboard/)** (the site text is in Italian)
+**Live site: [federicoamatruda47-commits.github.io/macro-dashboard](https://federicoamatruda47-commits.github.io/macro-dashboard/)** (in English)
 
-![Dashboard overview](docs/dashboard.png)
+![Dashboard overview](docs/dashboard.jpg)
 
-## Contents
+## What is on the site
 
-| Tab | Main indicators |
+| Page | What it shows |
 |---|---|
-| **United States** | Fed funds rate, Treasury yield curve (2Y, 10Y), 10Y-2Y and 10Y-3M spreads, 10Y real yield (TIPS) and breakeven inflation, CPI and core PCE, credit spreads (Baa-Treasury, High Yield OAS), VIX, broad dollar index, unemployment, equity indices (S&P 500, Nasdaq 100, Russell 2000) and an equal-weight/cap-weight S&P 500 ratio to gauge market concentration. NBER recessions shaded. |
-| **Eurozone** | ECB deposit facility rate, AAA euro yield curve (Bund proxy), sovereign spreads (BTP/OAT vs Bund), HICP headline and core, euro high-yield spread, EUR/USD, equity indices (Euro Stoxx 50, DAX, CAC 40, FTSE MIB) and European banks. CEPR recessions shaded. |
-| **Commodities** | Performance table, energy (WTI, Brent, Henry Hub, TTF), precious metals (gold, silver), industrial metals (copper, aluminium), agriculturals (wheat, corn), and commodities vs US rates charts. |
-| **Japan** | BoJ policy rate, daily JGB yields (2Y, 10Y, 30Y), CPI headline, core and core-core (all from the Statistics Bureau), USD/JPY, Nikkei 225. |
-| **China** | Loan Prime Rate (1Y), CPI, USD/CNY, CSI 300 (via an ETF) and Hang Seng. |
-| **South Korea** | BoK base rate, 10Y yield (monthly), CPI, USD/KRW, KOSPI. |
-| **Global comparison** | Policy rates of the US, Eurozone, Japan, China and Korea on one chart; 10Y yields; CPI inflation; currencies vs the dollar and equity indices (with the MSCI ACWI benchmark) rebased to 100 at the start of the selected period, switchable between local currency and USD. |
+| **Overview** | 14 key numbers (Fed and ECB rates, US and euro-area inflation, 10-year yields, BTP-Bund spread, S&P 500, Euro Stoxx 50, EUR/USD, gold, Brent, VIX) with a one-year trend and changes; **What changed this week**: the biggest weekly moves compared with each series' own normal volatility; a short data-status line. |
+| **Markets › Rates & curves** | Policy rates of five economies, US and euro-area yield curves (today vs 1 month and 1 year ago), 10-year yields compared, curve slope and inversions, inflation and real rates (TIPS, breakeven). |
+| **Markets › Credit** | US and euro-area high-yield spreads on one chart, US investment-grade and Baa spreads, BTP-Bund, OAT-Bund and euro-area sovereign spreads. |
+| **Markets › Equities** | One performance table (last level, 1W, 1M, YTD, 1Y) for US, euro-area and Asian indices and MSCI ACWI; equity indices compared in local currency or in USD; US and European detail; S&P 500 concentration; VIX. |
+| **Markets › FX** | Euro, yen, yuan and won against the dollar (base 100 and levels) and the broad dollar index. |
+| **Markets › Commodities** | Performance table, energy, precious and industrial metals, agriculturals, and commodity-vs-US-rates charts. |
+| **Economies** | One page per economy: the US (labour market for now); Italy, euro area, UK and a comparison view are coming; Japan, China and South Korea later. |
+| **Method & sources** | Sources, the freshness check, fallback sources, calculated series, how "What changed this week" works and why its bar is 2×, the known limits of the data, and a table of every series with its status. |
 
-No recession shading for Asia: there is no official, machine-readable source. Not included for lack of fresh free sources: China 10Y yield, 5Y LPR and PPI; Korean 3Y yield (daily data only through the Bank of Korea API, which needs a Korean registration).
-
-Each tab opens with a summary of the latest value and the 1-week, 1-month and 1-year changes (equity indices also show the year-to-date change). Charts have 1Y / 5Y / 10Y / Max range buttons and light/dark themes.
+Charts have 1Y / 5Y / 10Y / Max buttons and light and dark themes. A country always has the same colour on every chart. Every page and every chart has its own link (`…/markets/rates/#chart-mk-rates-slope`).
 
 ## Data sources and known limits
 
-| Source | Used for | Known limits |
-|---|---|---|
-| [FRED](https://fred.stlouisfed.org/) (official API, key required) | US data; fallback for the other tabs | ICE BofA OAS series start in October 2023 (licence), so `BAA10Y` is used for long history. `DTWEXBGS` is weekly with a few days' delay. |
-| [ECB Data Portal](https://data.ecb.europa.eu/) (no key) | Policy rate, AAA yield curve, HICP | Daily country yields (Bund, BTP, OAT) are not free: sovereign spreads use monthly convergence-criteria yields, about one month late. No free euro investment-grade spread; euro HY only from October 2023. The old `ICP` HICP dataset is frozen at December 2025; the new `HICP` dataset is used. |
-| [Yahoo Finance](https://finance.yahoo.com/) via `yfinance` (unofficial) | Commodity continuous futures, equity indices, USD exchange rates | Not an official API and may break. Contract rollovers cause small price jumps (noted under the charts). All equity prices are closing prices without dividends (not "adjusted"), for consistency between indices and ETFs; for the DAX the price index (DAX K, `^GDAXIP`, from March 2013) is used because the official DAX reinvests dividends. Fallbacks exist only for the S&P 500 and Nasdaq 100 (FRED; the S&P 500 only from 2016) and for some exchange rates; none for gold and silver or the other indices. European banks and MSCI ACWI are ETFs (`EXV1.DE`, STOXX Europe 600 Banks, includes non-euro banks; `ACWI`), because the Euro Stoxx Banks and MSCI ACWI indices are not on Yahoo. The CSI 300  index has no history on Yahoo: the ETF `510300.SS` is used instead (from 2012). |
-| [BIS](https://stats.bis.org/) (no key) | Central bank policy rates of all five economies; CPI inflation (year on year) of the Asian countries and the global comparison | The BIS publishes Korea about one month late, so that series has a custom 45-day freshness threshold. China is the 1Y Loan Prime Rate, not an overnight rate. |
-| [Japanese Ministry of Finance](https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/) (no key) | Daily JGB yields | CSV files in Shift-JIS; the history file is joined with the current-month file. |
-| [Statistics Bureau of Japan](https://www.stat.go.jp/english/) via [DBnomics](https://db.nomics.world/) (no key) | Japanese CPI indices (headline, core, core-core); the Japan tab uses them, the global comparison uses BIS for uniformity | DBnomics is a free aggregator, not the statistics office itself. |
+The full, always up-to-date list is on the site (Method & sources). In short:
 
-CEPR recession dates have no API and are maintained by hand in `config.yaml`.
+| Source | Used for |
+|---|---|
+| [FRED](https://fred.stlouisfed.org/) (official API, key required) | US data and many fallbacks. ICE BofA spread series start in October 2023 (licence). |
+| [ECB Data Portal](https://data.ecb.europa.eu/) (no key) | Policy rate, AAA yield curve (a Bund proxy), HICP inflation, EUR/USD. Daily country yields are not free: sovereign spreads use monthly figures. |
+| [Yahoo Finance](https://finance.yahoo.com/) via `yfinance` (unofficial) | Equity indices, ETFs, commodity futures and exchange rates. It is not an official API and may break; most prices are closes without dividends. |
+| [BIS](https://data.bis.org/) (no key) | Policy rates and CPI inflation for the cross-country comparisons. |
+| [Japan Ministry of Finance](https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/) (no key) | Daily JGB yields. |
+| [Statistics Bureau of Japan](https://www.stat.go.jp/english/) via [DBnomics](https://db.nomics.world/) (no key) | Japan CPI by component. |
+
+Recession dates: NBER via FRED for the US; the CEPR for the euro area, kept by hand in `config.yaml` because it has no API. Not included for lack of fresh free sources: China's 10-year yield, 5-year LPR and PPI; Korea's 3-year yield.
 
 ## Data quality
 
-- **Freshness check.** Every series is checked against a staleness threshold (10 days for daily, 21 weekly, 75 monthly, 120 quarterly, counted from the end of the observation period). A series can override its threshold with `soglia_giorni` in `config.yaml`, with the reason written next to it. Stale series trigger a warning at the top of the page, which catches frozen series that return no error.
-- **Automatic fallback sources.** A series can declare a `riserva` (backup). If the primary source fails, the backup is used and the page says so, including any difference in unit.
-- **Computed series use a single source.** Spreads and ratios (`fonte: calcolata`) are computed only if all components come from the same primary source. If one component fell back to a backup, the computed series is shown as unavailable with an explanation, so spot and futures prices, different sources or different units are never mixed.
-- **Failures are isolated.** A failing series never blocks the build; it becomes "not available" with a warning. `build.py` exits with an error only if no series can be downloaded, in which case nothing is published.
+- **Freshness check.** Every series is checked against a staleness threshold (10 days for daily, 21 weekly, 75 monthly, 120 quarterly, counted from the end of the observation period; a series can override it with `soglia_giorni`, with the reason written next to it). Stale series trigger a warning on the pages that use them, which catches frozen series that return no error.
+- **Fallback sources.** A series can declare a `riserva` (backup). If the primary source fails, the backup is used, the chart footer says "(fallback)" and a notice appears, including any difference in unit.
+- **Calculated series use a single source.** Spreads and ratios (`fonte: calcolata`) are computed only if all inputs come from the same primary source; otherwise they are shown as unavailable with an explanation, so spot and futures prices, different sources or different units are never mixed.
+- **Failures are isolated.** A failing series never blocks the build. `build.py` exits with an error only if no series can be downloaded, in which case nothing is published.
+- **Tests.** The weekly-moves calculation has unit tests on invented data (`python -m unittest discover -s tests -t .`), run in the workflow before the build: if one fails, nothing is published. With `PROVE_CON_RETE=1` they also check real episodes (oil and VIX in 2020).
+- **Consistency checks.** `tools/inventario.py` checks that no chart or series was lost or duplicated and that every chart is on the page promised in `docs/mappa-grafici.yaml`; `tools/controlla_link.py` checks the internal links; `tools/valida_palette.py` checks that the country colours are distinguishable, also for colour-blind readers, and have enough contrast in both themes.
 
 ## Automatic updates
 
-A GitHub Actions workflow (`.github/workflows/aggiorna-dashboard.yml`) runs Monday to Saturday at 23:30 UTC, on manual dispatch, and on every push to `main`. It installs the dependencies, runs `python build.py` to download data and generate `site/`, then deploys the result to GitHub Pages. The run time is after the close of US futures and Asian markets. The FRED key is stored as the repository secret `FRED_API_KEY`.
+A GitHub Actions workflow (`.github/workflows/aggiorna-dashboard.yml`) runs Monday to Saturday at 23:30 UTC (after the US futures and Asian exchanges have closed), on manual dispatch and on every push to `main`. It installs the dependencies, runs the tests, runs `python build.py` to download data and generate `site/`, then deploys to GitHub Pages. The FRED key is stored as the repository secret `FRED_API_KEY`.
 
 ## Architecture
 
 ```
-config.yaml          regions, CEPR recessions, series definitions
+config.yaml          colours, pages, menu, key numbers, CEPR recessions, series definitions
 build.py             single entry point: download -> compute -> generate site/
+contenuti/note.yaml  the technical notes (shown in Method & sources)
 dashboard/
   sources/           one module per source, each exposing scarica(id) -> pandas.Series
-  data.py            series loading, fallbacks, computed series, transformations, freshness
+  data.py            series loading, fallbacks, calculated series, transformations, freshness
   charts.py          reusable Plotly charts
-  regions/           one module per tab, composing sections and charts
-  render.py          writes site/ from the Jinja2 template
-templates/           HTML template
-static/              CSS and JavaScript (tabs, charts, theme)
+  mercati/           one module per Markets page
+  economie/          one module per Economies page
+  movimenti.py       "What changed this week"
+  render.py          writes site/ from the Jinja2 templates
+templates/ static/   HTML templates, CSS and JavaScript
+tests/ tools/        unit tests and consistency checks
+docs/                the restructuring plan and log, chart map
 ```
 
 ### Adding a series
 
-1. Add a block to `config.yaml` with `id`, `fonte`, `nome`, `regione`, `categoria`, `unita`, `trasformazione` and optionally `riserva`.
-2. To show it in a chart, add it in `dashboard/regions/<region>.py`.
+1. Add a block to `config.yaml` with `id`, `fonte`, `nome`, `paese`, `categoria`, `unita`, `trasformazione` and optionally `riserva`, `colore`, `movimenti` / `gruppo_movimenti`.
+2. To show it in a chart, add it to a page module in `dashboard/mercati/` (or `dashboard/economie/`) and give the chart a `come_leggerlo` line.
 3. For a spread or ratio use `fonte: calcolata` with `componenti: [A, B]` (A − B, or `operazione: rapporto` for A / B).
 
-Before adding a series, check both its full history and its latest data point at the source.
+Before adding a series, check both its full history and its latest data point at the source. The internal names in the code are in Italian; everything shown on the site is in English.
 
 ## Running locally
 
@@ -78,6 +85,7 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 "FRED_API_KEY=your_key" | Out-File .env -Encoding ascii
+python -m unittest discover -s tests -t .
 python build.py
 python -m http.server 8000 --directory site
 ```
@@ -86,5 +94,5 @@ Then open http://localhost:8000.
 
 ## Roadmap
 
-- **More economies:** dedicated pages for other countries.
+- **Economies:** fill the pages for the US, Italy, the euro area and the UK, and a comparison view; then Japan, China and South Korea.
 - **China and Korea gaps:** add the missing series if a free, fresh source appears.

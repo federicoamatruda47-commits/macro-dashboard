@@ -1,35 +1,34 @@
 # Dashboard macro
 
 ## Obiettivo
-Dashboard macroeconomica **statica**, rigenerata ogni giorno e pubblicata su **GitHub Pages**.
+Dashboard macroeconomica **statica**, rigenerata ogni giorno e pubblicata su **GitHub Pages**, in inglese.
 L'utente è uno studente di finanza, principiante in programmazione: spiegare le scelte
 in modo semplice e proporre un piano prima di modifiche importanti.
 
-Roadmap in 3 fasi:
-1. **USA** (fatta): politica monetaria, curva Treasury, spread, tassi reali, inflazione, credito, condizioni
-2. **Eurozona** (fatta): DFR, curva AAA (proxy Bund), spread sovrani, HICP, HY in euro, EUR/USD. Fonte BCE, riserva FRED
-3. **Asia** (fatta): tab Giappone, Cina, Corea del Sud + tab **Confronto globale** (fonti: BIS, Ministero delle Finanze giapponese, Statistics Bureau of Japan via DBnomics, FRED/OCSE, Yahoo)
-
-Sezione **Azioni** (fatta) nelle tab USA ed Eurozona e benchmark ACWI con interruttore valuta locale/USD nel Confronto globale (fonte Yahoo).
-
-Tab tematica **Commodities** (fatta): tabella di performance, energia, metalli preziosi e industriali, agricoli,
-grafici commodities vs tassi USA. Fonte Yahoo Finance (future continui), riserva FRED (spot o medie mensili FMI).
-
-## Ristrutturazione in corso
-Il sito sta passando da 7 tab in una pagina sola a più pagine (Overview, Markets, Economies, Method & sources), in inglese.
-**Piano approvato e stato degli step: [docs/ristrutturazione.md](docs/ristrutturazione.md)** (leggerlo a inizio sessione e aggiornare
-la tabella "Stato" a ogni fine step). Un ramo per step (`ristrutturazione/step-N`); a fine step riepilogo e **attesa dell'ok dell'utente
-prima del merge**. Prima di dichiarare finito uno step: `python tools/inventario.py controlla` (nessun grafico o serie perso/doppio;
-mappa in `docs/mappa-grafici.yaml`). **Righe "How to read it" (`come_leggerlo`, regole dell'utente del 01/10/2026, valgono per tutto lo step 4 e oltre):** linguaggio semplice, una o due frasi,
-comprensibili a chi non è del settore; prudenti e fattuali: descrivono relazioni storiche ("historically", "has tended to"), mai previsioni o certezze,
-e citano le eccezioni importanti quando servono (es. oro e tassi reali dopo il 2022). **Alla fine di ogni pagina dello step 4 si mostra all'utente una tabella
-con tutte le righe "How to read it" di quella pagina, da rivedere prima del merge.** Le pagine stanno in `dashboard/mercati/` e `dashboard/economie/` (registro in `__init__.py`)
-e nel blocco `pagine:` di `config.yaml` (non esiste più il blocco `regioni`, né il campo `regione` delle serie).
-Quando la ristrutturazione sarà finita, le sezioni "Struttura" e "Regole" qui sotto vanno riscritte.
+## Il sito (dopo la ristrutturazione del 01/10/2026, vedi [docs/ristrutturazione.md](docs/ristrutturazione.md))
+Una pagina HTML per ogni indirizzo (`site/<id>/index.html`, link sempre relativi):
+- **Overview** (`/`): 14 numeri chiave con mini-grafico (blocco `panoramica:` di `config.yaml`), "What changed this week", schede verso le altre pagine, stato dei dati.
+- **Markets** (`markets/`, hub): `rates` (tassi di policy, curve, rendimenti, pendenza e inversioni, inflazione, tassi reali), `credit` (spread societari e sovrani),
+  `equities` (tabella di performance a gruppi con "Last", confronto borse locale/USD, VIX), `fx`, `commodities`. In ogni pagina i Paesi si confrontano nello stesso grafico.
+- **Economies** (`economies/`, hub): `usa` (per ora solo la disoccupazione), `italy`, `euro-area`, `uk`, `compare` (pagine vuote "coming soon"); Japan, China, South Korea = schede "later".
+  **Prossimo lavoro: riempire le pagine di Economies** (si fa una pagina per volta, con le stesse regole di Markets).
+- **Method & sources** (`method/`, `method/series/`): fonti, controllo di freschezza, fonti di riserva, serie calcolate, "What changed this week", limiti noti (registro delle note),
+  tabella di tutte le serie.
+- I vecchi indirizzi (`usa/`, `eurozona/`, `commodities/`...) restano come pagine che rimandano ai nuovi (`pagine.REINDIRIZZAMENTI`).
 
 ## Regole del progetto
-- **Testi del sito in INGLESE** (decisione del 01/10/2026): numeri `1,234.5` (punto decimale), date `30 Sep 2026`, scadenze `10Y`, unità `bp`/`pp`,
-  periodi `1Y 5Y 10Y Max`. **Commenti e nomi interni del codice restano in italiano.** Nel config `nome` e `unita` sono in inglese (`"% y/y"`).
+- **Testi del sito in INGLESE**: numeri `1,234.5` (punto decimale), date `30 Sep 2026`, scadenze `10Y`, unità `bp`/`pp`, periodi `1Y 5Y 10Y Max`.
+  **Commenti e nomi interni del codice restano in italiano.** Nel config `nome` e `unita` sono in inglese (`"% y/y"`).
+- **Righe "How to read it" (`come_leggerlo`)**: ogni grafico ne ha una (la build avvisa se manca). Linguaggio semplice, una o due frasi,
+  comprensibili a chi non è del settore; prudenti e fattuali: descrivono relazioni storiche ("historically", "has tended to"), mai previsioni o certezze,
+  e citano le eccezioni importanti quando servono (es. oro e tassi reali dopo il 2022). Gli esempi concreti si **verificano sui dati** prima di scriverli
+  (es. l'inversione 2022-24 senza recessione NBER; l'inflazione giapponese sopra il 2% solo fino a fine 2025). **Quando si scrive o si cambia una pagina si mostra
+  all'utente una tabella con tutte le righe della pagina, da rivedere prima del merge.**
+- **Note tecniche**: i testi lunghi stanno in `contenuti/note.yaml` (un id per nota); un grafico le richiama con `note=["id", ...]`. Sotto il grafico compaiono solo la fonte
+  con il link e i titoli delle note; i testi sono in Method > Known limits. Link alle fonti: `dashboard/fonti_url.py`.
+- **Pagine**: definite nel blocco `pagine:` di `config.yaml` (stato `attiva`, `in-arrivo`, `dopo`; `numeri_chiave`) e costruite da funzioni registrate in
+  `dashboard/mercati/__init__.py` o `dashboard/economie/__init__.py` (`costruisci(serie, config) -> list[Sezione]`). Una serie (o indice) ha **una sola definizione** in `config.yaml`;
+  i grafici la riusano per id. Gli id dei grafici non devono coincidere con gli id HTML delle sezioni (`<slug>-<sezione>`): l'elemento duplicato non si disegna.
 - Ambiente: Windows + PowerShell, **Python 3.14**, ambiente virtuale `.venv`.
 - Prima di aggiungere una libreria, verificare che esista un wheel per Python 3.14 su Windows
   (`pip install --dry-run --only-binary=:all: <pacchetto>`) e aggiornare `requirements.txt` con la versione fissata.
@@ -45,46 +44,47 @@ Quando la ristrutturazione sarà finita, le sezioni "Struttura" e "Regole" qui s
   si calcola solo se tutte le componenti vengono dalla stessa fonte principale. Se anche una sola componente è
   passata alla riserva, la serie calcolata diventa "non disponibile" con un avviso che spiega il motivo: non si
   mescolano mai spot e future, fonti diverse o unità diverse (es. Brent spot FRED − WTI future Yahoo).
-  Vale per tutte le serie calcolate (spread Brent-WTI, rapporto rame/oro, spread BTP-Bund, pendenze...). Codice: `data._calcola`.
+  Vale per tutte le serie calcolate (spread Brent-WTI, rapporto rame/oro, spread BTP-Bund, pendenze, borse in USD...). Codice: `data._calcola`.
 - Una riserva può avere un'unità diversa dalla principale (`riserva: {..., unita: ..., nota: ...}`): la serie assume
   l'unità della riserva e l'avviso lo dice. Per questo non mettere nello stesso grafico serie che potrebbero finire
   in unità diverse (es. grano e mais sono in due grafici separati).
 - **Controllo di freschezza** su tutte le serie: se l'ultimo dato supera la soglia (10 giorni giornaliere, 21 settimanali,
-  75 mensili, 120 trimestrali, contati dalla fine del periodo) il sito mostra un avviso in cima. Serve a scoprire
-  le serie "congelate" che non danno errore (vedi il caso HICP sotto).
-- Grafici: un solo asse y per grafico (niente doppio asse), **colori fissi per Paese** (blocco `colori:` di `config.yaml`, campo `paese`/`colore` di ogni serie; le variabili CSS `--c-<chiave>` le scrive
-  ogni pagina da lì; `tools/valida_palette.py --pairs all` verifica i colori anche per il daltonismo: rilanciarlo se se ne cambia uno).
-  Più serie dello stesso colore nello stesso grafico si distinguono dallo stile della linea (piena, tratteggiata, puntinata). Ogni grafico
-  deve avere `come_leggerlo` (una riga in parole semplici): la build avvisa se manca. Bande grigie = recessioni: NBER (serie `USREC`) per USA e Commodities,
-  CEPR (date scritte a mano in `config.yaml` → `recessioni:`) per l'Eurozona.
-  Per confrontare due serie con unità diverse si usa `charts.due_pannelli`: due pannelli sovrapposti con lo stesso
-  asse del tempo, ognuno col suo asse y (il pannello in basso si può invertire). `app.js` gestisce più assi e gli
-  assi invertiti (`layout.meta.assi_invertiti`).
-- Sotto i grafici con future continui Yahoo compare la nota sui cambi di scadenza (piccoli salti di prezzo).
+  75 mensili, 120 trimestrali, contati dalla fine del periodo) il sito mostra un avviso nelle pagine che usano la serie (e, in breve, nell'Overview).
+  Serve a scoprire le serie "congelate" che non danno errore (vedi il caso HICP sotto).
+  Una serie può avere `soglia_giorni: N` (sostituisce quella standard) solo con il motivo scritto nel config
+  (oggi: tasso BoK dal BIS, 45 giorni, perché il BIS pubblica la Corea con ~1 mese di ritardo).
+- **Grafici**: un solo asse y per grafico (niente doppio asse); **colori fissi per Paese** (blocco `colori:` di `config.yaml`, campo `paese`/`colore` di ogni serie; le variabili
+  CSS `--c-<chiave>` le scrive ogni pagina da lì). I colori hanno contrasto ≥ 3:1 con lo sfondo in entrambi i temi e si distinguono a coppie anche con il daltonismo:
+  `python tools/valida_palette.py --pairs all` va rilanciato se se ne cambia uno. Più serie dello stesso colore nello stesso grafico si distinguono dallo stile
+  della linea (piena, tratteggiata, puntinata...). Bande grigie = recessioni: NBER (serie `USREC`) o CEPR (date a mano in `config.yaml` → `recessioni:`) **solo nei grafici di una sola economia**;
+  nessuna banda nei confronti tra Paesi, nei cambi e in Asia. Per confrontare due serie con unità diverse si usa `charts.due_pannelli`
+  (due pannelli con lo stesso asse del tempo; quello in basso si può invertire; `app.js` gestisce `layout.meta.assi_invertiti`).
+- **Grafici "base 100"** (`charts.linee_base100`): il JavaScript ribasa a 100 all'inizio del periodo scelto, ma non prima della prima data in cui esistono tutte le serie (`base100()` in `static/app.js`).
+  **Grafici con due varianti** (`Grafico.varianti`, interruttore "Local currency / In USD"): la figura contiene le linee di entrambe, ognuna con `meta.variante`; `app.js` mostra solo quelle della variante scelta
+  e ribasa considerando solo le linee visibili. In `linee_base100` il 3° elemento facoltativo di ogni voce è `{linea, variante, benchmark}` (la stessa `linea` = stessa identità e stesso stile; benchmark = linea spessa tratteggiata nel colore "mondo").
+  Le borse in USD sono serie `calcolata` (indice / cambio "valuta per dollaro", tutto Yahoo): se un cambio passa alla riserva FRED la serie in USD è "non disponibile" con avviso.
+- **Azioni**: sempre prezzi di chiusura senza dividendi (`auto_adjust=False` in `yahoo.py`), spiegato nelle note. `Sezione.tabella_performance` / `gruppi_performance` + `etichetta_performance` = tabella con Last / 1W / 1M / YTD / 1Y.
+  Le schede "Key numbers" mostrano la variazione da inizio anno per le serie con `categoria: borsa` (o se la pagina ha `ytd: true`).
+- Sotto i grafici con future continui Yahoo c'è il link alla nota sui cambi di scadenza (compare solo se i dati sono davvero di Yahoo, non della riserva).
 - Prima di aggiungere una serie, verificarne sulla fonte **storico e ultimo dato** (non solo che esista).
-- **Soglia di freschezza personalizzata**: una serie può avere `soglia_giorni: N` in `config.yaml` (sostituisce quella standard).
-  Va usata solo con il motivo scritto nel config (oggi: tasso BoK dal BIS, 45 giorni, perché il BIS pubblica la Corea con ~1 mese di ritardo).
-- **Dati senza fonte gratuita aggiornata = righe eliminate, non serie "non disponibili"**: non si mettono in config (altrimenti
-  l'avviso resterebbe acceso per sempre) e in fondo alla pagina si scrive una nota (`regions/asia.sezione_non_inclusi`).
-- Asia: nessuna banda di recessione (nessuna fonte ufficiale e automatica). Grafici "base 100" (`charts.linee_base100`): il JavaScript
-  ribasa a 100 all'inizio del periodo scelto, ma non prima della prima data in cui esistono tutte le serie (`base100()` in `static/app.js`).
-- **Azioni**: sempre prezzi di chiusura senza dividendi (`auto_adjust=False` in `yahoo.py`), scritto in nota. Ogni indice ha **una sola
-  definizione** in `config.yaml` (regione = tab di appartenenza); i grafici delle altre tab lo riusano per id (es. `^GSPC` è in `usa`
-  e il Confronto globale lo legge da lì). Le schede "In sintesi" prendono le serie con `riepilogo: true` della loro regione; per le serie
-  con `categoria: borsa` mostrano anche la variazione da inizio anno. `Sezione.tabella_performance` + `etichetta_performance` = tabella con 1S/1M/YTD/1A.
-- **Grafici con due varianti** (`Grafico.varianti`, interruttore "Valuta locale / In USD"): la figura contiene le linee di entrambe, ognuna con
-  `meta.variante`; `app.js` mostra solo quelle della variante scelta e ribasa a 100 considerando solo le linee visibili. Le linee senza variante
-  (S&P 500, ACWI: già in USD) sono sempre visibili. In `charts.linee_base100` il 3° elemento facoltativo di ogni voce è `{slot, variante, benchmark}`
-  (benchmark = linea spessa tratteggiata, colore del testo). Le borse in USD sono serie `calcolata` (indice / cambio "valuta per dollaro", tutto Yahoo):
-  se un cambio passa alla riserva FRED la serie in USD è "non disponibile" con avviso, come da regola sulle serie calcolate.
-- Gli id dei grafici non devono coincidere con gli id delle sezioni (`<regione>-<sezione>`, es. `usa-azioni`): l'elemento duplicato non si disegna.
-- Non fare commit o push senza richiesta esplicita dell'utente.
+- **Dati senza fonte gratuita aggiornata = righe eliminate, non serie "non disponibili"**: non si mettono in config (altrimenti l'avviso resterebbe acceso per sempre)
+  e si scrive una nota nel registro (`not-included-*` in `contenuti/note.yaml`, gruppo "Country coverage").
+- **"What changed this week"** (`dashboard/movimenti.py`, funzioni pure con test): movimento a 7 giorni diviso per la deviazione standard dei movimenti a 7 giorni dei 3 anni precedenti;
+  soglia **2×** (a 1,5× circa il 13% delle serie la supera per caso in una settimana normale: la lista sarebbe sempre piena), massimo 5 righe, una serie per gruppo (`gruppo_movimenti`).
+  Entrano solo serie con `movimenti: true` (giornaliere o settimanali; mai tassi di policy né serie mensili). "×normal" non è una probabilità. La motivazione è scritta in Method.
+- **Prima di dichiarare finito un lavoro** (e prima di ogni merge): `python -m unittest discover -s tests -t .` (con `PROVE_CON_RETE=1` anche gli episodi storici), `python build.py`,
+  `python tools/inventario.py controlla` e `sito` (nessun grafico o serie perso o doppio, ognuno nella pagina promessa da `docs/mappa-grafici.yaml`), `python tools/controlla_link.py` (link interni).
+  I test girano anche nel workflow GitHub prima della build: se falliscono non si pubblica.
+- **Flusso di lavoro con l'utente**: un ramo per lavoro; a fine lavoro riepilogo e **attesa dell'ok dell'utente prima del merge su `main`** (il merge e il push pubblicano il sito).
+  Dopo ogni modifica richiesta dall'utente si **verifica che sia applicata** (nel file e nella pagina generata) prima di unire. Nessun commit o push fuori da questo flusso senza richiesta esplicita.
 
 ## Struttura
 ```
-config.yaml              regioni/tab, recessioni CEPR, elenco delle serie (id, fonte, nome, regione, categoria, unita,
-                         trasformazione, riepilogo; facoltativi: riserva, componenti, operazione, fattore, decimali)
+config.yaml              colori fissi, pagine (hub, Markets, Economies), menu, panoramica (numeri chiave dell'Overview), recessioni CEPR,
+                         elenco delle serie (id, fonte, nome, paese, categoria, unita, trasformazione; facoltativi: colore, riserva, componenti,
+                         operazione, fattore, decimali, soglia_giorni, movimenti, gruppo_movimenti, etichetta_breve)
 build.py                 comando unico: scarica → calcola → genera site/
+contenuti/note.yaml      registro delle note tecniche (testi in inglese, raggruppati; ancore method/#note-<id>)
 dashboard/
   sources/               un modulo per fonte; ognuno espone scarica(id) -> pandas.Series
     __init__.py          registro FONTI {"fred", "ecb", "yahoo", "bis", "mof", "statjp"}
@@ -93,27 +93,29 @@ dashboard/
     yahoo.py             Yahoo Finance via yfinance (non ufficiale), id = ticker (es. CL=F); riusabile per borse e cambi
     bis.py               API BIS (stats.bis.org), senza chiave; id = "DATASET/CHIAVE" (es. WS_CBPOL/D.JP tassi di policy, WS_LONG_CPI/M.JP.771 inflazione a/a)
     mof_giappone.py      CSV del Ministero delle Finanze giapponese (JGB giornalieri); id = JGB_2Y, JGB_10Y, JGB_30Y
-    statjp.py            Statistics Bureau of Japan via DBnomics (CPI core); id = "CPIm/001" (totale), "CPIm/733" (senza freschi) o "CPIm/740" (senza freschi né energia)
+    statjp.py            Statistics Bureau of Japan via DBnomics (CPI); id = "CPIm/001" (totale), "CPIm/733" (senza freschi) o "CPIm/740" (senza freschi né energia)
     errori.py            ErroreFonte
   data.py                classe Serie, lettura config, download con riserva, serie calcolate (A − B o A / B, stessa fonte),
-                         trasformazioni (livello / yoy), variazioni 1s/1m/1a (+ da inizio anno), controllo di freschezza
-  charts.py              grafici riutilizzabili: linee_storiche (recessioni, inversioni, linea di riferimento, unità sull'asse),
+                         trasformazioni (livello / yoy), variazioni 1W/1M/1Y (+ YTD), controllo di freschezza
+  charts.py              grafici riutilizzabili: linee_storiche (recessioni, inversioni, linea di riferimento, unità sull'asse), linee_base100,
                          due_pannelli, curva_rendimenti, periodi_recessione (da USREC), periodi_da_trimestri (da elenco CEPR)
-  regions/
-    __init__.py          registro REGIONI {"usa", "eurozona", "commodities", "giappone", "cina", "corea", "globale"}
-    modello.py           dataclass Sezione (anche tabella_performance) e Grafico (anche alto)
-    usa.py               composizione della pagina USA
-    eurozona.py          composizione della pagina Eurozona
-    commodities.py       composizione della tab Commodities (tematica, non geografica)
-    asia.py              attrezzi comuni a Giappone/Cina/Corea (grafici senza recessioni, nota "dati non inclusi")
-    giappone.py cina.py corea.py   pagine dei tre Paesi
-    globale.py           Confronto globale (policy, 10 anni, inflazione, valute e borse a base 100)
-  render.py              prepara i dati per il template e scrive site/
-templates/index.html.j2  pagina HTML (Jinja2)
+  modello.py             dataclass Sezione (tabella_performance, gruppi_performance) e Grafico (note, come_leggerlo, varianti, alto)
+  mercati/               una pagina per file (rates, credit, equities, fx, commodities) + registro PAGINE in __init__.py
+  economie/              le pagine di Economies (per ora usa.py) + registro PAGINE
+  movimenti.py           "What changed this week" (calcolo puro, testato)
+  sparkline.py           mini-grafici SVG delle schede dell'Overview
+  fonti_url.py           link alle pagine delle serie presso le fonti (FRED, BCE, BIS, DBnomics, Yahoo, MoF)
+  metodo.py              contenuto vivo della pagina Method (fonti, soglie, riserve, serie calcolate, gruppi dei movimenti, note raggruppate)
+  pagine.py              percorsi relativi, menu a due righe, REINDIRIZZAMENTI dei vecchi indirizzi
+  render.py              prepara i dati per i template e scrive site/ (pagine, hub, Overview, Method, Series status, reindirizzamenti)
+templates/               base, panoramica (Overview), pagina, hub, metodo, serie, reindirizzamento, _componenti (macro)
 static/style.css         stile, tema chiaro/scuro, layout per telefono
-static/app.js            tab, disegno Plotly, pulsanti 1A/5A/10A/Max, colori dal tema
+static/app.js            disegno Plotly (solo quando un grafico sta per entrare nello schermo), pulsanti 1Y/5Y/10Y/Max, varianti, colori fissi dal tema
+tests/                   test_movimenti.py (unittest, solo libreria standard)
+tools/                   inventario.py (nulla perso/doppio), controlla_link.py, valida_palette.py
+docs/                    ristrutturazione.md (piano e registro), mappa-grafici.yaml, inventario-baseline.json
 site/                    OUTPUT generato (non versionato: lo ricrea la GitHub Action)
-.github/workflows/aggiorna-dashboard.yml   build giornaliera + pubblicazione su Pages
+.github/workflows/aggiorna-dashboard.yml   test + build giornaliera + pubblicazione su Pages
 ```
 
 ### Azioni occidentali e benchmark (verificate il 01/10/2026)
@@ -130,20 +132,22 @@ site/                    OUTPUT generato (non versionato: lo ricrea la GitHub Ac
   `EURUSD=X` è l'inverso di `EUR=X`; si è scelto `EUR=X` per usare sempre il rapporto indice / cambio. FRED non offre una riserva con lo stesso verso per l'euro.
 
 ## Come si aggiunge…
-- **una serie**: un blocco in `config.yaml`; se deve apparire in un grafico, aggiungerla in `regions/<regione>.py`.
+- **una serie**: un blocco in `config.yaml` (con `paese`, e `colore` se serve); se deve apparire in un grafico, aggiungerla nella pagina in `dashboard/mercati/<pagina>.py`
+  (o `dashboard/economie/`); se deve entrare in "What changed this week": `movimenti: true` + `gruppo_movimenti`.
   Riserva automatica: `riserva: {fonte: fred, id: ..., trasformazione: ...}` (usata solo se la principale fallisce,
   segnalata con un avviso). Spread calcolato: `fonte: calcolata` + `componenti: [A, B]` → A − B nelle date comuni;
   `operazione: rapporto` → A / B, `fattore: 1000` moltiplica il risultato.
 - **una fonte** (es. BIS): `dashboard/sources/bis.py` con `scarica(id)`, registrarla in `sources/__init__.py`
   e in `NOMI_FONTI` di `data.py` (nome mostrato sul sito).
-- **una regione**: `dashboard/regions/<id>.py` con `costruisci(serie, config) -> list[Sezione]`, registrarla in
-  `regions/__init__.py`, mettere `attiva: true` in `config.yaml`.
+- **una pagina**: una voce nel blocco `pagine:` di `config.yaml` (e nel `menu:`), un file `dashboard/mercati/<id>.py` o `dashboard/economie/<id>.py` con
+  `costruisci(serie, config) -> list[Sezione]`, registrato nel `PAGINE` del suo `__init__.py`; `stato: attiva`. Poi le righe `come_leggerlo` e la tabella da far rivedere all'utente.
 
 ## Comandi
 ```powershell
 .\.venv\Scripts\Activate.ps1           # attiva l'ambiente virtuale
 pip install -r requirements.txt       # installa le librerie
-python build.py                        # genera site/index.html
+python build.py                        # genera site/
+python -m unittest discover -s tests -t .   # test (dati inventati; PROVE_CON_RETE=1 per gli episodi storici)
 python -m http.server 8000 --directory site   # anteprima su http://localhost:8000
 ```
 
@@ -184,16 +188,16 @@ python -m http.server 8000 --directory site   # anteprima su http://localhost:80
 - WTI: il 20/04/2020 il future ha chiuso a −37 $: `yahoo.py` non scarta i valori negativi.
 - I cambi di scadenza si vedono nei dati (es. il Brent di novembre scade l'ultimo giorno lavorativo di settembre).
 
-### Asia e Confronto globale (verificate il 01/10/2026)
+### Asia e confronti tra Paesi (verificate il 01/10/2026)
 - **BIS** `WS_CBPOL` (tassi di policy, giornalieri; USA/EA/JP/CN a fine settembre, **Corea ferma a fine agosto**): CN è l'**LPR a 1 anno**
   (dal 20/08/2019; prima tasso ufficiale sui prestiti), US il punto medio dell'obiettivo Fed, XM il tasso sui depositi BCE.
   `WS_LONG_CPI/M.<PAESE>.771` = inflazione annua mensile (JP e KR fino a luglio, CN/US/XM fino ad agosto). L'unità 628 sono gli indici.
 - **Giappone**: JGB giornalieri dal Ministero delle Finanze (`jgbcme_all.csv` + `jgbcme.csv` del mese; 2A dal 1974, 10A dal 1986, 30A dal 1999). Riserva FRED solo per il 10A
-  (`IRLTLT01JPM156N`, mensile). CPI: DBnomics `STATJP/CPIm/001` (totale), `/733` e `/740` (core, core-core): indici dal 1970, ultimo agosto, variazione annua con `yoy`. Pagina Giappone = tutto Statistics Bureau; il BIS (`WS_LONG_CPI/M.JP.771`, un mese indietro) resta solo nel Confronto globale, per una fonte uniforme tra Paesi.
+  (`IRLTLT01JPM156N`, mensile). CPI: DBnomics `STATJP/CPIm/001` (totale), `/733` e `/740` (core, core-core): indici dal 1970, ultimo agosto, variazione annua con `yoy`. Il grafico del Giappone usa tutto Statistics Bureau; il BIS (`WS_LONG_CPI/M.JP.771`, un mese indietro) resta solo nel confronto dell'inflazione tra Paesi, per una fonte uniforme.
   FRED/OCSE per CPI Giappone e Cina sono **fermi** (2021 e 2025): non usarli.
 - **Corea**: rendimento 10A solo mensile (FRED `IRLTLT01KRM156N`). Il 3A giornaliero esiste solo su ECOS (Bank of Korea),
   che richiede la registrazione con numero di telefono coreano: non usata. La chiave `sample` di ECOS restituisce al massimo 10 righe.
 - **Cina**: non inclusi rendimento 10A, LPR 5A e PPI (nessuna fonte gratuita aggiornata: NBS su DBnomics è ferma a 02/2026, FRED/OCSE al 2022-2023).
   **CSI 300**: su Yahoo `000300.SS` restituisce una sola candela, quindi si usa l'ETF `510300.SS` (dal 2012, prezzo in yuan) con nota sul sito.
 - Yahoo: `^N225`, `^HSI`, `^KS11`, `^GSPC`, `^STOXX50E`, `FTSEMIB.MI`, `JPY=X`, `CNY=X`, `KRW=X` (cambi "valuta per dollaro", riserve FRED `DEXJPUS`, `DEXCHUS`, `DEXKOUS`).
-- Nel Confronto globale i cambi yen/yuan/won sono capovolti (1/x) per essere letti nello stesso verso dell'euro (EUR/USD BCE).
+- Nel confronto delle valute (FX) i cambi yen/yuan/won sono capovolti (1/x) per essere letti nello stesso verso dell'euro (EUR/USD BCE).
