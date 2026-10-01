@@ -12,7 +12,7 @@ import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from plotly.offline import get_plotlyjs_version
 
-from . import annuali, metodo, movimenti
+from . import annuali, metodo, movimenti, paesi
 from .data import (FONTE_CALCOLATA, NOMI_FONTI, OPERAZIONI, PERIODI_PERFORMANCE, Serie, tipo_variazione, trova_serie,
                    variazioni)
 from .fonti_url import url_indicatore, url_serie
@@ -163,7 +163,7 @@ def _fonti_grafico(usate: list[Serie], serie: dict[str, Serie]) -> list[dict]:
     return list(gruppi.values())
 
 
-def _dati_grafico(grafico: Grafico, serie: dict[str, Serie], oggi: pd.Timestamp, note: dict) -> dict:
+def _dati_grafico(grafico: Grafico, serie: dict[str, Serie], oggi: pd.Timestamp, note: dict, economia: list[dict] | None = None) -> dict:
     usate = [trova_serie(serie, i) for i in grafico.serie_ids]
     ignote = [i for i in grafico.note if i not in note["note"]]
     if ignote:
@@ -174,6 +174,7 @@ def _dati_grafico(grafico: Grafico, serie: dict[str, Serie], oggi: pd.Timestamp,
         "note": [{"id": i, "titolo": note["note"][i]["titolo"]} for i in grafico.note if i in note["note"]],
         "fonti": _fonti_grafico(usate, serie),
         "come_leggerlo": grafico.come_leggerlo,
+        "economia": economia or [],      # link "→ Economy" ai Paesi del grafico (solo nelle pagine Markets, solo se la destinazione esiste)
         "storico": grafico.storico,
         "periodo_iniziale": grafico.periodo_iniziale,
         "largo": grafico.largo,
@@ -329,14 +330,90 @@ def _con_componenti(ids, serie: dict[str, Serie]) -> set[str]:
     return trovati
 
 
-def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict, radice_progetto: Path | None = None) -> dict:
+def _data_it(testo: str | None) -> str | None:
+    """"2026-07-13" -> "July 2026" (per le fonti annuali)."""
+    try:
+        d = datetime.fromisoformat(str(testo)[:10])
+    except (TypeError, ValueError):
+        return None
+    return f"{d:%B %Y}"
+
+
+def _pagina_paese(config: dict, serie: dict[str, Serie], note: dict, elenco: list[dict], snapshot: dict, catalogo: list[annuali.Indicatore],
+                  oggi: pd.Timestamp, radice_progetto: Path, usi_note: dict[str, list[dict]]) -> dict | None:
+    """Tutto ciò che serve al modello della pagina del Paese (economies/country.html): elenco, specifica dei grafici per static/paese.js, riquadri Markets."""
+    if not elenco:
+        return None
+    contenuto = paesi.carica_contenuto(radice_progetto / "contenuti" / "paese.yaml", catalogo, note)
+    per_id = {i.id: i for i in catalogo}
+    meta_imf, meta_bm = snapshot[annuali.FONTE_IMF], snapshot[annuali.FONTE_BM]
+    edizione = (meta_imf.meta.get("edizione") if meta_imf else None) or ""
+    pubblicazione = str(meta_imf.meta.get("pubblicato", ""))[:4] if meta_imf else ""
+    anni_imf = [int(a) for a in meta_imf.dati["anno"]] if meta_imf else []
+    wdi, wgi = (_data_it(meta_bm.meta.get(k)) if meta_bm else None for k in ("wdi_aggiornato", "wgi_aggiornato"))
+    configurati = paesi.carica_paesi(config)
+    nomi_pagina = {p["id"]: p["nome"] for p in config.get("pagine", [])}
+
+    def fonte_di(chiave: str, fonte: str) -> dict:
+        """Nome e indirizzo della fonte di un indicatore (per "Source:" sotto il grafico)."""
+        ind = per_id[chiave]
+        if ind.fonte == annuali.FONTE_IMF:
+            return {"nome": f"IMF World Economic Outlook, {edizione}" if edizione else "IMF World Economic Outlook", "url": url_indicatore("imf", ind.codice)}
+        return {"nome": "World Bank " + ("WGI" if ind.sorgente_wb == 3 else "WDI"), "url": url_indicatore("wb", ind.codice)}
+
+    sezioni = []
+    for s in contenuto["sezioni"]:
+        grafici = []
+        for g in s["grafici"]:
+            principale = g["serie"][0]
+            fonti = {"principale": fonte_di(principale, g["fonte"])}
+            if principale in paesi.SOSTITUTI_BM:                           # alternativa per i Paesi senza FMI
+                fonti["alternativa"] = fonte_di(paesi.SOSTITUTI_BM[principale], "wb")
+            ref = {"pagina": "Country explorer", "href": f"economies/country.html#chart-{g['id']}", "titolo": g["titolo"]}
+            for i in g.get("note", []):
+                usi_note.setdefault(i, []).append(ref)
+            grafici.append({**g, "fonti": fonti, "note": [{"id": i, "titolo": note["note"][i]["titolo"], "href": f"../method/#note-{i}"} for i in g.get("note", [])]})
+        sezioni.append({"id": s["id"], "titolo": s["titolo"], "descrizione": s.get("descrizione", ""), "grafici": grafici})
+    outlook = {**contenuto["outlook"], "note": [{"id": i, "titolo": note["note"][i]["titolo"], "href": f"../method/#note-{i}"} for i in contenuto["outlook"].get("note", [])]}
+    for i in contenuto["outlook"].get("note", []):
+        usi_note.setdefault(i, []).append({"pagina": "Country explorer", "href": "economies/country.html#outlook", "titolo": contenuto["outlook"]["titolo"]})
+
+    codici = {p["c"] for p in elenco}
+    mercati = []
+    for chiave, paese in configurati.items():
+        if not (paese.mercati and paese.iso3 in codici):
+            continue
+        mercati.append({
+            "iso3": paese.iso3, "nome": paese.nome,
+            "schede": [_scheda_riepilogo(trova_serie(serie, i), oggi) for i in paese.mercati],
+            "link": [{"nome": nomi_pagina[v], "href": posixpath.relpath(v, paesi.ID_HUB_ECONOMIES) + "/"} for v in paese.vai],
+        })
+    regioni: dict[str, list[dict]] = {}
+    for p in elenco:
+        regioni.setdefault(p["regione"] or "Other", []).append(p)
+    spec = {
+        "colori": {p.iso3: p.chiave for p in configurati.values() if p.iso3},
+        "numeri_chiave": contenuto["numeri_chiave"], "sezioni": sezioni, "outlook": outlook, "indicatori": paesi.metadati_indicatori(catalogo),
+        "anno_weo": int(pubblicazione) if pubblicazione.isdigit() else None, "anno_ultimo_weo": max(anni_imf) if anni_imf else None,
+        "pagina_completa": {p.iso3: paesi.pagina_completa_del_paese(p.iso3, config) for p in configurati.values()
+                            if p.iso3 and paesi.pagina_completa_del_paese(p.iso3, config)},
+        "fonte_imf": {"nome": f"IMF World Economic Outlook, {edizione}", "url": url_indicatore("imf", "NGDP_RPCH")},
+    }
+    return {"elenco": elenco, "regioni": [{"nome": r, "paesi": v} for r, v in sorted(regioni.items(), key=lambda x: (x[0] == "Other", x[0]))],
+            "n_paesi": len(elenco), "edizione": edizione, "wdi": wdi, "wgi": wgi, "mercati": mercati, "spec": spec, "sezioni": sezioni, "outlook": outlook}
+
+
+def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict, radice_progetto: Path | None = None,
+                     snapshot: dict | None = None, codici_paesi: set[str] | None = None, elenco_paesi: list[dict] | None = None) -> dict:
     """Raccoglie tutto ciò che serve al modello HTML."""
     adesso = datetime.now(FUSO_ORARIO)
     oggi = pd.Timestamp(adesso.date())
     adesso_utc = adesso.astimezone(timezone.utc)
 
     # Dati annuali per Paese (snapshot nel repository): solo controlli di stato, nessuna pagina li usa ancora
-    snapshot = {f: annuali.leggi_snapshot(radice_progetto, f) if radice_progetto else None for f in (annuali.FONTE_IMF, annuali.FONTE_BM)}
+    if snapshot is None:
+        snapshot = {f: annuali.leggi_snapshot(radice_progetto, f) if radice_progetto else None for f in (annuali.FONTE_IMF, annuali.FONTE_BM)}
+    codici_paesi = codici_paesi or set()      # i Paesi della pagina country.html: servono per non scrivere link a Paesi che non ci sono
     stati_annuali = annuali.stati_snapshot(snapshot[annuali.FONTE_IMF], snapshot[annuali.FONTE_BM], oggi.date())
     ritardo_annuali = [_voce_ritardo_annuale(s) for s in stati_annuali if s.in_ritardo]
 
@@ -344,6 +421,12 @@ def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict, radice_p
     usi_serie: dict[str, list[dict]] = {}   # id serie -> grafici e tabelle che la usano (per Series status)
     usi_note: dict[str, list[dict]] = {}    # id nota -> grafici che la richiamano (per Known limits)
     href_grafici: dict[str, str] = {}       # id grafico -> indirizzo (per i link dell'Overview)
+
+    def link_economia(g: Grafico, id_pagina: str, gruppo: str | None) -> list[dict]:
+        """I link "→ Economy" sotto un grafico Markets: un Paese per volta (regola in dashboard/paesi.py)."""
+        if gruppo != "markets":
+            return []
+        return paesi.link_economia_per_serie([trova_serie(serie, i).paese for i in g.serie_ids], config, id_pagina, codici_paesi)
 
     def costruisci_voce(voce: dict, costruttore, id_numeri_chiave: list[str], ytd: bool) -> dict:
         """Una pagina del sito con tutto ciò che serve al modello HTML."""
@@ -370,7 +453,7 @@ def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict, radice_p
                         "titolo": f"{sezione.titolo} (table)"})
                 sezioni.append({
                     "id": sezione.id, "titolo": sezione.titolo, "descrizione": sezione.descrizione,
-                    "grafici": [_dati_grafico(g, serie, oggi, note) for g in sezione.grafici],
+                    "grafici": [_dati_grafico(g, serie, oggi, note, link_economia(g, id_pagina, voce.get("gruppo"))) for g in sezione.grafici],
                     "etichetta_performance": sezione.etichetta_performance,
                     "performance": ([_riga_performance(trova_serie(serie, i), oggi) for i in sezione.tabella_performance]
                                     + [{**_riga_performance(trova_serie(serie, i), oggi), "gruppo": titolo}
@@ -406,6 +489,9 @@ def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict, radice_p
                 vicina = fratelli[indice]
                 pagina[chiave] = {"nome": vicina["nome"], "href": posixpath.relpath(vicina["id"], pagina["id"]) + "/"}
 
+    catalogo = annuali.carica_catalogo(config)
+    pagina_paese = _pagina_paese(config, serie, note, elenco_paesi or [], snapshot, catalogo, oggi, radice_progetto, usi_note) if radice_progetto else None
+
     stato = []
     for s in serie.values():
         riga = _riga_stato(s, oggi)
@@ -437,6 +523,7 @@ def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict, radice_p
             "annuali": metodo.snapshot_annuali(stati_annuali),
         },
         "indicatori_annuali": _righe_indicatori(config, snapshot, stati_annuali),
+        "pagina_paese": pagina_paese,
         "aggiornato": f"{adesso_utc.day} {adesso_utc:%b %Y}, {adesso_utc:%H:%M} UTC",
         "pagine": pagine,
         "errori": [{"id": s.id, "nome": s.nome, "errore": s.errore} for s in serie.values() if not s.ok],
@@ -473,7 +560,12 @@ def genera_sito(config: dict, serie: dict[str, Serie], radice_progetto: Path) ->
     ambiente = Environment(loader=FileSystemLoader(radice_progetto / "templates"),
                            autoescape=select_autoescape(["html", "j2"]),
                            trim_blocks=True, lstrip_blocks=True)
-    contesto = prepara_contesto(config, serie, carica_note(radice_progetto), radice_progetto)
+    # Dati annuali per Paese: file JSON per la pagina country.html (uno per Paese) e codici validi per i link
+    snapshot = {f: annuali.leggi_snapshot(radice_progetto, f) for f in (annuali.FONTE_IMF, annuali.FONTE_BM)}
+    catalogo = annuali.carica_catalogo(config)
+    elenco_paesi = paesi.elenco_paesi(snapshot[annuali.FONTE_IMF], snapshot[annuali.FONTE_BM], config)
+    dati_paesi = paesi.scrivi_dati(cartella_site, snapshot[annuali.FONTE_IMF], snapshot[annuali.FONTE_BM], catalogo, elenco_paesi)
+    contesto = prepara_contesto(config, serie, carica_note(radice_progetto), radice_progetto, snapshot, set(dati_paesi), elenco_paesi)
     # Regola del sito: ogni grafico ha una riga "How to read it" (si scrive pagina per pagina durante la ristrutturazione)
     senza = [g["id"] for r in contesto["pagine"] for s in r["sezioni"] for g in s["grafici"] if not g["come_leggerlo"]]
     if senza:
@@ -481,11 +573,11 @@ def genera_sito(config: dict, serie: dict[str, Serie], radice_progetto: Path) ->
     comune = {chiave: contesto[chiave]
               for chiave in ("aggiornato", "plotly_versione", "versione", "css_colori")}
 
-    def scrivi(id_pagina: str, modello: str, **dati) -> Path:
+    def scrivi(id_pagina: str, modello: str, nome_file: str = "index.html", **dati) -> Path:
         menu, sottomenu = costruisci_menu(config, id_pagina)
         html = ambiente.get_template(modello).render(
             **comune, **dati, id_pagina=id_pagina, radice=radice(id_pagina), menu=menu, sottomenu=sottomenu)
-        file = cartella_site / percorso(id_pagina) / "index.html"
+        file = cartella_site / percorso(id_pagina) / nome_file
         file.parent.mkdir(parents=True, exist_ok=True)
         file.write_text(html, encoding="utf-8")
         return file
@@ -495,10 +587,23 @@ def genera_sito(config: dict, serie: dict[str, Serie], radice_progetto: Path) ->
         scrivi(pagina_dati["id"], "pagina.html.j2", r=pagina_dati)
     for hub in [p for p in config.get("pagine", []) if p.get("tipo") == "hub"]:
         etichette = {"in-arrivo": "coming soon", "dopo": "later"}   # le pagine "attive" non hanno etichetta
-        figlie = [{"nome": p["nome"], "descrizione": p.get("descrizione", ""), "etichetta": etichette.get(p.get("stato")),
-                   "href": None if p.get("stato") == "dopo" else p["id"].rsplit("/", 1)[-1] + "/"}
+        def indirizzo(p: dict) -> str | None:
+            """Pagina figlia; le schede "later" con un Paese portano alla sua pagina country.html (se i dati ci sono), altrimenti sono solo schede."""
+            if p.get("stato") != "dopo":
+                return p["id"].rsplit("/", 1)[-1] + "/"
+            return paesi.destinazione(p["paese"], config, hub["id"], set(dati_paesi)) if p.get("paese") else None
+
+        figlie = [{"nome": p["nome"], "descrizione": p.get("descrizione", ""),
+                   "etichetta": None if indirizzo(p) and p.get("stato") == "dopo" else etichette.get(p.get("stato")),
+                   "href": indirizzo(p)}
                   for p in config["pagine"] if p.get("gruppo") == hub["id"]]
+        if hub["id"] == paesi.ID_HUB_ECONOMIES and dati_paesi:
+            figlie.append({"nome": "Country explorer", "etichetta": None, "href": "country.html",
+                           "descrizione": f"Annual data for {len(dati_paesi)} countries from the IMF and the World Bank: growth, prices, jobs, public finances, "
+                                          "the external position and governance. Search any country."})
         scrivi(hub["id"], "hub.html.j2", pagina=hub, figlie=figlie, **avvisi)
+    if contesto["pagina_paese"]:   # economies/country.html: una pagina sola per tutti i Paesi (il Paese è nell'indirizzo: ?c=ITA)
+        scrivi(paesi.ID_HUB_ECONOMIES, "paese.html.j2", nome_file="country.html", p=contesto["pagina_paese"], **avvisi)
     for vecchio, nuovo in REINDIRIZZAMENTI.items():
         scrivi_reindirizzamento(cartella_site, vecchio, nuovo, ambiente)
     scrivi(PAGINA_METODO, "metodo.html.j2", m=contesto["metodo"], **avvisi)

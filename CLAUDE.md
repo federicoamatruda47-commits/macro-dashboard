@@ -10,7 +10,7 @@ Una pagina HTML per ogni indirizzo (`site/<id>/index.html`, link sempre relativi
 - **Overview** (`/`): 14 numeri chiave con mini-grafico (blocco `panoramica:` di `config.yaml`), "What changed this week", schede verso le altre pagine, stato dei dati.
 - **Markets** (`markets/`, hub): `rates` (tassi di policy, curve, rendimenti, pendenza e inversioni, inflazione, tassi reali), `credit` (spread societari e sovrani),
   `equities` (tabella di performance a gruppi con "Last", confronto borse locale/USD, VIX), `fx`, `commodities`. In ogni pagina i Paesi si confrontano nello stesso grafico.
-- **Economies** (`economies/`, hub): `usa` (per ora solo la disoccupazione), `italy`, `euro-area`, `uk`, `compare` (pagine vuote "coming soon"); Japan, China, South Korea = schede "later".
+- **Economies** (`economies/`, hub): `usa` (per ora solo la disoccupazione), `italy`, `euro-area`, `uk`, `compare` (pagine vuote "coming soon", livello A); **`economies/country.html?c=ISO3`** = una pagina sola per ~218 Paesi (livello B, dati annuali FMI e Banca Mondiale, vedi sotto); le schede Japan, China, South Korea dell'hub portano lì.
   **Prossimo lavoro: riempire le pagine di Economies** (si fa una pagina per volta, con le stesse regole di Markets).
 - **Method & sources** (`method/`, `method/series/`): fonti, controllo di freschezza, fonti di riserva, serie calcolate, "What changed this week", limiti noti (registro delle note),
   tabella di tutte le serie.
@@ -75,11 +75,15 @@ Una pagina HTML per ogni indirizzo (`site/<id>/index.html`, link sempre relativi
   Entrano solo serie con `movimenti: true` (giornaliere o settimanali; mai tassi di policy né serie mensili). "×normal" non è una probabilità. La motivazione è scritta in Method.
 - **Dati annuali per Paese (FMI WEO e Banca Mondiale, step 10a)**: non sono `serie` (sarebbero ~2.000 voci): stanno in un **catalogo `indicatori:`** di `config.yaml` e in **snapshot CSV nel repository**
   (`dati/weo/`, `dati/bm/`; formato in `dashboard/annuali.py`: `dati.csv` = paese, indicatore, anno, valore, ordinato e arrotondato a 3 decimali per eccesso a metà (interi da 1 milione in su), nella scala dell'FMI (miliardi, milioni) come il file del WEO, così il diff mostra solo i valori cambiati;
-  `ultimo_effettivo.csv` = ultimo anno con dato reale per Paese e indicatore, dopo è stima/proiezione; `meta.json` = date di pubblicazione/aggiornamento della fonte, mai la data di oggi). La build giornaliera legge solo gli snapshot.
+  `ultimo_effettivo.csv` = ultimo anno con dato reale per Paese e indicatore, dopo è stima/proiezione, più `anno_fiscale` (1 se l'FMI scrive "FY2024/25": 200 coppie, 33 Paesi); `meta.json` = date di pubblicazione/aggiornamento della fonte, mai la data di oggi). La build giornaliera legge solo gli snapshot.
   **FMI: a mano** (`python tools/aggiorna_weo.py` a ogni WEO, metà aprile e metà ottobre; riserva: `python tools/importa_weo.py FILE` con il CSV scaricato da data.imf.org, verificato: dà lo stesso snapshot dell'API byte per byte): i termini d'uso chiedono richieste avviate da una persona.
   **Banca Mondiale: automatica** (`.github/workflows/aggiorna-dati-bm.yml`, mensile: esegue test e controlli e apre una pull request solo se i dati cambiano, con l'esito nella descrizione; il merge lo fa l'utente) o a mano (`python tools/aggiorna_bm.py`).
   Freschezza a semestri (WEO: 210 giorni dalla pubblicazione) e annuale (Banca Mondiale: 456 giorni); se l'ultimo commit ha più di 45 giorni il job `controlla-attivita` del workflow giornaliero apre **una sola issue** su GitHub (`tools/controlla_attivita.py`; si chiude da sola al commit successivo; NON c'è alcun avviso sul sito pubblico): GitHub spegne i workflow programmati dopo 60 giorni senza attività.
   La Banca Mondiale va chiamata senza `page=1` e con controllo di `sourceid` (con `page=1` risponde a volte con un'altra sorgente). Disoccupazione e occupazione WB sono stime modellate ILO; WGI: solo il punteggio 0-100 (`GOV_WGI_CC.SC`, con `_LB`/`_UB`), nessun rango.
+- **Pagina del Paese** (`economies/country.html`, step 10b): struttura e righe "How to read it" in `contenuti/paese.yaml` (sezioni, grafici, forma, serie del catalogo); disegno in `static/paese.js` (Plotly; selettore con ricerca, indirizzo `?c=ITA` aggiornato con `pushState`, codice non valido = messaggio con il selettore); dati in `site/economies/dati/<ISO3>.json` (un file per Paese, ~3 KB compressi) e `ultimi-valori.json` (per la mappa dell'Overview, step 14), scritti da `dashboard/paesi.py` a ogni build.
+  Regole: il Paese ha dati FMI per PIL, crescita, PIL pro capite, prezzi, finanza pubblica, conto corrente (anni dopo l'ultimo anno **effettivo** = stime/proiezioni, tratteggiati; l'anno effettivo sta accanto al valore); la Banca Mondiale solo per lavoro, popolazione, WGI e, **solo per i Paesi senza FMI**, PIL e crescita (mai le due fonti nello stesso grafico). Anni fiscali (`anno_fiscale` nello snapshot): nota sotto i grafici. Nessun interruttore di fonte.
+  **Righe "How to read it" della pagina del Paese**: esempi solo di episodi chiusi da almeno due anni (oggi: Italia 2020-21 e 2022, Grecia 2024); **mai valori correnti né classifiche**, perché il WEO di ottobre li cambierebbe (un test lo controlla: nessun anno dal 2025 in poi, nessuna classifica).
+- **Link "→ Economy" e riquadro Markets** (blocco `paesi:` di `config.yaml`, regola in `dashboard/paesi.py`): il link di un Paese porta alla sua pagina di livello A **solo se è `completa: true`** (campo del blocco `pagine`, non solo `attiva`), altrimenti a `economies/country.html?c=ISO3`; l'area euro non ha link finché `economies/euro-area` non è completa; mai link a codici che non sono nei dati né a pagine `in-arrivo`. Il "Full page →" della pagina del Paese segue la stessa regola. Quando una pagina di livello A è finita (step 11-13) si imposta `completa: true` e i link cambiano da soli. `tools/controlla_link.py` verifica anche i `?c=`.
 - **Prima di dichiarare finito un lavoro** (e prima di ogni merge): `python -m unittest discover -s tests -t .` (con `PROVE_CON_RETE=1` anche gli episodi storici), `python build.py`,
   `python tools/inventario.py controlla` e `sito` (nessun grafico o serie perso o doppio, ognuno nella pagina promessa da `docs/mappa-grafici.yaml`), `python tools/controlla_link.py` (link interni).
   I test girano anche nel workflow GitHub prima della build: se falliscono non si pubblica.
@@ -93,6 +97,7 @@ config.yaml              colori fissi, pagine (hub, Markets, Economies), menu, p
                          operazione, fattore, decimali, soglia_giorni, movimenti, gruppo_movimenti, etichetta_breve)
 build.py                 comando unico: scarica → calcola → genera site/
 contenuti/note.yaml      registro delle note tecniche (testi in inglese, raggruppati; ancore method/#note-<id>)
+contenuti/paese.yaml     contenuto della pagina del Paese: sezioni, grafici, righe "How to read it", schede, tabella IMF outlook
 dashboard/
   sources/               un modulo per fonte; ognuno espone scarica(id) -> pandas.Series (imf.py, imf_file.py e worldbank.py sono diversi: dati annuali, non in FONTI)
     __init__.py          registro FONTI {"fred", "ecb", "yahoo", "bis", "mof", "statjp"}
@@ -114,12 +119,14 @@ dashboard/
   sparkline.py           mini-grafici SVG delle schede dell'Overview
   fonti_url.py           link alle pagine delle serie presso le fonti (FRED, BCE, BIS, DBnomics, Yahoo, MoF)
   annuali.py             dati annuali per Paese: catalogo `indicatori`, snapshot (lettura/scrittura), freschezza a semestri, confronto di snapshot
+  paesi.py               pagina del Paese e link Markets <-> Economies: elenco dei Paesi, dati per Paese, regola della destinazione dei link
   attivita.py            data dell'ultimo commit e soglia dei 45 giorni (la usa tools/controlla_attivita.py, che apre la issue)
   metodo.py              contenuto vivo della pagina Method (fonti, soglie, riserve, serie calcolate, gruppi dei movimenti, note raggruppate)
   pagine.py              percorsi relativi, menu a due righe, REINDIRIZZAMENTI dei vecchi indirizzi
   render.py              prepara i dati per i template e scrive site/ (pagine, hub, Overview, Method, Series status, reindirizzamenti)
-templates/               base, panoramica (Overview), pagina, hub, metodo, serie, reindirizzamento, _componenti (macro)
+templates/               base, panoramica (Overview), pagina, paese (pagina del Paese), hub, metodo, serie, reindirizzamento, _componenti (macro)
 static/style.css         stile, tema chiaro/scuro, layout per telefono
+static/paese.js          pagina del Paese (selettore, grafici annuali, tabella IMF outlook)
 static/app.js            disegno Plotly (solo quando un grafico sta per entrare nello schermo), pulsanti 1Y/5Y/10Y/Max, varianti, colori fissi dal tema
 tests/                   test_movimenti.py (unittest, solo libreria standard)
 tools/                   inventario.py (nulla perso/doppio), controlla_link.py, valida_palette.py,

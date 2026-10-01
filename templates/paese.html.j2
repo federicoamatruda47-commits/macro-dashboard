@@ -1,0 +1,142 @@
+{% extends "base.html.j2" %}
+{% from "_componenti.html.j2" import avvisi %}
+{# =====================================================================
+   Pagina del Paese (economies/country.html?c=ISO3): un solo file per tutti i Paesi. Il Paese si sceglie con il selettore (o dall'indirizzo) e i dati
+   si leggono da economies/dati/<ISO3>.json (static/paese.js). La struttura (sezioni, grafici, righe "How to read it") è già qui, nascosta finché
+   non arrivano i dati; l'elenco dei Paesi è HTML normale, quindi senza JavaScript resta un elenco di link.
+   ===================================================================== #}
+
+{% block titolo %}Country explorer · Macro dashboard{% endblock %}
+{% block descrizione %}Annual economic data for {{ p.n_paesi }} countries from the IMF and the World Bank: growth, prices, jobs, public finances, the external position and governance.{% endblock %}
+
+{% block contenuto %}
+<section class="intestazione-pagina">
+  <h1 id="paese-titolo">Country explorer</h1>
+  <p class="descrizione" id="paese-riga">Annual data for {{ p.n_paesi }} countries and territories: growth, prices, jobs, public finances, the external position and governance.
+    Choose a country below. Figures after each country's latest actual year are IMF estimates and projections.</p>
+  <p class="aggiornamento">{% if p.edizione %}<a href="{{ p.spec.fonte_imf.url }}" target="_blank" rel="noopener">IMF World Economic Outlook, {{ p.edizione }}</a> (the next edition comes out in {{ 'October' if p.edizione.startswith('April') else 'April' }}){% endif %}
+    {% if p.wdi %}· World Bank: development indicators {{ p.wdi }}{% endif %}{% if p.wgi %}, governance indicators {{ p.wgi }}{% endif %}</p>
+</section>
+
+{{ avvisi(errori, in_ritardo, riserve, totale_serie, "", radice) }}
+
+{# ---- Selettore: campo di ricerca con elenco (solo con JavaScript; senza, resta l'elenco di link più sotto) ---- #}
+<section class="selettore-paese blocco" id="selettore" aria-label="Choose a country" hidden>
+  <label class="selettore-etichetta" for="cerca-paese">Country</label>
+  <div class="selettore-campo">
+    <input id="cerca-paese" type="search" role="combobox" aria-expanded="false" aria-controls="risultati-paese" aria-autocomplete="list"
+           autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search a country or a code (ITA, JPN…)">
+    <ul id="risultati-paese" class="selettore-risultati" role="listbox" aria-label="Matching countries" hidden></ul>
+  </div>
+  <div class="selettore-vicini">
+    <button type="button" id="paese-prec" class="pulsante-paese">‹ Previous</button>
+    <button type="button" id="paese-succ" class="pulsante-paese">Next ›</button>
+  </div>
+  <p class="selettore-stato" id="paese-annuncio" role="status" aria-live="polite"></p>
+</section>
+
+{# ---- Stato iniziale, codice non valido o JavaScript assente: tutti i Paesi come link, per regione ---- #}
+<section class="blocco" id="paese-elenco" aria-labelledby="titolo-elenco">
+  <div class="avviso avviso-errore" id="paese-errore" role="alert" hidden></div>
+  <noscript><div class="avviso avviso-ritardo">The charts need JavaScript. You can still open a country below, but its page will stay empty without it.</div></noscript>
+  <h2 id="titolo-elenco">All countries</h2>
+  <p class="descrizione">{{ p.n_paesi }} countries and territories. “IMF” means the country is in the IMF World Economic Outlook (with projections); countries only in the
+    World Bank data show fewer indicators. <a href="{{ radice }}method/#note-country-coverage-annual">About the coverage</a>.</p>
+  {% for r in p.regioni %}
+  <h3 class="titolo-gruppo">{{ r.nome }}</h3>
+  <ul class="elenco-paesi">
+    {% for c in r.paesi %}<li><a href="country.html?c={{ c.c }}" data-c="{{ c.c }}" data-nome="{{ c.nome }}" data-regione="{{ c.regione }}">{{ c.nome }}</a>{% if not c.fmi %} <span class="etichetta-fonte" title="World Bank data only">WB only</span>{% endif %}</li>{% endfor %}
+  </ul>
+  {% endfor %}
+</section>
+
+{# ---- Contenuto del Paese scelto (nascosto finché non arrivano i dati) ---- #}
+<div id="paese-contenuto" hidden>
+  <p class="paese-info" id="paese-info"></p>
+  <ul class="chips" aria-label="On this page" id="paese-chips">
+    <li><a href="#paese-numeri">Key numbers</a></li>
+    {% for s in p.sezioni %}<li><a href="#sez-{{ s.id }}" data-sezione="{{ s.id }}">{{ s.titolo }}</a></li>{% endfor %}
+    <li><a href="#outlook" data-sezione="outlook">{{ p.outlook.titolo }}</a></li>
+  </ul>
+
+  <section class="blocco" id="paese-numeri" aria-labelledby="titolo-numeri">
+    <h2 id="titolo-numeri">Key numbers</h2>
+    <p class="descrizione">The latest <em>actual</em> year of each indicator is written next to the value: it is not the same for every indicator.</p>
+    <div class="griglia-kpi" id="paese-kpi"></div>
+  </section>
+
+  {# Riquadro Markets: uno per ogni Paese che ha serie di mercato; l'unico che si vede è quello del Paese scelto #}
+  {% for m in p.mercati %}
+  <section class="blocco riquadro-markets" data-c="{{ m.iso3 }}" hidden aria-labelledby="mk-{{ m.iso3 }}">
+    <h2 id="mk-{{ m.iso3 }}">Markets in {{ m.nome }}</h2>
+    <p class="descrizione">Market prices for this economy; the Markets pages compare them across countries.
+      {% for l in m.link %}<a href="{{ l.href }}">→ {{ l.nome }}</a>{{ " · " if not loop.last }}{% endfor %}</p>
+    <div class="griglia-kpi">
+      {% for k in m.schede %}
+      <article class="kpi{% if not k.ok %} kpi-errore{% endif %}">
+        <h3>{{ k.nome }}</h3>
+        {% if k.ok %}
+        <p class="kpi-valore">{{ k.valore }}{% if k.unita %} <span class="kpi-unita">{{ k.unita }}</span>{% endif %}</p>
+        <p class="kpi-data{% if k.ritardo %} in-ritardo{% endif %}">as of {{ k.data }}{% if k.ritardo %} · stale{% endif %}</p>
+        <dl class="kpi-variazioni{% if k.variazioni|length == 4 %} kpi-variazioni-4{% endif %}">
+          {% for v in k.variazioni %}<div><dt>{{ v.etichetta }}</dt><dd>{{ v.testo }}</dd></div>{% endfor %}
+        </dl>
+        {% else %}
+        <p class="kpi-valore">n/a</p><p class="kpi-data">⚠ {{ k.errore }}</p>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+
+  {% for s in p.sezioni %}
+  <section class="blocco" id="sez-{{ s.id }}" data-sezione="{{ s.id }}" aria-labelledby="titolo-sez-{{ s.id }}">
+    <h2 id="titolo-sez-{{ s.id }}">{{ s.titolo }}</h2>
+    {% if s.descrizione %}<p class="descrizione">{{ s.descrizione }}</p>{% endif %}
+    <div class="griglia-grafici">
+      {% for g in s.grafici %}
+      <article class="scheda-grafico" id="chart-{{ g.id }}" data-grafico="{{ g.id }}">
+        <header class="scheda-testa">
+          <h3>{{ g.titolo }}</h3>
+          <div class="periodi-paese" role="group" aria-label="Chart period">
+            {% for per in ["10Y", "25Y", "Max"] %}<button type="button" data-periodo="{{ per }}" aria-pressed="{{ 'true' if per == '25Y' else 'false' }}">{{ per }}</button>{% endfor %}
+          </div>
+        </header>
+        <div class="note-grafico" data-note-dinamiche hidden></div>
+        <div class="grafico-paese" role="img" aria-label="Chart: {{ g.titolo }}"></div>
+        <footer class="scheda-piede">
+          <p class="come-leggerlo"><strong>How to read it:</strong> {{ g.come_leggerlo|trim }}</p>
+          <p class="fonti">Source: <a data-fonte href="{{ g.fonti.principale.url }}" target="_blank" rel="noopener">{{ g.fonti.principale.nome }} ↗</a>
+            · <span data-ultimo></span>
+            {% if g.note %}· Notes: {% for n in g.note %}<a href="{{ n.href }}">{{ n.titolo }}</a>{{ ", " if not loop.last }}{% endfor %}{% endif %}</p>
+        </footer>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+
+  <section class="blocco" id="outlook" data-sezione="outlook" aria-labelledby="titolo-outlook">
+    <h2 id="titolo-outlook">{{ p.outlook.titolo }}</h2>
+    <div class="note-grafico" id="outlook-nota" hidden></div>
+    <div class="tabella-scorrevole" id="outlook-tabella"></div>
+    <div class="scheda-piede">
+      <p class="come-leggerlo"><strong>How to read it:</strong> {{ p.outlook.come_leggerlo|trim }}</p>
+      <p class="fonti">Source: <a href="{{ p.spec.fonte_imf.url }}" target="_blank" rel="noopener">{{ p.spec.fonte_imf.nome }} ↗</a>
+        {% if p.outlook.note %}· Notes: {% for n in p.outlook.note %}<a href="{{ n.href }}">{{ n.titolo }}</a>{{ ", " if not loop.last }}{% endfor %}{% endif %}</p>
+    </div>
+  </section>
+
+  <p class="descrizione" id="paese-mancanti" hidden></p>
+  <p class="descrizione"><a href="#selettore" id="cambia-paese">↑ Change country</a> · Every series on this site, with its source and status:
+    <a href="{{ radice }}method/series/">Series status</a>. Sources, rules and known limits: <a href="{{ radice }}method/">Sources &amp; method</a>.</p>
+</div>
+
+<script type="application/json" id="spec-paese">{{ p.spec|tojson }}</script>
+{% endblock %}
+
+{% block script_grafici %}
+<script src="https://cdn.plot.ly/plotly-basic-{{ plotly_versione }}.min.js" charset="utf-8"></script>
+<script src="{{ radice }}paese.js?v={{ versione }}"></script>
+{% endblock %}

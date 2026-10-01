@@ -140,6 +140,10 @@
       {% for n in g.note %}<a href="{{ radice }}method/#note-{{ n.id }}">{{ n.titolo }}</a>{{ ", " if not loop.last }}{% endfor %}{% endif %}
     </p>
     {% endif %}
+    {% if g.economia %}
+    <p class="fonti link-economia">{{ 'Economy' if g.economia|length == 1 else 'Economies' }}:
+      {% for e in g.economia %}<a href="{{ e.href }}">→ {{ e.nome }}</a>{{ " · " if not loop.last }}{% endfor %}</p>
+    {% endif %}
     {% if g.ultimi_dati %}
     <p class="ultimi">Latest data:
       {% for u in g.ultimi_dati %}<span{% if u.ritardo %} class="in-ritardo"{% endif %}>{{ u.nome }} {{ u.data }}</span>{{ " · " if not loop.last }}{% endfor %}</p>

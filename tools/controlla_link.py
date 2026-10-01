@@ -1,5 +1,5 @@
 """Controllo dei link INTERNI del sito generato (cartella site/): ogni link relativo deve portare a una pagina che esiste
-e, se ha un frammento (#chart-..., #note-...), a un elemento con quell'id.
+e, se ha un frammento (#chart-..., #note-...), a un elemento con quell'id; un link a economies/country.html?c=ISO3 deve avere il file di dati del Paese.
 
 Uso (dopo `python build.py`):
     python tools/controlla_link.py
@@ -10,13 +10,13 @@ Non controlla i link esterni (fonti): richiederebbero la rete e cambiano spesso.
 import re
 import sys
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 SITO = Path(__file__).resolve().parent.parent / "site"
 
 
 def main() -> int:
-    pagine = {p: p.read_text(encoding="utf-8") for p in SITO.rglob("index.html")}
+    pagine = {p: p.read_text(encoding="utf-8") for p in SITO.rglob("*.html")}      # anche economies/country.html
     id_per_pagina = {p: set(re.findall(r'\sid="([^"]+)"', h)) for p, h in pagine.items()}
     rotti, controllati = [], 0
     for pagina, html in pagine.items():
@@ -31,6 +31,11 @@ def main() -> int:
             if not destinazione.exists():
                 rotti.append(f"{pagina.relative_to(SITO)}: {href} -> pagina inesistente")
                 continue
+            # Pagina del Paese: country.html?c=ISO3 deve avere il suo file di dati (un codice sbagliato mostrerebbe solo un messaggio d'errore)
+            if destinazione.name == "country.html" and url.query:
+                codice = parse_qs(url.query).get("c", [""])[0]
+                if not (destinazione.parent / "dati" / f"{codice}.json").exists():
+                    rotti.append(f"{pagina.relative_to(SITO)}: {href} -> il Paese {codice!r} non ha un file di dati")
             if url.fragment and destinazione in id_per_pagina and url.fragment not in id_per_pagina[destinazione]:
                 rotti.append(f"{pagina.relative_to(SITO)}: {href} -> manca l'elemento #{url.fragment}")
     print(f"{controllati} link interni controllati in {len(pagine)} pagine")
