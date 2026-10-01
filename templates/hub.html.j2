@@ -1,5 +1,5 @@
 {% extends "base.html.j2" %}
-{% from "_componenti.html.j2" import avvisi %}
+{% from "_componenti.html.j2" import avvisi, ricerca_paesi %}
 {# Pagina indice di una sezione (es. Markets): una scheda per ogni pagina figlia. Le pagine non ancora pronte sono segnate "coming soon". #}
 
 {% block titolo %}{{ pagina.nome }} · Macro dashboard{% endblock %}
@@ -14,6 +14,9 @@
 
 {{ avvisi(errori, in_ritardo, riserve, totale_serie, "", radice) }}
 
+{% if riquadri %}
+{{ ricerca_paesi(riquadri) }}
+{% else %}
 <section class="blocco" aria-labelledby="pagine-hub">
   <h2 id="pagine-hub">Pages</h2>
   <div class="griglia-kpi griglia-pagine">
@@ -32,4 +35,7 @@
     {% endfor %}
   </div>
 </section>
+{% endif %}
 {% endblock %}
+
+{% block script_grafici %}{% if riquadri %}<script src="{{ radice }}elenco-paesi.js?v={{ versione }}"></script>{% endif %}{% endblock %}

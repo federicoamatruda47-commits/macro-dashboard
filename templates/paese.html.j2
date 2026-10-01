@@ -1,5 +1,5 @@
 {% extends "base.html.j2" %}
-{% from "_componenti.html.j2" import avvisi %}
+{% from "_componenti.html.j2" import avvisi, ricerca_paesi %}
 {# =====================================================================
    Pagina del Paese (economies/country.html?c=ISO3): un solo file per tutti i Paesi. Il Paese si sceglie con il selettore (o dall'indirizzo) e i dati
    si leggono da economies/dati/<ISO3>.json (static/paese.js). La struttura (sezioni, grafici, righe "How to read it") è già qui, nascosta finché
@@ -36,18 +36,10 @@
 </section>
 
 {# ---- Stato iniziale, codice non valido o JavaScript assente: tutti i Paesi come link, per regione ---- #}
-<section class="blocco" id="paese-elenco" aria-labelledby="titolo-elenco">
+<section class="blocco" id="paese-elenco">
   <div class="avviso avviso-errore" id="paese-errore" role="alert" hidden></div>
   <noscript><div class="avviso avviso-ritardo">The charts need JavaScript. You can still open a country below, but its page will stay empty without it.</div></noscript>
-  <h2 id="titolo-elenco">All countries</h2>
-  <p class="descrizione">{{ p.n_paesi }} countries and territories. “IMF” means the country is in the IMF World Economic Outlook (with projections); countries only in the
-    World Bank data show fewer indicators. <a href="{{ radice }}method/#note-country-coverage-annual">About the coverage</a>.</p>
-  {% for r in p.regioni %}
-  <h3 class="titolo-gruppo">{{ r.nome }}</h3>
-  <ul class="elenco-paesi">
-    {% for c in r.paesi %}<li><a href="country.html?c={{ c.c }}" data-c="{{ c.c }}" data-nome="{{ c.nome }}" data-nome-fonte="{{ c.nome_fonte }}" data-regione="{{ c.regione }}">{{ c.nome }}</a>{% if not c.fmi %} <span class="etichetta-fonte" title="World Bank data only">WB only</span>{% endif %}</li>{% endfor %}
-  </ul>
-  {% endfor %}
+  {{ ricerca_paesi(riquadri) }}
 </section>
 
 {# ---- Contenuto del Paese scelto (nascosto finché non arrivano i dati) ---- #}
@@ -143,5 +135,6 @@
 
 {% block script_grafici %}
 <script src="https://cdn.plot.ly/plotly-basic-{{ plotly_versione }}.min.js" charset="utf-8"></script>
+<script src="{{ radice }}elenco-paesi.js?v={{ versione }}"></script>
 <script src="{{ radice }}paese.js?v={{ versione }}"></script>
 {% endblock %}

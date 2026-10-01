@@ -13,3 +13,6 @@ __pycache__/
 
 # Il sito generato viene ricostruito ogni giorno dalla GitHub Action
 site/
+
+# Screenshot di verifica dei vari step (si guardano in locale, non si versionano)
+docs/schermate-*/

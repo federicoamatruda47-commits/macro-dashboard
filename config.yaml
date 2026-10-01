@@ -113,7 +113,7 @@ pagine:
     nome: Economies
     titolo_menu: Overview
     tipo: hub
-    descrizione: "One page per economy: growth, jobs, prices, public finances and policy. For now this is the structure; the content will follow."
+    descrizione: "One page per economy: growth, jobs, prices, public finances and policy. Search any of the countries below, or start from the featured ones."
   - id: economies/usa
     nome: United States
     gruppo: economies
@@ -275,6 +275,46 @@ nomi_paesi:
   SYR: {nome: Syria, nome_fonte: Syrian Arab Republic}
   VEN: {nome: Venezuela, nome_fonte: "Venezuela, RB"}
   YEM: {nome: Yemen, nome_fonte: "Yemen, Rep."}
+
+# Nomi alternativi per la RICERCA (non si mostrano mai): codice ISO3 -> altri modi in cui si scrive il Paese. La ricerca ignora accenti e maiuscole
+# (Curaçao = Curacao), quindi qui non servono le varianti con gli accenti. Un test controlla che ognuno trovi il suo Paese.
+# Per Cisgiordania e Gaza/Taiwan il nome mostrato resta quello della fonte: "Palestine" serve solo a chi lo cerca.
+nomi_alternativi:
+  ARE: [UAE, Emirates]
+  BHS: [Bahamas]
+  BRN: [Brunei]
+  CIV: [Ivory Coast, Côte d'Ivoire]
+  COD: [DR Congo, DRC, Congo-Kinshasa]
+  COG: [Congo-Brazzaville]
+  CPV: [Cape Verde]
+  CUW: [Curaçao]
+  CZE: [Czech Republic]
+  GBR: [UK, Great Britain, Britain, England]
+  GMB: [Gambia]
+  KGZ: [Kyrgyzstan]
+  KNA: [Saint Kitts and Nevis]
+  LAO: [Laos]
+  LCA: [Saint Lucia]
+  MKD: [Macedonia]
+  MMR: [Burma]
+  NLD: [Holland, The Netherlands]
+  PSE: [Palestine, Gaza, West Bank]
+  STP: [São Tomé and Príncipe]
+  SWZ: [Swaziland]
+  TLS: [East Timor]
+  TUR: [Turkey, Türkiye]
+  USA: [US, America, United States of America]
+  VCT: [Saint Vincent and the Grenadines]
+  VNM: [Vietnam]
+
+# Hub Economies (templates/_componenti.html.j2, macro ricerca_paesi): "Featured" (chiavi del blocco `paesi:` e pagine dell'hub, in questo ordine),
+# poi tutti i Paesi per regione, nell'ordine geografico qui sotto (un test controlla che ogni regione dei dati sia elencata).
+# La scheda "Euro area" (senza codice ISO3 e senza pagina completa) resta SOLO fino allo step 12 (pagina economies/euro-area): se lo step slitta, si toglie da in_evidenza.
+# La scheda "Compare" (pagine_in_evidenza) segue la stessa regola: resta SOLO fino allo step 13 (pagina economies/compare); se lo step slitta, si toglie da pagine_in_evidenza.
+hub_economies:
+  in_evidenza: [us, ea, it, uk, cn, jp]
+  pagine_in_evidenza: [economies/compare]
+  regioni: [North America, Latin America & Caribbean, Europe & Central Asia, "Middle East, North Africa, Afghanistan & Pakistan", Sub-Saharan Africa, South Asia, East Asia & Pacific]
 
 # Paesi che la Banca Mondiale non ha nel suo elenco: nome (come lo scrive l'FMI) e regione (nella pagina del Paese compaiono solo i dati FMI).
 paesi_aggiuntivi:
