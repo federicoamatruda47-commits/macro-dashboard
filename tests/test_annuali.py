@@ -432,3 +432,60 @@ class TestDescrizionePr(unittest.TestCase):
         testo = m.descrizione(esiti, "")
         self.assertIn("**FAILED**", testo)
         self.assertIn("draft", testo)
+
+
+class TestControllaAttivita(unittest.TestCase):
+    """tools/controlla_attivita.py: una sola issue, mai duplicata; si chiude quando torna un commit (con `gh` finto)."""
+
+    @staticmethod
+    def modulo():
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("controlla_attivita", RADICE / "tools" / "controlla_attivita.py")
+        m = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(m)
+        return m
+
+    def lancia(self, m, giorni, aperte):
+        """Esegue main() con `gh` e la data dell'ultimo commit finti: ritorna le chiamate a `gh` che modificano qualcosa."""
+        chiamate = []
+
+        def finto_gh(*argomenti):
+            if argomenti[:2] == ("issue", "list"):
+                return __import__("json").dumps([{"number": n, "title": t} for n, t in aperte])
+            chiamate.append(argomenti)
+            return "https://github.com/x/y/issues/9"
+
+        oggi = date(2026, 10, 1)
+        stato = attivita.valuta(date.fromordinal(oggi.toordinal() - giorni), oggi, 45)
+        with mock.patch.object(m, "gh", side_effect=finto_gh), mock.patch.object(m.attivita, "valuta", return_value=stato), \
+                mock.patch.object(m.attivita, "data_ultimo_commit", return_value=stato.ultimo_commit), mock.patch("sys.argv", ["x"]):
+            m.main()
+        return chiamate
+
+    def test_apre_una_sola_issue_oltre_45_giorni(self):
+        m = self.modulo()
+        chiamate = self.lancia(m, 46, [])
+        self.assertEqual([c[:2] for c in chiamate], [("issue", "create")])
+        self.assertEqual(chiamate[0][3], m.TITOLO)
+        self.assertIn("46 giorni fa", chiamate[0][5])
+
+    def test_non_ne_apre_una_seconda(self):
+        m = self.modulo()
+        self.assertEqual(self.lancia(m, 50, [(3, m.TITOLO), (7, "Un'altra issue")]), [])
+
+    def test_sotto_soglia_non_apre_nulla(self):
+        m = self.modulo()
+        self.assertEqual(self.lancia(m, 45, []), [])
+        self.assertEqual(self.lancia(m, 3, [(4, "Un'altra issue")]), [])
+
+    def test_chiude_la_issue_quando_torna_un_commit(self):
+        m = self.modulo()
+        chiamate = self.lancia(m, 2, [(5, m.TITOLO)])
+        self.assertEqual([c[:3] for c in chiamate], [("issue", "close", "5")])
+
+    def test_issue_aperta_riconosce_il_titolo_esatto(self):
+        m = self.modulo()
+        elenco = '[{"number": 8, "title": "Nessun commit da più di 45 giorni"}, {"number": 6, "title": "%s"}, {"number": 9, "title": "%s"}]' % (m.TITOLO, m.TITOLO)
+        with mock.patch.object(m, "gh", return_value=elenco):
+            self.assertEqual(m.issue_aperta(m.TITOLO), 6)          # la più vecchia, se per sbaglio ce ne sono due
+            self.assertIsNone(m.issue_aperta("[PROVA] " + m.TITOLO))

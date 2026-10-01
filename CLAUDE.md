@@ -74,11 +74,11 @@ Una pagina HTML per ogni indirizzo (`site/<id>/index.html`, link sempre relativi
   soglia **2×** (a 1,5× circa il 13% delle serie la supera per caso in una settimana normale: la lista sarebbe sempre piena), massimo 5 righe, una serie per gruppo (`gruppo_movimenti`).
   Entrano solo serie con `movimenti: true` (giornaliere o settimanali; mai tassi di policy né serie mensili). "×normal" non è una probabilità. La motivazione è scritta in Method.
 - **Dati annuali per Paese (FMI WEO e Banca Mondiale, step 10a)**: non sono `serie` (sarebbero ~2.000 voci): stanno in un **catalogo `indicatori:`** di `config.yaml` e in **snapshot CSV nel repository**
-  (`dati/weo/`, `dati/bm/`; formato in `dashboard/annuali.py`: `dati.csv` = paese, indicatore, anno, valore, ordinato e arrotondato a 3 decimali, così il diff mostra solo i valori cambiati;
+  (`dati/weo/`, `dati/bm/`; formato in `dashboard/annuali.py`: `dati.csv` = paese, indicatore, anno, valore, ordinato e arrotondato a 3 decimali per eccesso a metà (interi da 1 milione in su), nella scala dell'FMI (miliardi, milioni) come il file del WEO, così il diff mostra solo i valori cambiati;
   `ultimo_effettivo.csv` = ultimo anno con dato reale per Paese e indicatore, dopo è stima/proiezione; `meta.json` = date di pubblicazione/aggiornamento della fonte, mai la data di oggi). La build giornaliera legge solo gli snapshot.
-  **FMI: a mano** (`python tools/aggiorna_weo.py` a ogni WEO, metà aprile e metà ottobre; riserva: `python tools/importa_weo.py FILE --pubblicato AAAA-MM-GG` con il file scaricato dal sito): i termini d'uso chiedono richieste avviate da una persona.
+  **FMI: a mano** (`python tools/aggiorna_weo.py` a ogni WEO, metà aprile e metà ottobre; riserva: `python tools/importa_weo.py FILE` con il CSV scaricato da data.imf.org, verificato: dà lo stesso snapshot dell'API byte per byte): i termini d'uso chiedono richieste avviate da una persona.
   **Banca Mondiale: automatica** (`.github/workflows/aggiorna-dati-bm.yml`, mensile: esegue test e controlli e apre una pull request solo se i dati cambiano, con l'esito nella descrizione; il merge lo fa l'utente) o a mano (`python tools/aggiorna_bm.py`).
-  Freschezza a semestri (WEO: 210 giorni dalla pubblicazione) e annuale (Banca Mondiale: 456 giorni); avviso nelle pagine se l'ultimo commit ha più di 45 giorni (GitHub spegne i workflow programmati dopo 60 giorni senza attività).
+  Freschezza a semestri (WEO: 210 giorni dalla pubblicazione) e annuale (Banca Mondiale: 456 giorni); se l'ultimo commit ha più di 45 giorni il job `controlla-attivita` del workflow giornaliero apre **una sola issue** su GitHub (`tools/controlla_attivita.py`; si chiude da sola al commit successivo; NON c'è alcun avviso sul sito pubblico): GitHub spegne i workflow programmati dopo 60 giorni senza attività.
   La Banca Mondiale va chiamata senza `page=1` e con controllo di `sourceid` (con `page=1` risponde a volte con un'altra sorgente). Disoccupazione e occupazione WB sono stime modellate ILO; WGI: solo il punteggio 0-100 (`GOV_WGI_CC.SC`, con `_LB`/`_UB`), nessun rango.
 - **Prima di dichiarare finito un lavoro** (e prima di ogni merge): `python -m unittest discover -s tests -t .` (con `PROVE_CON_RETE=1` anche gli episodi storici), `python build.py`,
   `python tools/inventario.py controlla` e `sito` (nessun grafico o serie perso o doppio, ognuno nella pagina promessa da `docs/mappa-grafici.yaml`), `python tools/controlla_link.py` (link interni).
@@ -114,7 +114,7 @@ dashboard/
   sparkline.py           mini-grafici SVG delle schede dell'Overview
   fonti_url.py           link alle pagine delle serie presso le fonti (FRED, BCE, BIS, DBnomics, Yahoo, MoF)
   annuali.py             dati annuali per Paese: catalogo `indicatori`, snapshot (lettura/scrittura), freschezza a semestri, confronto di snapshot
-  attivita.py            data dell'ultimo commit e avviso oltre 45 giorni
+  attivita.py            data dell'ultimo commit e soglia dei 45 giorni (la usa tools/controlla_attivita.py, che apre la issue)
   metodo.py              contenuto vivo della pagina Method (fonti, soglie, riserve, serie calcolate, gruppi dei movimenti, note raggruppate)
   pagine.py              percorsi relativi, menu a due righe, REINDIRIZZAMENTI dei vecchi indirizzi
   render.py              prepara i dati per i template e scrive site/ (pagine, hub, Overview, Method, Series status, reindirizzamenti)
@@ -123,7 +123,7 @@ static/style.css         stile, tema chiaro/scuro, layout per telefono
 static/app.js            disegno Plotly (solo quando un grafico sta per entrare nello schermo), pulsanti 1Y/5Y/10Y/Max, varianti, colori fissi dal tema
 tests/                   test_movimenti.py (unittest, solo libreria standard)
 tools/                   inventario.py (nulla perso/doppio), controlla_link.py, valida_palette.py,
-                         aggiorna_weo.py / importa_weo.py / aggiorna_bm.py (snapshot annuali), riepilogo_snapshot.py e descrizione_pr.py (testo della pull request dei dati)
+                         aggiorna_weo.py / importa_weo.py / aggiorna_bm.py (snapshot annuali), riepilogo_snapshot.py e descrizione_pr.py (testo della pull request dei dati), controlla_attivita.py (issue dei 45 giorni)
 dati/                    snapshot CSV dei dati annuali (weo/, bm/), versionati: si aggiornano solo con gli strumenti sopra
 docs/                    ristrutturazione.md (piano e registro), mappa-grafici.yaml, inventario-baseline.json
 site/                    OUTPUT generato (non versionato: lo ricrea la GitHub Action)
