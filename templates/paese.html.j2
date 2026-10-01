@@ -102,6 +102,11 @@
           <div class="periodi-paese" role="group" aria-label="Chart period">
             {% for per in ["10Y", "25Y", "Max"] %}<button type="button" data-periodo="{{ per }}" aria-pressed="{{ 'true' if per == '25Y' else 'false' }}">{{ per }}</button>{% endfor %}
           </div>
+          {% if g.scala_log %}
+          <div class="scala-paese" role="group" aria-label="Chart scale">
+            <button type="button" data-scala="linear" aria-pressed="true">Linear</button><button type="button" data-scala="log" aria-pressed="false">Log</button>
+          </div>
+          {% endif %}
         </header>
         <div class="note-grafico" data-note-dinamiche hidden></div>
         <div class="grafico-paese" role="img" aria-label="Chart: {{ g.titolo }}"></div>

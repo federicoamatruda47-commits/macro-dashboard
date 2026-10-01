@@ -21,6 +21,10 @@
   // Utilità
   // ----------------------------------------------------------------------
   const norma = (s) => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  // Scala logaritmica simmetrica (inflazione): log10(1+|y|) con il segno. Sotto 1 è quasi lineare, poi ogni tacca vale dieci volte la precedente
+  const simlog = (y) => (y === null ? null : Math.sign(y) * Math.log10(1 + Math.abs(y)));
+  const SOGLIA_LOG = 100;
+  const VALORI_TACCHE = [-1000, -100, -10, -1, 0, 1, 10, 100, 1000, 10000, 100000, 1000000];
   const num = (v, cifre) => Number(v).toLocaleString("en-US", { minimumFractionDigits: cifre, maximumFractionDigits: cifre });
   const conUnita = (testo, unita) => testo + (unita && unita.charAt(0) === "%" ? unita : unita ? " " + unita : "");
   const etichettaAnno = (anno, fiscale) => (fiscale ? anno + "/" + String(anno + 1).slice(2) : String(anno));
@@ -217,6 +221,7 @@
     schede.forEach((scheda) => {
       const g = grafico(scheda.dataset.grafico);
       scheda._periodo = PERIODO_INIZIALE;
+      scheda._scala = "auto";       // la scelta manuale Linear/Log vale solo per il Paese che si sta guardando
       scheda.querySelectorAll(".periodi-paese button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.periodo === PERIODO_INIZIALE ? "true" : "false"));
       if (!disegnaGrafico(scheda, g, d)) mancanti.push(g.titolo);
     });
@@ -324,7 +329,8 @@
     if (!serie.length || serie[0].id !== g.serie[0]) { scheda.hidden = true; if (div.data) Plotly.purge(div); return false; }
     scheda.hidden = false;
     if (typeof Plotly === "undefined") { div.textContent = "The chart library could not be loaded (an Internet connection is required)."; div.classList.add("grafico-vuoto"); return true; }
-    div.classList.remove("grafico-vuoto"); div.textContent = "";
+    if (div.classList.contains("grafico-vuoto")) { div.classList.remove("grafico-vuoto"); div.textContent = ""; }   // tolto il messaggio d'errore, mai il grafico (Plotly.react lo aggiorna)
+    scheda._scalaEffettiva = null;
 
     const t = leggiTema();
     const chiave = SPEC.colori[d.c] || "mondo";
@@ -380,12 +386,29 @@
                       legenda: g.forma === "barre-linea", stile: !principale && g.forma === "barre-linea" ? { width: 2.5 } : null };
         traccePerSerie(x.id, x.s, d, g, opz).forEach((tr) => { tracce.push(tr); });
       });
+      // Scala logaritmica simmetrica: regola semplice, cioè almeno un anno sopra il 100% nella finestra visibile (le stime e le proiezioni contano),
+      // salvo che l'utente abbia scelto a mano Linear o Log (la scelta resta finché non cambia Paese). Si ricalcola a ogni cambio di periodo.
+      if (g.scala_log) {
+        const visibili = [];
+        tracce.forEach((tr) => tr.y.forEach((v, k) => { if (v !== null && tr.x[k] >= da && tr.x[k] <= a) visibili.push(v); }));
+        const log = scheda._scala === "log" || (scheda._scala !== "linear" && visibili.some((v) => v > SOGLIA_LOG));
+        scheda._scalaEffettiva = log ? "log" : "linear";
+        if (log) tracce.forEach((tr) => { tr.y = tr.y.map(simlog); });      // i tooltip restano quelli con i valori veri (hovertext)
+      }
       tracce.forEach((tr) => tr.y.forEach((v, k) => { if (v !== null && tr.x[k] >= da && tr.x[k] <= a) valoriY.push(v); }));
       if (valoriY.length) {
         let min = Math.min(...valoriY), max = Math.max(...valoriY);
         if (g.forma !== "linea" || g.riga0) { min = Math.min(min, 0); max = Math.max(max, 0); }
         const margine = (max - min || Math.abs(max) || 1) * 0.08;
         layout.yaxis.range = [min - margine, max + margine];
+        if (scheda._scalaEffettiva === "log") {          // tacche con i valori veri (0, 1, 10, 100, 1,000%...) nelle posizioni trasformate
+          const dentro = VALORI_TACCHE.filter((v) => simlog(v) >= layout.yaxis.range[0] && simlog(v) <= layout.yaxis.range[1]);
+          layout.yaxis.tickmode = "array";
+          layout.yaxis.tickvals = dentro.map(simlog);
+          layout.yaxis.ticktext = dentro.map((v) => num(v, 0) + "%");
+          layout.yaxis.ticksuffix = "";
+          layout.margin.l = 78;                            // "100,000%" è più largo dei numeri della scala lineare
+        }
       }
       layout.showlegend = g.forma === "barre-linea" && serie.length > 1;
       if (layout.showlegend) layout.legend = { orientation: "h", x: 0, y: 1.14, font: { color: t.testo2, size: 12 } };
@@ -399,6 +422,7 @@
     }
     Plotly.react(div, tracce, layout, { responsive: true, displaylogo: false, displayModeBar: false, scrollZoom: false });
     scheda._tracce = true;
+    scheda.querySelectorAll(".scala-paese button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.scala === scheda._scalaEffettiva ? "true" : "false"));
     notaGrafico(scheda, g, d, serie, w, haProiezioni && eff + 0.5 > da - 0.5);
     fonteGrafico(scheda, g, d);
     return true;
@@ -406,6 +430,7 @@
 
   function notaGrafico(scheda, g, d, serie, w, proiezioniVisibili) {
     const note = [];
+    if (scheda._scalaEffettiva === "log") note.push("Logarithmic scale above 1%: each gridline is ten times the one before, so distances are not proportional.");
     if (proiezioniVisibili) note.push("To the right of the dotted line, dashed lines and lighter bars are IMF estimates and projections.");
     const principale = g.serie[0];
     const eff = d.effettivo[principale];
@@ -484,6 +509,13 @@
     if (!corrente || !cache.has(corrente)) return;
     scheda._periodo = b.dataset.periodo;
     scheda.querySelectorAll(".periodi-paese button").forEach((x) => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+    disegnaGrafico(scheda, grafico(scheda.dataset.grafico), cache.get(corrente));
+  });
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest(".scala-paese button");
+    if (!b || !corrente || !cache.has(corrente)) return;
+    const scheda = b.closest(".scheda-grafico");
+    scheda._scala = b.dataset.scala;
     disegnaGrafico(scheda, grafico(scheda.dataset.grafico), cache.get(corrente));
   });
   function ridisegna() {

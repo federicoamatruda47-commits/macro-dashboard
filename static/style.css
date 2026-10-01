@@ -396,13 +396,14 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .etichetta-fonte { display: inline-block; padding: 0 5px; border: 1px solid var(--griglia); border-radius: 4px; color: var(--testo-tenue); font-size: 0.68rem; vertical-align: 1px; }
 .grafico-paese { height: 300px; margin-top: 6px; }
 @media (max-width: 600px) { .grafico-paese { height: 260px; } }
-.periodi-paese { display: flex; gap: 2px; }
-.periodi-paese button {
+.periodi-paese, .scala-paese { display: flex; gap: 2px; }
+.periodi-paese button, .scala-paese button {
   min-width: 40px; min-height: 32px; padding: 2px 8px; border: 1px solid var(--griglia); border-radius: 6px;
   background: none; color: var(--testo-2); font: inherit; font-size: 0.8rem; cursor: pointer;
 }
-.periodi-paese button[aria-pressed="true"] { background: var(--testo); border-color: var(--testo); color: var(--superficie); }
-.periodi-paese button:focus-visible { outline: 2px solid var(--accento); outline-offset: 1px; }
+.scala-paese { margin-left: auto; }
+.periodi-paese button[aria-pressed="true"], .scala-paese button[aria-pressed="true"] { background: var(--testo); border-color: var(--testo); color: var(--superficie); }
+.periodi-paese button:focus-visible, .scala-paese button:focus-visible { outline: 2px solid var(--accento); outline-offset: 1px; }
 .note-grafico { margin: 4px 0 0; font-size: 0.82rem; color: var(--testo-2); }
 .note-grafico[hidden] { display: none; }
 .note-grafico p { margin: 2px 0; }

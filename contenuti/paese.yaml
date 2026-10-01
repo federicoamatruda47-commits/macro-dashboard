@@ -10,6 +10,8 @@
 #                (le tre serie del PIL che esistono anche presso la Banca Mondiale passano alla Banca Mondiale solo per i Paesi senza dati FMI)
 #   unita, decimali   unità e cifre decimali nei tooltip e nelle schede
 #   riga0        true = linea di riferimento a zero
+#   scala_log    true = il grafico passa da solo a una scala logaritmica simmetrica (log10(1+|y|) col segno) se nella finestra visibile c'è almeno un valore
+#                sopra il 100%; due pulsanti Linear / Log permettono di scegliere a mano (la scelta resta finché non si cambia Paese)
 #   fonte        imf (WEO; per i Paesi senza FMI la Banca Mondiale) | wb (Banca Mondiale: lavoro, popolazione, WGI)
 #   come_leggerlo  una o due frasi per chi non è del settore, prudenti e fattuali (regole in CLAUDE.md). Esempi SOLO di episodi chiusi da almeno due anni:
 #                  mai valori correnti né classifiche, perché il WEO di ottobre li cambierebbe.
@@ -96,6 +98,7 @@ sezioni:
         decimali: 1
         riga0: true
         fonte: imf
+        scala_log: true                               # scala logaritmica simmetrica se nella finestra visibile c'è un anno sopra il 100%
         tooltip_extra: [inflation_end_of_period]      # nel tooltip, accanto alla media annua
         come_leggerlo: >-
           Average inflation over the year: how much consumer prices rose compared with the previous year. The tooltip also shows December-on-December
