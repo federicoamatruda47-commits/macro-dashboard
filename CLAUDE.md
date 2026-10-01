@@ -14,6 +14,7 @@ Una pagina HTML per ogni indirizzo (`site/<id>/index.html`, link sempre relativi
   **Prossimo lavoro: riempire le pagine di Economies** (si fa una pagina per volta, con le stesse regole di Markets).
 - **Method & sources** (`method/`, `method/series/`): fonti, controllo di freschezza, fonti di riserva, serie calcolate, "What changed this week", limiti noti (registro delle note),
   tabella di tutte le serie.
+- **Tema chiaro/scuro**: segue il sistema; l'interruttore ◐ (Auto/Light/Dark) imposta `data-theme` su `<html>` e la scelta si ricorda solo nel `localStorage` del visitatore (`static/app.js`, `render.css_colori`, `static/style.css`).
 - I vecchi indirizzi (`usa/`, `eurozona/`, `commodities/`...) restano come pagine che rimandano ai nuovi (`pagine.REINDIRIZZAMENTI`).
 
 ## Regole del progetto

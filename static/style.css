@@ -26,9 +26,11 @@
   /* I colori dei grafici (--c-us, --c-ea, ...) non stanno qui: li scrive ogni pagina da config.yaml (blocco "colori") */
 }
 
-/* Tema scuro: segue l'impostazione del sistema operativo */
+/* Tema: di default segue il sistema operativo. L'interruttore (◐) nella testata imposta data-theme="light" o "dark" su <html>
+   e la scelta si ricorda solo nel browser di chi visita (localStorage). */
+:root[data-theme="light"] { color-scheme: light; }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     color-scheme: dark;
     --pagina: #0d0d0d;
     --superficie: #1a1a19;
@@ -46,6 +48,24 @@
     --rialzo: #3fc23f;  --rialzo-sfondo: rgba(12, 163, 12, 0.16);
     --ribasso: #ff8a8a; --ribasso-sfondo: rgba(230, 103, 103, 0.16);
   }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --pagina: #0d0d0d;
+  --superficie: #1a1a19;
+  --testo: #ffffff;
+  --testo-2: #c3c2b7;
+  --testo-tenue: #898781;
+  --griglia: #2c2c2a;
+  --asse: #383835;
+  --bordo: rgba(255, 255, 255, 0.10);
+  --accento: #3987e5;
+  --avviso-sfondo: #2e2610;
+  --avviso-bordo: #fab219;
+  --errore-testo: #ff8a8a;
+  --ok-testo: #0ca30c;
+  --rialzo: #3fc23f;  --rialzo-sfondo: rgba(12, 163, 12, 0.16);
+  --ribasso: #ff8a8a; --ribasso-sfondo: rgba(230, 103, 103, 0.16);
 }
 
 * { box-sizing: border-box; }
@@ -315,3 +335,14 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   .mov-punteggio { text-align: left; grid-column: 1; grid-row: 2; }
   .mov-valore { grid-column: 2; grid-row: 2; justify-self: end; }
 }
+
+/* ---- Interruttore del tema (◐) ---- */
+.testata-riga { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.interruttore-tema {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 4px 10px;
+  border: 1px solid var(--griglia); border-radius: 999px; background: none; color: var(--testo-2);
+  font: inherit; font-size: 0.82rem; cursor: pointer;
+}
+.interruttore-tema:hover { border-color: var(--accento); color: var(--testo); }
+.interruttore-tema:focus-visible { outline: 2px solid var(--accento); outline-offset: 2px; }
+.interruttore-tema .icona { font-size: 1.05rem; line-height: 1; }

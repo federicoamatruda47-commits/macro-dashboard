@@ -6,6 +6,47 @@
       (nei grafici "base 100" i valori ripartono da 100 all'inizio del periodo)
    4. colori dei grafici presi dal tema (chiaro o scuro) del CSS
    ===================================================================== */
+// ----------------------------------------------------------------------
+// Interruttore del tema (◐): Auto (segue il sistema) -> Light -> Dark -> Auto.
+// La scelta sta solo nel localStorage del browser di chi visita; senza scelta vale il sistema.
+// Sta in un blocco a parte perché deve funzionare in tutte le pagine, anche senza grafici.
+// ----------------------------------------------------------------------
+(function () {
+  "use strict";
+  const pulsante = document.getElementById("interruttore-tema");
+  if (!pulsante) return;
+  const ORDINE = ["auto", "light", "dark"];
+  const NOMI = { auto: "Auto", light: "Light", dark: "Dark" };
+
+  function scelta() {
+    try {
+      const t = localStorage.getItem("tema");
+      return t === "light" || t === "dark" ? t : "auto";
+    } catch (e) { return "auto"; }
+  }
+
+  function mostra(tema) {
+    if (tema === "auto") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", tema);
+    const prossimo = ORDINE[(ORDINE.indexOf(tema) + 1) % ORDINE.length];
+    pulsante.querySelector(".etichetta-tema").textContent = NOMI[tema];
+    pulsante.title = "Colour theme: " + NOMI[tema] + (tema === "auto" ? " (follows your device)" : "") + ". Click for " + NOMI[prossimo] + ".";
+    pulsante.setAttribute("aria-label", pulsante.title);
+  }
+
+  pulsante.hidden = false;
+  mostra(scelta());
+  pulsante.addEventListener("click", () => {
+    const prossimo = ORDINE[(ORDINE.indexOf(scelta()) + 1) % ORDINE.length];
+    try {
+      if (prossimo === "auto") localStorage.removeItem("tema");
+      else localStorage.setItem("tema", prossimo);
+    } catch (e) { /* storage bloccato: il tema vale solo finché la pagina resta aperta */ }
+    mostra(prossimo);
+    window.dispatchEvent(new Event("tema-cambiato"));   // i grafici si ridisegnano con i nuovi colori
+  });
+})();
+
 (function () {
   "use strict";
 
@@ -304,13 +345,15 @@
     elementi.forEach(disegna);
   }
 
-  // Cambio tema del sistema (chiaro <-> scuro) mentre la pagina è aperta
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+  // Cambio tema (del sistema, o con l'interruttore) mentre la pagina è aperta: si ricolorano i grafici già disegnati
+  function ricolora() {
     disegnati.forEach((id) => {
       const el = document.getElementById(id);
       applicaTema(el.data, el.layout);
       el.layout.datarevision = Date.now(); // forza Plotly a ridisegnare i colori
       Plotly.react(el, el.data, el.layout);
     });
-  });
+  }
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ricolora);
+  window.addEventListener("tema-cambiato", ricolora);
 })();
