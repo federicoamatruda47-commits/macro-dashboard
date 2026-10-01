@@ -1,0 +1,84 @@
+# Dove finisce ogni grafico esistente (vedi docs/ristrutturazione.md, sezione 4).
+# Letto da tools/inventario.py.
+#
+# esito:   kept   = il grafico resta (stesso id)
+#          moved  = il grafico si sposta in un'altra pagina (stesso id)
+#          merged = il grafico sparisce e le sue serie entrano nel grafico "in" (nuovo o esistente)
+# pagina:  percorso della pagina di destinazione
+# in:      solo per merged: id del grafico che raccoglie le sue serie (tutte, verificato dal controllo)
+#
+# I grafici nuovi hanno id provvisori (mk-...): vanno creati nello step indicato.
+
+grafici:
+  # --- USA ---
+  usa-dff:             {esito: merged, pagina: /markets/rates/,   in: mk-rates-fed-ecb}   # step 4e
+  usa-curva-oggi:      {esito: moved,  pagina: /markets/rates/}
+  usa-rendimenti:      {esito: moved,  pagina: /markets/rates/}
+  usa-spread:          {esito: moved,  pagina: /markets/rates/}
+  usa-reali:           {esito: moved,  pagina: /markets/rates/}
+  usa-inflazione:      {esito: moved,  pagina: /markets/rates/}
+  usa-baa:             {esito: moved,  pagina: /markets/credit/}
+  usa-oas:             {esito: moved,  pagina: /markets/credit/}
+  usa-indici-azionari: {esito: moved,  pagina: /markets/equities/}
+  usa-concentrazione:  {esito: moved,  pagina: /markets/equities/}
+  usa-vix:             {esito: moved,  pagina: /markets/equities/}
+  usa-dollaro:         {esito: moved,  pagina: /markets/fx/}
+  usa-disoccupazione:  {esito: moved,  pagina: /economies/usa/}
+  # --- Eurozona ---
+  eur-dfr:             {esito: merged, pagina: /markets/rates/,   in: mk-rates-fed-ecb}   # step 4e
+  eur-curva-oggi:      {esito: moved,  pagina: /markets/rates/}
+  eur-rendimenti:      {esito: moved,  pagina: /markets/rates/}
+  eur-pendenza:        {esito: merged, pagina: /markets/rates/,   in: mk-rates-slope}     # step 4e
+  eur-spread-paesi:    {esito: moved,  pagina: /markets/credit/}
+  eur-spread-tutti:    {esito: moved,  pagina: /markets/credit/}
+  eur-inflazione:      {esito: moved,  pagina: /markets/rates/}
+  eur-hy:              {esito: merged, pagina: /markets/credit/,  in: mk-credit-hy}       # step 4c
+  eur-indici-azionari: {esito: moved,  pagina: /markets/equities/}
+  eur-eurusd:          {esito: moved,  pagina: /markets/fx/}
+  # --- Commodities (tutte 1:1) ---
+  com-petrolio:           {esito: moved, pagina: /markets/commodities/}
+  com-gas-usa:            {esito: moved, pagina: /markets/commodities/}
+  com-gas-eu:             {esito: moved, pagina: /markets/commodities/}
+  com-oro:                {esito: moved, pagina: /markets/commodities/}
+  com-argento:            {esito: moved, pagina: /markets/commodities/}
+  com-rame:               {esito: moved, pagina: /markets/commodities/}
+  com-alluminio:          {esito: moved, pagina: /markets/commodities/}
+  com-grano:              {esito: moved, pagina: /markets/commodities/}
+  com-mais:               {esito: moved, pagina: /markets/commodities/}
+  com-oro-reale:          {esito: moved, pagina: /markets/commodities/}
+  com-rame-oro:           {esito: moved, pagina: /markets/commodities/}
+  com-petrolio-breakeven: {esito: moved, pagina: /markets/commodities/}
+  com-brent-wti:          {esito: moved, pagina: /markets/commodities/}
+  # --- Giappone ---
+  jp-policy:           {esito: merged, pagina: /markets/rates/,   in: gl-policy}
+  jp-jgb:              {esito: moved,  pagina: /markets/rates/}
+  jp-inflazione:       {esito: moved,  pagina: /markets/rates/}
+  jp-cambio:           {esito: moved,  pagina: /markets/fx/}
+  jp-nikkei:           {esito: merged, pagina: /markets/equities/, in: gl-borse}          # livello nella colonna "Last"
+  # --- Cina ---
+  cn-lpr:              {esito: merged, pagina: /markets/rates/,   in: gl-policy}
+  cn-inflazione:       {esito: merged, pagina: /markets/rates/,   in: gl-inflazione}
+  cn-cambio:           {esito: moved,  pagina: /markets/fx/}
+  cn-csi300:           {esito: merged, pagina: /markets/equities/, in: gl-borse}
+  cn-hangseng:         {esito: merged, pagina: /markets/equities/, in: gl-borse}
+  # --- Corea ---
+  kr-policy:           {esito: merged, pagina: /markets/rates/,   in: gl-policy}
+  kr-ktb:              {esito: merged, pagina: /markets/rates/,   in: gl-rendimenti}
+  kr-inflazione:       {esito: merged, pagina: /markets/rates/,   in: gl-inflazione}
+  kr-cambio:           {esito: moved,  pagina: /markets/fx/}
+  kr-kospi:            {esito: merged, pagina: /markets/equities/, in: gl-borse}
+  # --- Confronto globale ---
+  gl-policy:           {esito: moved,  pagina: /markets/rates/}
+  gl-rendimenti:       {esito: moved,  pagina: /markets/rates/}
+  gl-inflazione:       {esito: moved,  pagina: /markets/rates/}
+  gl-valute:           {esito: moved,  pagina: /markets/fx/}
+  gl-borse:            {esito: moved,  pagina: /markets/equities/}
+
+# Grafici nuovi previsti dal piano (id provvisori), con lo step in cui nascono
+nuovi:
+  mk-rates-fed-ecb: {pagina: /markets/rates/,  step: 4e}
+  mk-rates-slope:   {pagina: /markets/rates/,  step: 4e}
+  mk-credit-hy:     {pagina: /markets/credit/, step: 4c}
+
+# Serie di config.yaml eliminate di proposito (vuoto: nessuna serie si perde)
+serie_rimosse: []

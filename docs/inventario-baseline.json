@@ -1,0 +1,746 @@
+{
+ "grafici": [
+  {
+   "id": "usa-dff",
+   "pagina": "usa",
+   "titolo": "Fed funds effettivo",
+   "serie_ids": [
+    "DFF"
+   ]
+  },
+  {
+   "id": "usa-curva-oggi",
+   "pagina": "usa",
+   "titolo": "Curva dei Treasury: oggi, 1 mese fa, 1 anno fa",
+   "serie_ids": [
+    "DGS3MO",
+    "DGS2",
+    "DGS5",
+    "DGS10",
+    "DGS30"
+   ]
+  },
+  {
+   "id": "usa-rendimenti",
+   "pagina": "usa",
+   "titolo": "Rendimenti per scadenza nel tempo",
+   "serie_ids": [
+    "DGS3MO",
+    "DGS2",
+    "DGS5",
+    "DGS10",
+    "DGS30"
+   ]
+  },
+  {
+   "id": "usa-spread",
+   "pagina": "usa",
+   "titolo": "Spread 10A-2A e 10A-3M",
+   "serie_ids": [
+    "T10Y2Y",
+    "T10Y3M"
+   ]
+  },
+  {
+   "id": "usa-reali",
+   "pagina": "usa",
+   "titolo": "Tasso reale 10A e breakeven 10A",
+   "serie_ids": [
+    "DFII10",
+    "T10YIE"
+   ]
+  },
+  {
+   "id": "usa-inflazione",
+   "pagina": "usa",
+   "titolo": "CPI headline, CPI core e PCE core (% annua)",
+   "serie_ids": [
+    "CPIAUCSL",
+    "CPILFESL",
+    "PCEPILFE"
+   ]
+  },
+  {
+   "id": "usa-baa",
+   "pagina": "usa",
+   "titolo": "Spread Baa (Moody's) - Treasury 10A",
+   "serie_ids": [
+    "BAA10Y"
+   ]
+  },
+  {
+   "id": "usa-oas",
+   "pagina": "usa",
+   "titolo": "OAS Investment Grade e High Yield (ICE BofA)",
+   "serie_ids": [
+    "BAMLC0A0CM",
+    "BAMLH0A0HYM2"
+   ]
+  },
+  {
+   "id": "usa-indici-azionari",
+   "pagina": "usa",
+   "titolo": "Indici azionari USA (base 100)",
+   "serie_ids": [
+    "^GSPC",
+    "^NDX",
+    "^RUT"
+   ]
+  },
+  {
+   "id": "usa-concentrazione",
+   "pagina": "usa",
+   "titolo": "Concentrazione: S&P 500 Equal Weight / S&P 500",
+   "serie_ids": [
+    "SP500_EW_SU_CW"
+   ]
+  },
+  {
+   "id": "usa-vix",
+   "pagina": "usa",
+   "titolo": "VIX (volatilità attesa S&P 500)",
+   "serie_ids": [
+    "VIXCLS"
+   ]
+  },
+  {
+   "id": "usa-dollaro",
+   "pagina": "usa",
+   "titolo": "Dollaro broad (indice nominale, gen 2006 = 100)",
+   "serie_ids": [
+    "DTWEXBGS"
+   ]
+  },
+  {
+   "id": "usa-disoccupazione",
+   "pagina": "usa",
+   "titolo": "Tasso di disoccupazione",
+   "serie_ids": [
+    "UNRATE"
+   ]
+  },
+  {
+   "id": "eur-dfr",
+   "pagina": "eurozona",
+   "titolo": "Tasso sui depositi BCE (DFR)",
+   "serie_ids": [
+    "FM/D.U2.EUR.4F.KR.DFR.LEV"
+   ]
+  },
+  {
+   "id": "eur-curva-oggi",
+   "pagina": "eurozona",
+   "titolo": "Curva AAA area euro (proxy Bund): oggi, 1 mese fa, 1 anno fa",
+   "serie_ids": [
+    "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_3M",
+    "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_1Y",
+    "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y",
+    "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_5Y",
+    "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y",
+    "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_30Y"
+   ]
+  },
+  {
+   "id": "eur-rendimenti",
+   "pagina": "eurozona",
+   "titolo": "Curva AAA area euro (proxy Bund): 2 e 10 anni",
+   "serie_ids": [
+    "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y",
+    "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y"
+   ]
+  },
+  {
+   "id": "eur-pendenza",
+   "pagina": "eurozona",
+   "titolo": "Pendenza della curva AAA: 10A - 2A",
+   "serie_ids": [
+    "EA_AAA_10A_2A"
+   ]
+  },
+  {
+   "id": "eur-spread-paesi",
+   "pagina": "eurozona",
+   "titolo": "Spread BTP-Bund e OAT-Bund 10 anni (dati MENSILI)",
+   "serie_ids": [
+    "SPREAD_BTP_BUND",
+    "SPREAD_OAT_BUND"
+   ]
+  },
+  {
+   "id": "eur-spread-tutti",
+   "pagina": "eurozona",
+   "titolo": "Tutti i titoli di Stato area euro meno AAA, 10 anni (giornaliero)",
+   "serie_ids": [
+    "EA_TUTTI_MENO_AAA_10A"
+   ]
+  },
+  {
+   "id": "eur-inflazione",
+   "pagina": "eurozona",
+   "titolo": "HICP headline e core (% annua)",
+   "serie_ids": [
+    "HICP/M.U2.N.000000.4D0.ANR",
+    "HICP/M.U2.N.XEF000.4D0.ANR"
+   ]
+  },
+  {
+   "id": "eur-hy",
+   "pagina": "eurozona",
+   "titolo": "OAS High Yield in euro (ICE BofA)",
+   "serie_ids": [
+    "BAMLHE00EHYIOAS"
+   ]
+  },
+  {
+   "id": "eur-indici-azionari",
+   "pagina": "eurozona",
+   "titolo": "Borse e banche europee (base 100)",
+   "serie_ids": [
+    "^STOXX50E",
+    "^GDAXIP",
+    "^FCHI",
+    "FTSEMIB.MI",
+    "EXV1.DE"
+   ]
+  },
+  {
+   "id": "eur-eurusd",
+   "pagina": "eurozona",
+   "titolo": "EUR/USD (dollari per 1 euro)",
+   "serie_ids": [
+    "EXR/D.USD.EUR.SP00.A"
+   ]
+  },
+  {
+   "id": "com-petrolio",
+   "pagina": "commodities",
+   "titolo": "Petrolio WTI e Brent",
+   "serie_ids": [
+    "CL=F",
+    "BZ=F"
+   ]
+  },
+  {
+   "id": "com-gas-usa",
+   "pagina": "commodities",
+   "titolo": "Gas naturale Henry Hub (USA)",
+   "serie_ids": [
+    "NG=F"
+   ]
+  },
+  {
+   "id": "com-gas-eu",
+   "pagina": "commodities",
+   "titolo": "Gas naturale TTF (Europa)",
+   "serie_ids": [
+    "TTF=F"
+   ]
+  },
+  {
+   "id": "com-oro",
+   "pagina": "commodities",
+   "titolo": "Oro",
+   "serie_ids": [
+    "GC=F"
+   ]
+  },
+  {
+   "id": "com-argento",
+   "pagina": "commodities",
+   "titolo": "Argento",
+   "serie_ids": [
+    "SI=F"
+   ]
+  },
+  {
+   "id": "com-rame",
+   "pagina": "commodities",
+   "titolo": "Rame",
+   "serie_ids": [
+    "HG=F"
+   ]
+  },
+  {
+   "id": "com-alluminio",
+   "pagina": "commodities",
+   "titolo": "Alluminio (COMEX)",
+   "serie_ids": [
+    "ALI=F"
+   ]
+  },
+  {
+   "id": "com-grano",
+   "pagina": "commodities",
+   "titolo": "Grano",
+   "serie_ids": [
+    "ZW=F"
+   ]
+  },
+  {
+   "id": "com-mais",
+   "pagina": "commodities",
+   "titolo": "Mais",
+   "serie_ids": [
+    "ZC=F"
+   ]
+  },
+  {
+   "id": "com-oro-reale",
+   "pagina": "commodities",
+   "titolo": "Oro vs tasso reale USA 10 anni (TIPS)",
+   "serie_ids": [
+    "GC=F",
+    "DFII10"
+   ]
+  },
+  {
+   "id": "com-rame-oro",
+   "pagina": "commodities",
+   "titolo": "Rapporto rame/oro vs Treasury 10 anni",
+   "serie_ids": [
+    "RAPPORTO_RAME_ORO",
+    "DGS10"
+   ]
+  },
+  {
+   "id": "com-petrolio-breakeven",
+   "pagina": "commodities",
+   "titolo": "Petrolio WTI vs inflazione attesa 10 anni (breakeven)",
+   "serie_ids": [
+    "CL=F",
+    "T10YIE"
+   ]
+  },
+  {
+   "id": "com-brent-wti",
+   "pagina": "commodities",
+   "titolo": "Spread Brent − WTI",
+   "serie_ids": [
+    "SPREAD_BRENT_WTI"
+   ]
+  },
+  {
+   "id": "jp-policy",
+   "pagina": "giappone",
+   "titolo": "Tasso di policy BoJ",
+   "serie_ids": [
+    "WS_CBPOL/D.JP"
+   ]
+  },
+  {
+   "id": "jp-jgb",
+   "pagina": "giappone",
+   "titolo": "Rendimenti JGB a 2, 10 e 30 anni",
+   "serie_ids": [
+    "JGB_2Y",
+    "JGB_10Y",
+    "JGB_30Y"
+   ]
+  },
+  {
+   "id": "jp-inflazione",
+   "pagina": "giappone",
+   "titolo": "CPI totale, core e core-core (% annua)",
+   "serie_ids": [
+    "CPIm/001",
+    "CPIm/733",
+    "CPIm/740"
+   ]
+  },
+  {
+   "id": "jp-cambio",
+   "pagina": "giappone",
+   "titolo": "USD/JPY (yen per 1 dollaro)",
+   "serie_ids": [
+    "JPY=X"
+   ]
+  },
+  {
+   "id": "jp-nikkei",
+   "pagina": "giappone",
+   "titolo": "Nikkei 225",
+   "serie_ids": [
+    "^N225"
+   ]
+  },
+  {
+   "id": "cn-lpr",
+   "pagina": "cina",
+   "titolo": "Loan Prime Rate a 1 anno",
+   "serie_ids": [
+    "WS_CBPOL/D.CN"
+   ]
+  },
+  {
+   "id": "cn-inflazione",
+   "pagina": "cina",
+   "titolo": "CPI Cina (% annua)",
+   "serie_ids": [
+    "WS_LONG_CPI/M.CN.771"
+   ]
+  },
+  {
+   "id": "cn-cambio",
+   "pagina": "cina",
+   "titolo": "USD/CNY (yuan per 1 dollaro)",
+   "serie_ids": [
+    "CNY=X"
+   ]
+  },
+  {
+   "id": "cn-csi300",
+   "pagina": "cina",
+   "titolo": "CSI 300 (ETF 510300)",
+   "serie_ids": [
+    "510300.SS"
+   ]
+  },
+  {
+   "id": "cn-hangseng",
+   "pagina": "cina",
+   "titolo": "Hang Seng (Hong Kong)",
+   "serie_ids": [
+    "^HSI"
+   ]
+  },
+  {
+   "id": "kr-policy",
+   "pagina": "corea",
+   "titolo": "Tasso base BoK",
+   "serie_ids": [
+    "WS_CBPOL/D.KR"
+   ]
+  },
+  {
+   "id": "kr-ktb",
+   "pagina": "corea",
+   "titolo": "Titoli di Stato 10 anni (dati MENSILI)",
+   "serie_ids": [
+    "IRLTLT01KRM156N"
+   ]
+  },
+  {
+   "id": "kr-inflazione",
+   "pagina": "corea",
+   "titolo": "CPI Corea del Sud (% annua)",
+   "serie_ids": [
+    "WS_LONG_CPI/M.KR.771"
+   ]
+  },
+  {
+   "id": "kr-cambio",
+   "pagina": "corea",
+   "titolo": "USD/KRW (won per 1 dollaro)",
+   "serie_ids": [
+    "KRW=X"
+   ]
+  },
+  {
+   "id": "kr-kospi",
+   "pagina": "corea",
+   "titolo": "KOSPI",
+   "serie_ids": [
+    "^KS11"
+   ]
+  },
+  {
+   "id": "gl-policy",
+   "pagina": "globale",
+   "titolo": "Tassi di policy a confronto",
+   "serie_ids": [
+    "WS_CBPOL/D.US",
+    "WS_CBPOL/D.XM",
+    "WS_CBPOL/D.JP",
+    "WS_CBPOL/D.CN",
+    "WS_CBPOL/D.KR"
+   ]
+  },
+  {
+   "id": "gl-rendimenti",
+   "pagina": "globale",
+   "titolo": "Rendimenti dei titoli di Stato a 10 anni",
+   "serie_ids": [
+    "DGS10",
+    "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y",
+    "JGB_10Y",
+    "IRLTLT01KRM156N"
+   ]
+  },
+  {
+   "id": "gl-inflazione",
+   "pagina": "globale",
+   "titolo": "Inflazione CPI a confronto (% annua)",
+   "serie_ids": [
+    "WS_LONG_CPI/M.US.771",
+    "WS_LONG_CPI/M.XM.771",
+    "WS_LONG_CPI/M.JP.771",
+    "WS_LONG_CPI/M.CN.771",
+    "WS_LONG_CPI/M.KR.771"
+   ]
+  },
+  {
+   "id": "gl-valute",
+   "pagina": "globale",
+   "titolo": "Valute contro il dollaro (base 100)",
+   "serie_ids": [
+    "EXR/D.USD.EUR.SP00.A",
+    "JPY=X",
+    "CNY=X",
+    "KRW=X"
+   ]
+  },
+  {
+   "id": "gl-borse",
+   "pagina": "globale",
+   "titolo": "Borse a confronto (base 100)",
+   "serie_ids": [
+    "^GSPC",
+    "^STOXX50E",
+    "FTSEMIB.MI",
+    "^N225",
+    "510300.SS",
+    "^KS11",
+    "^HSI",
+    "ACWI",
+    "^STOXX50E_USD",
+    "FTSEMIB.MI_USD",
+    "^N225_USD",
+    "510300.SS_USD",
+    "^KS11_USD",
+    "^HSI_USD"
+   ]
+  }
+ ],
+ "tabelle": [
+  {
+   "pagina": "usa",
+   "sezione": "azioni",
+   "serie_ids": [
+    "^GSPC",
+    "^NDX",
+    "^RUT",
+    "^SPXEW"
+   ]
+  },
+  {
+   "pagina": "eurozona",
+   "sezione": "azioni",
+   "serie_ids": [
+    "^STOXX50E",
+    "^GDAXIP",
+    "^FCHI",
+    "FTSEMIB.MI",
+    "EXV1.DE"
+   ]
+  },
+  {
+   "pagina": "commodities",
+   "sezione": "performance",
+   "serie_ids": [
+    "CL=F",
+    "BZ=F",
+    "NG=F",
+    "TTF=F",
+    "GC=F",
+    "SI=F",
+    "HG=F",
+    "ALI=F",
+    "ZW=F",
+    "ZC=F"
+   ]
+  }
+ ],
+ "serie_config": [
+  "510300.SS",
+  "510300.SS_USD",
+  "ACWI",
+  "ALI=F",
+  "BAA10Y",
+  "BAMLC0A0CM",
+  "BAMLH0A0HYM2",
+  "BAMLHE00EHYIOAS",
+  "BZ=F",
+  "CL=F",
+  "CNY=X",
+  "CPIAUCSL",
+  "CPILFESL",
+  "CPIm/001",
+  "CPIm/733",
+  "CPIm/740",
+  "DFF",
+  "DFII10",
+  "DGS10",
+  "DGS2",
+  "DGS30",
+  "DGS3MO",
+  "DGS5",
+  "DTWEXBGS",
+  "EA_AAA_10A_2A",
+  "EA_TUTTI_MENO_AAA_10A",
+  "EUR=X",
+  "EXR/D.USD.EUR.SP00.A",
+  "EXV1.DE",
+  "FM/D.U2.EUR.4F.KR.DFR.LEV",
+  "FTSEMIB.MI",
+  "FTSEMIB.MI_USD",
+  "GC=F",
+  "HG=F",
+  "HICP/M.U2.N.000000.4D0.ANR",
+  "HICP/M.U2.N.XEF000.4D0.ANR",
+  "HKD=X",
+  "IRLTLT01KRM156N",
+  "IRS/M.DE.L.L40.CI.0000.EUR.N.Z",
+  "IRS/M.FR.L.L40.CI.0000.EUR.N.Z",
+  "IRS/M.IT.L.L40.CI.0000.EUR.N.Z",
+  "JGB_10Y",
+  "JGB_2Y",
+  "JGB_30Y",
+  "JPY=X",
+  "KRW=X",
+  "NG=F",
+  "PCEPILFE",
+  "RAPPORTO_RAME_ORO",
+  "SI=F",
+  "SP500_EW_SU_CW",
+  "SPREAD_BRENT_WTI",
+  "SPREAD_BTP_BUND",
+  "SPREAD_OAT_BUND",
+  "T10Y2Y",
+  "T10Y3M",
+  "T10YIE",
+  "TTF=F",
+  "UNRATE",
+  "USREC",
+  "VIXCLS",
+  "WS_CBPOL/D.CN",
+  "WS_CBPOL/D.JP",
+  "WS_CBPOL/D.KR",
+  "WS_CBPOL/D.US",
+  "WS_CBPOL/D.XM",
+  "WS_LONG_CPI/M.CN.771",
+  "WS_LONG_CPI/M.JP.771",
+  "WS_LONG_CPI/M.KR.771",
+  "WS_LONG_CPI/M.US.771",
+  "WS_LONG_CPI/M.XM.771",
+  "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y",
+  "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_1Y",
+  "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y",
+  "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_30Y",
+  "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_3M",
+  "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_5Y",
+  "YC/B.U2.EUR.4F.G_N_C.SV_C_YM.SR_10Y",
+  "ZC=F",
+  "ZW=F",
+  "^FCHI",
+  "^GDAXIP",
+  "^GSPC",
+  "^HSI",
+  "^HSI_USD",
+  "^KS11",
+  "^KS11_USD",
+  "^N225",
+  "^N225_USD",
+  "^NDX",
+  "^RUT",
+  "^SPXEW",
+  "^STOXX50E",
+  "^STOXX50E_USD"
+ ],
+ "serie_usate": [
+  "510300.SS",
+  "510300.SS_USD",
+  "ACWI",
+  "ALI=F",
+  "BAA10Y",
+  "BAMLC0A0CM",
+  "BAMLH0A0HYM2",
+  "BAMLHE00EHYIOAS",
+  "BZ=F",
+  "CL=F",
+  "CNY=X",
+  "CPIAUCSL",
+  "CPILFESL",
+  "CPIm/001",
+  "CPIm/733",
+  "CPIm/740",
+  "DFF",
+  "DFII10",
+  "DGS10",
+  "DGS2",
+  "DGS30",
+  "DGS3MO",
+  "DGS5",
+  "DTWEXBGS",
+  "EA_AAA_10A_2A",
+  "EA_TUTTI_MENO_AAA_10A",
+  "EUR=X",
+  "EXR/D.USD.EUR.SP00.A",
+  "EXV1.DE",
+  "FM/D.U2.EUR.4F.KR.DFR.LEV",
+  "FTSEMIB.MI",
+  "FTSEMIB.MI_USD",
+  "GC=F",
+  "HG=F",
+  "HICP/M.U2.N.000000.4D0.ANR",
+  "HICP/M.U2.N.XEF000.4D0.ANR",
+  "HKD=X",
+  "IRLTLT01KRM156N",
+  "IRS/M.DE.L.L40.CI.0000.EUR.N.Z",
+  "IRS/M.FR.L.L40.CI.0000.EUR.N.Z",
+  "IRS/M.IT.L.L40.CI.0000.EUR.N.Z",
+  "JGB_10Y",
+  "JGB_2Y",
+  "JGB_30Y",
+  "JPY=X",
+  "KRW=X",
+  "NG=F",
+  "PCEPILFE",
+  "RAPPORTO_RAME_ORO",
+  "SI=F",
+  "SP500_EW_SU_CW",
+  "SPREAD_BRENT_WTI",
+  "SPREAD_BTP_BUND",
+  "SPREAD_OAT_BUND",
+  "T10Y2Y",
+  "T10Y3M",
+  "T10YIE",
+  "TTF=F",
+  "UNRATE",
+  "USREC",
+  "VIXCLS",
+  "WS_CBPOL/D.CN",
+  "WS_CBPOL/D.JP",
+  "WS_CBPOL/D.KR",
+  "WS_CBPOL/D.US",
+  "WS_CBPOL/D.XM",
+  "WS_LONG_CPI/M.CN.771",
+  "WS_LONG_CPI/M.JP.771",
+  "WS_LONG_CPI/M.KR.771",
+  "WS_LONG_CPI/M.US.771",
+  "WS_LONG_CPI/M.XM.771",
+  "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y",
+  "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_1Y",
+  "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y",
+  "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_30Y",
+  "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_3M",
+  "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_5Y",
+  "YC/B.U2.EUR.4F.G_N_C.SV_C_YM.SR_10Y",
+  "ZC=F",
+  "ZW=F",
+  "^FCHI",
+  "^GDAXIP",
+  "^GSPC",
+  "^HSI",
+  "^HSI_USD",
+  "^KS11",
+  "^KS11_USD",
+  "^N225",
+  "^N225_USD",
+  "^NDX",
+  "^RUT",
+  "^SPXEW",
+  "^STOXX50E",
+  "^STOXX50E_USD"
+ ],
+ "html_byte_vecchio_sito": 5951736
+}
