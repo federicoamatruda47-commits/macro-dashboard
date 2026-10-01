@@ -12,7 +12,7 @@ import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from plotly.offline import get_plotlyjs_version
 
-from . import metodo
+from . import metodo, movimenti
 from .data import (FONTE_CALCOLATA, NOMI_FONTI, OPERAZIONI, PERIODI_PERFORMANCE, Serie, tipo_variazione, trova_serie,
                    variazioni)
 from .fonti_url import url_serie
@@ -20,6 +20,7 @@ from .pagine import HOME, PAGINA_METODO, PAGINA_SERIE, REINDIRIZZAMENTI, costrui
 from .economie import PAGINE as PAGINE_ECONOMIE
 from .mercati import PAGINE as PAGINE_MERCATI
 from .modello import Grafico
+from .sparkline import sparkline_svg
 
 FUSO_ORARIO = ZoneInfo("Europe/Rome")
 # Costruttore delle sezioni di ogni pagina con contenuti (le pagine "in-arrivo" non ne hanno)
@@ -69,6 +70,15 @@ def testo_variazione(valore: float | None, unita: str) -> str:
     return f"{testo} {tipo}" if tipo in ("bp", "pp") else f"{testo}%"
 
 
+def etichetta_data(s: Serie) -> str:
+    """La data di un dato come si legge sulla scheda: 'Aug 2026' per le serie mensili, '30 Sep 2026' per le altre."""
+    if s.frequenza == "mensile":
+        return f"{s.ultima_data:%b %Y}"
+    if s.frequenza == "trimestrale":
+        return f"Q{(s.ultima_data.month - 1) // 3 + 1} {s.ultima_data.year}"
+    return formatta_data(s.ultima_data)
+
+
 def formatta_data(data: pd.Timestamp | None) -> str:
     """Es. '30 Sep 2026' (il giorno senza zero iniziale: %-d non esiste su Windows)."""
     return f"{data.day} {data:%b %Y}" if data is not None else "—"
@@ -90,7 +100,7 @@ def _scheda_riepilogo(s: Serie, oggi: pd.Timestamp, ytd: bool = False) -> dict:
     if s.ok:
         scheda.update(
             valore=valore_con_unita(s.ultimo_valore, s.unita, s.decimali),
-            data=formatta_data(s.ultima_data),
+            data=etichetta_data(s),
             ritardo=s.in_ritardo(oggi),
             variazioni=[{"etichetta": etichetta, "testo": testo_variazione(v, s.unita)}
                         for etichetta, v in variazioni(s, periodi).items()],
@@ -241,6 +251,36 @@ def _serie_usate(sezioni, serie: dict[str, Serie]) -> list[Serie]:
     return list(trovate.values())
 
 
+def _scheda_panoramica(voce: dict, serie: dict[str, Serie], oggi: pd.Timestamp, href_grafici: dict[str, str]) -> dict:
+    """Una scheda dell'Overview: come quelle delle pagine, più il mini-grafico a un anno e il link al grafico."""
+    s = trova_serie(serie, voce["serie"])
+    scheda = _scheda_riepilogo(s, oggi)
+    scheda["nome"] = voce["etichetta"]
+    scheda["sparkline"] = sparkline_svg(s.dati, s.chiave_colore) if s.ok else ""
+    scheda["href"] = href_grafici.get(voce["vai"])
+    return scheda
+
+
+def _righe_movimenti(classifica: movimenti.Classifica, serie: dict[str, Serie], usi_serie: dict[str, list[dict]]) -> dict:
+    """Le righe di "What changed this week" pronte per il modello HTML."""
+    ultima = max((s.ultima_data for s in serie.values() if s.ok and s.movimenti), default=None)
+    righe = []
+    for m in classifica.righe:
+        usi = usi_serie.get(m.id, [])
+        righe.append({
+            "etichetta": m.etichetta,
+            "movimento": testo_variazione(m.mossa, m.unita),
+            "direzione": "up" if m.mossa > 0 else "down",
+            "punteggio": f"{abs(m.punteggio):.1f}×",
+            "barra": round(min(abs(m.punteggio) / 5, 1) * 100),          # lunghezza della barra: 5× = barra piena
+            "data": formatta_data(m.data_ultimo) if ultima is not None and (ultima - m.data_ultimo).days > 3 else None,
+            "href": usi[0]["href"] if usi else None,
+        })
+    return {"righe": righe, "n_controllate": classifica.n_controllate, "n_sopra_soglia": classifica.n_sopra_soglia,
+            "soglia": f"{classifica.soglia:g}", "massimo": classifica.massimo,
+            "settimana_al": formatta_data(ultima)}
+
+
 def _con_componenti(ids, serie: dict[str, Serie]) -> set[str]:
     """Gli id dati più, a cascata, le componenti delle serie calcolate."""
     trovati: set[str] = set()
@@ -262,6 +302,8 @@ def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict) -> dict:
     nomi_aree = {chiave: voce["nome"] for chiave, voce in config["colori"].items()}  # es. "us" -> United States
     usi_serie: dict[str, list[dict]] = {}   # id serie -> grafici e tabelle che la usano (per Series status)
     usi_note: dict[str, list[dict]] = {}    # id nota -> grafici che la richiamano (per Known limits)
+    href_grafici: dict[str, str] = {}       # id grafico -> indirizzo (per i link dell'Overview)
+
     def costruisci_voce(voce: dict, costruttore, id_numeri_chiave: list[str], ytd: bool) -> dict:
         """Una pagina del sito con tutto ciò che serve al modello HTML."""
         id_pagina = voce["id"]
@@ -276,6 +318,7 @@ def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict) -> dict:
             for sezione in oggetti:
                 for g in sezione.grafici:
                     riferimento = {"pagina": voce["nome"], "href": f"{id_pagina}/#chart-{g.id}", "titolo": g.titolo}
+                    href_grafici.setdefault(g.id, riferimento["href"])
                     for i in _con_componenti(g.serie_ids, serie):
                         usi_serie.setdefault(i, []).append(riferimento)
                     for i in g.note:
@@ -329,13 +372,27 @@ def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict) -> dict:
         riga["usi"] = usi_serie.get(s.id, [])
         stato.append(riga)
     standard, proprie = metodo.soglie_freschezza(config)
+    classifica_movimenti = movimenti.classifica(serie, oggi)
+
+    # Overview: numeri chiave, movimenti della settimana, schede verso le altre pagine
+    esplora = [{"gruppo": "Markets", "nome": p["nome"], "descrizione": p.get("descrizione", ""), "href": p["id"] + "/"}
+               for p in config.get("pagine", []) if p.get("gruppo") == "markets" and p.get("stato") == "attiva"]
+    esplora += [{"gruppo": "More", "nome": "Economies", "href": "economies/",
+                 "descrizione": "One page per economy. The US labour market is in; the others are coming."},
+                {"gruppo": "More", "nome": "Sources & method", "href": "method/",
+                 "descrizione": "Where the data comes from, how freshness is checked and the known limits."}]
 
     return {
         "stato": stato,
+        "panoramica": [{"titolo": g["titolo"], "schede": [_scheda_panoramica(v, serie, oggi, href_grafici) for v in g["schede"]]}
+                       for g in config.get("panoramica", [])],
+        "movimenti": _righe_movimenti(classifica_movimenti, serie, usi_serie),
+        "esplora": esplora,
         "metodo": {
             "fonti": metodo.descrivi_fonti(config), "soglie": standard, "soglie_proprie": proprie,
             "fallback": metodo.fallback_configurati(config, serie), "calcolate": metodo.serie_calcolate(config, serie),
             "regola_calcolate": metodo.REGOLA_CALCOLATE, "gruppi_note": metodo.raggruppa_note(note, usi_note),
+            "movimenti": metodo.descrivi_movimenti(config, serie, classifica_movimenti),
         },
         "aggiornato": f"{adesso_utc.day} {adesso_utc:%b %Y}, {adesso_utc:%H:%M} UTC",
         "pagine": pagine,
@@ -403,7 +460,7 @@ def genera_sito(config: dict, serie: dict[str, Serie], radice_progetto: Path) ->
         scrivi_reindirizzamento(cartella_site, vecchio, nuovo, ambiente)
     scrivi(PAGINA_METODO, "metodo.html.j2", m=contesto["metodo"], **avvisi)
     scrivi(PAGINA_SERIE, "serie.html.j2", stato=contesto["stato"], **avvisi)
-    pagina = scrivi(HOME, "home.html.j2", regioni=contesto["pagine"], **avvisi)
+    pagina = scrivi(HOME, "panoramica.html.j2", **{k: contesto[k] for k in ("panoramica", "movimenti", "esplora")}, **avvisi)
 
     # CSS e JavaScript
     for file in (radice_progetto / "static").iterdir():

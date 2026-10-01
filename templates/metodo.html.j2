@@ -16,6 +16,7 @@
     <li><a href="#freshness">Freshness check</a></li>
     <li><a href="#fallback">Fallback sources</a></li>
     <li><a href="#calculated">Calculated series</a></li>
+    <li><a href="#weekly-moves">What changed this week</a></li>
     <li><a href="#limits">Known limits</a></li>
   </ul>
 </section>
@@ -110,6 +111,36 @@
       </tbody>
     </table>
   </div>
+</section>
+
+<section class="blocco" id="weekly-moves">
+  <h2>What changed this week</h2>
+  <p class="descrizione">The Overview lists the biggest weekly moves compared with each series' own normal volatility, so that a 20 bp move
+    in a Treasury yield and a 5% move in oil can be compared. For each daily or weekly series flagged for this purpose, the site takes the
+    change over the last {{ m.movimenti.giorni }} days and divides it by the typical size of {{ m.movimenti.giorni }}-day changes in the
+    {{ m.movimenti.anni }} years before that week (the standard deviation, from at least {{ m.movimenti.minimo }} observations). The result is
+    shown as "×normal": 3.0× means three times a normal week. Rates and spreads are measured in basis points, prices and indices in %.</p>
+  <p class="descrizione">Only moves of at least <strong>{{ m.movimenti.soglia }}×</strong> are listed, at most one series per group (all US Treasury
+    yields count as one, for example, because they usually move together) and at most {{ m.movimenti.massimo }} rows. If nothing reaches the bar,
+    the box says "A quiet week".</p>
+  <p class="descrizione"><strong>Why {{ m.movimenti.soglia }}× and not a lower bar?</strong> If weekly moves were normally distributed, about 13% of
+    series would exceed 1.5× in an ordinary week purely by chance, so the list would almost always be full and would lose its meaning. At
+    {{ m.movimenti.soglia }}× that share falls to about 5%, so the list fills up mainly when something unusual really happens, and "A quiet week"
+    becomes useful information. Real markets have fatter tails and many series move together, so in a turbulent week the share can be much higher:
+    on the latest build, {{ m.movimenti.n_sopra_soglia }} of {{ m.movimenti.n_controllate }} series exceeded {{ m.movimenti.soglia }}×.</p>
+  <p class="descrizione"><strong>A score is not a probability.</strong> It says how many times larger than a typical week the move was, not how rare
+    it is. The VIX, for example, moves a lot even in normal weeks, so it rarely reaches the bar. Policy rates are left out because they change in
+    steps, monthly series because they have no weekly move, and any series with fewer than {{ m.movimenti.minimo }} past observations or an
+    out-of-date last value.</p>
+  <details class="stato">
+    <summary>The {{ m.movimenti.n_serie }} series in the calculation, by group</summary>
+    <div class="tabella-scorrevole">
+      <table class="tabella-testo">
+        <thead><tr><th>Group (one row at most)</th><th>Series</th></tr></thead>
+        <tbody>{% for g in m.movimenti.gruppi %}<tr><td>{{ g.nome }}</td><td>{{ g.serie }}</td></tr>{% endfor %}</tbody>
+      </table>
+    </div>
+  </details>
 </section>
 
 <section class="blocco" id="limits">

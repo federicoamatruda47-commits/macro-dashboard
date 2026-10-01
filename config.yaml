@@ -37,6 +37,10 @@
 #   operazione     solo per fonte "calcolata": "differenza" (A − B, predefinita) o "rapporto" (A / B)
 #   fattore        solo per fonte "calcolata": moltiplica il risultato (es. 1000 per un rapporto piccolo)
 #   decimali       cifre decimali mostrate sul sito (predefinito 2)
+#   movimenti      true = la serie entra nel calcolo "What changed this week" dell'Overview (solo serie giornaliere o settimanali);
+#                  richiede gruppo_movimenti. Non metterlo ai tassi di policy (cambiano a scatti) né alle serie mensili.
+#   gruppo_movimenti  nel calcolo conta al massimo UNA serie per gruppo (es. tutti i tassi USA muovono insieme)
+#   etichetta_breve   nome più chiaro per l'Overview, se "nome" da solo è ambiguo (es. "Euro AAA 10Y yield")
 #   soglia_giorni  soglia di freschezza propria della serie (giorni), al posto di quella standard
 #                  per la sua frequenza. Da usare SOLO con un motivo scritto accanto (es. fonte lenta)
 #
@@ -149,6 +153,32 @@ pagine:
     stato: dopo
     descrizione: The South Korean economy.
 
+# I numeri chiave dell'Overview (home): gruppi di schede. Ogni scheda mostra l'ultimo valore, il mini-grafico a un anno e le variazioni.
+#   serie      id della serie
+#   etichetta  nome mostrato sulla scheda
+#   vai        id del grafico a cui porta il clic (il link si costruisce da solo)
+panoramica:
+  - titolo: Policy & inflation
+    schede:
+      - {serie: DFF, etichetta: Fed funds rate, vai: mk-rates-fed-ecb}
+      - {serie: "FM/D.U2.EUR.4F.KR.DFR.LEV", etichetta: ECB deposit rate, vai: mk-rates-fed-ecb}
+      - {serie: CPIAUCSL, etichetta: US inflation (CPI), vai: usa-inflazione}
+      - {serie: "HICP/M.U2.N.000000.4D0.ANR", etichetta: Euro-area inflation (HICP), vai: eur-inflazione}
+  - titolo: Rates
+    schede:
+      - {serie: DGS10, etichetta: US 10Y Treasury yield, vai: usa-rendimenti}
+      - {serie: "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y", etichetta: Euro AAA 10Y yield (Bund proxy), vai: eur-rendimenti}
+      - {serie: SPREAD_BTP_BUND, etichetta: BTP-Bund spread (monthly), vai: eur-spread-paesi}
+      - {serie: T10Y2Y, etichetta: US 10Y-2Y spread, vai: mk-rates-slope}
+  - titolo: Markets
+    schede:
+      - {serie: "^GSPC", etichetta: S&P 500, vai: gl-borse}
+      - {serie: "^STOXX50E", etichetta: Euro Stoxx 50, vai: gl-borse}
+      - {serie: "EXR/D.USD.EUR.SP00.A", etichetta: EUR/USD, vai: eur-eurusd}
+      - {serie: "GC=F", etichetta: Gold, vai: com-oro}
+      - {serie: "BZ=F", etichetta: Brent oil, vai: com-petrolio}
+      - {serie: VIXCLS, etichetta: VIX (expected US stock volatility), vai: usa-vix}
+
 # Recessioni disegnate come bande grigie, per le regioni senza una serie scaricabile.
 # (Per gli USA si usa la serie FRED USREC, più in basso.)
 recessioni:
@@ -209,6 +239,9 @@ serie:
     categoria: curva
     unita: "%"
     trasformazione: livello
+    movimenti: true
+    gruppo_movimenti: us_rates
+    etichetta_breve: "US Treasury 3M"
   - id: DGS2
     fonte: fred
     nome: "Treasury 2Y"
@@ -216,6 +249,9 @@ serie:
     categoria: curva
     unita: "%"
     trasformazione: livello
+    movimenti: true
+    gruppo_movimenti: us_rates
+    etichetta_breve: "US Treasury 2Y"
   - id: DGS5
     fonte: fred
     nome: "Treasury 5Y"
@@ -223,6 +259,9 @@ serie:
     categoria: curva
     unita: "%"
     trasformazione: livello
+    movimenti: true
+    gruppo_movimenti: us_rates
+    etichetta_breve: "US Treasury 5Y"
   - id: DGS10
     fonte: fred
     nome: "Treasury 10Y"
@@ -230,6 +269,9 @@ serie:
     categoria: curva
     unita: "%"
     trasformazione: livello
+    movimenti: true
+    gruppo_movimenti: us_rates
+    etichetta_breve: "US Treasury 10Y"
   - id: DGS30
     fonte: fred
     nome: "Treasury 30Y"
@@ -239,6 +281,9 @@ serie:
     trasformazione: livello
 
   # --- Spread della curva -------------------------------------------
+    movimenti: true
+    gruppo_movimenti: us_rates
+    etichetta_breve: "US Treasury 30Y"
   - id: T10Y2Y
     fonte: fred
     nome: "10Y-2Y spread"
@@ -246,6 +291,9 @@ serie:
     categoria: spread_curva
     unita: "%"
     trasformazione: livello
+    movimenti: true
+    gruppo_movimenti: us_rates
+    etichetta_breve: "US 10Y-2Y spread"
   - id: T10Y3M
     fonte: fred
     nome: "10Y-3M spread"
@@ -255,6 +303,9 @@ serie:
     trasformazione: livello
 
   # --- Tassi reali e breakeven --------------------------------------
+    movimenti: true
+    gruppo_movimenti: us_rates
+    etichetta_breve: "US 10Y-3M spread"
   - id: DFII10
     fonte: fred
     nome: "Real yield 10Y (TIPS)"
@@ -262,6 +313,9 @@ serie:
     categoria: tassi_reali
     unita: "%"
     trasformazione: livello
+    movimenti: true
+    gruppo_movimenti: us_rates
+    etichetta_breve: "US 10Y real yield (TIPS)"
   - id: T10YIE
     fonte: fred
     nome: "Breakeven inflation 10Y"
@@ -271,6 +325,9 @@ serie:
     trasformazione: livello
 
   # --- Inflazione (indici di prezzo trasformati in variazione annua) -
+    movimenti: true
+    gruppo_movimenti: us_rates
+    etichetta_breve: "US 10Y breakeven inflation"
   - id: CPIAUCSL
     fonte: fred
     nome: "US CPI headline"
@@ -301,6 +358,8 @@ serie:
     categoria: credito
     unita: "%"
     trasformazione: livello
+    movimenti: true
+    gruppo_movimenti: us_credit
   - id: BAMLC0A0CM
     fonte: fred
     nome: "US investment-grade spread (OAS)"
@@ -308,6 +367,8 @@ serie:
     categoria: credito
     unita: "%"
     trasformazione: livello
+    movimenti: true
+    gruppo_movimenti: us_credit
   - id: BAMLH0A0HYM2
     fonte: fred
     nome: "US high-yield spread (OAS)"
@@ -317,6 +378,8 @@ serie:
     trasformazione: livello
 
   # --- Condizioni finanziarie e lavoro ------------------------------
+    movimenti: true
+    gruppo_movimenti: us_credit
   - id: VIXCLS
     fonte: fred
     nome: "VIX"
@@ -324,6 +387,9 @@ serie:
     categoria: condizioni
     unita: "points"
     trasformazione: livello
+    movimenti: true
+    gruppo_movimenti: vix
+    etichetta_breve: "VIX (expected US stock volatility)"
   - id: DTWEXBGS
     fonte: fred
     nome: "Broad dollar index"
@@ -331,6 +397,8 @@ serie:
     categoria: condizioni
     unita: "index"
     trasformazione: livello
+    movimenti: true
+    gruppo_movimenti: usd
   - id: UNRATE
     fonte: fred
     nome: "Unemployment rate"
@@ -372,6 +440,9 @@ serie:
     categoria: curva
     unita: "%"
     trasformazione: livello
+    movimenti: true
+    gruppo_movimenti: ea_rates
+    etichetta_breve: "Euro AAA 3M yield"
   - id: YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_1Y
     fonte: ecb
     nome: "AAA 1Y"
@@ -379,6 +450,9 @@ serie:
     categoria: curva
     unita: "%"
     trasformazione: livello
+    movimenti: true
+    gruppo_movimenti: ea_rates
+    etichetta_breve: "Euro AAA 1Y yield"
   - id: YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y
     fonte: ecb
     nome: "AAA 2Y"
@@ -386,6 +460,9 @@ serie:
     categoria: curva
     unita: "%"
     trasformazione: livello
+    movimenti: true
+    gruppo_movimenti: ea_rates
+    etichetta_breve: "Euro AAA 2Y yield"
   - id: YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_5Y
     fonte: ecb
     nome: "AAA 5Y"
@@ -393,6 +470,9 @@ serie:
     categoria: curva
     unita: "%"
     trasformazione: livello
+    movimenti: true
+    gruppo_movimenti: ea_rates
+    etichetta_breve: "Euro AAA 5Y yield"
   - id: YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y
     fonte: ecb
     nome: "AAA 10Y"
@@ -400,6 +480,9 @@ serie:
     categoria: curva
     unita: "%"
     trasformazione: livello
+    movimenti: true
+    gruppo_movimenti: ea_rates
+    etichetta_breve: "Euro AAA 10Y yield"
   - id: YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_30Y
     fonte: ecb
     nome: "AAA 30Y"
@@ -407,6 +490,9 @@ serie:
     categoria: curva
     unita: "%"
     trasformazione: livello
+    movimenti: true
+    gruppo_movimenti: ea_rates
+    etichetta_breve: "Euro AAA 30Y yield"
   - id: EA_AAA_10A_2A
     fonte: calcolata
     componenti: [YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y, YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y]
@@ -419,6 +505,9 @@ serie:
   # --- Spread sovrani -----------------------------------------------
   # Rendimenti 10 anni dei singoli Paesi: solo MENSILI (media del mese), dal dataset
   # BCE dei criteri di convergenza. I dati giornalieri per Paese non sono gratuiti.
+    movimenti: true
+    gruppo_movimenti: ea_rates
+    etichetta_breve: "Euro AAA slope 10Y-2Y"
   - id: IRS/M.DE.L.L40.CI.0000.EUR.N.Z
     fonte: ecb
     nome: "Bund 10Y (monthly average)"
@@ -480,6 +569,8 @@ serie:
   # --- Inflazione ---------------------------------------------------
   # ATTENZIONE: dal 2026 l'HICP è nel dataset BCE "HICP" (codice fornitore 4D0).
   # Il vecchio dataset "ICP" è fermo a dicembre 2025.
+    movimenti: true
+    gruppo_movimenti: ea_spreads
   - id: HICP/M.U2.N.000000.4D0.ANR
     fonte: ecb
     nome: "Euro-area HICP headline"
@@ -508,6 +599,8 @@ serie:
     trasformazione: livello
 
   # --- Cambio -------------------------------------------------------
+    movimenti: true
+    gruppo_movimenti: ea_credit
   - id: EXR/D.USD.EUR.SP00.A
     fonte: ecb
     nome: "EUR/USD"
@@ -528,6 +621,8 @@ serie:
   # =================================================================
 
   # --- Energia ------------------------------------------------------
+    movimenti: true
+    gruppo_movimenti: usd
   - id: CL=F
     fonte: yahoo
     nome: "WTI crude oil"
@@ -537,6 +632,8 @@ serie:
     unita: "$/barrel"
     trasformazione: livello
     riserva: {fonte: fred, id: DCOILWTICO, nota: "daily spot price, not futures"}
+    movimenti: true
+    gruppo_movimenti: oil
   - id: BZ=F
     fonte: yahoo
     nome: "Brent crude oil"
@@ -546,6 +643,8 @@ serie:
     unita: "$/barrel"
     trasformazione: livello
     riserva: {fonte: fred, id: DCOILBRENTEU, nota: "daily spot price, not futures"}
+    movimenti: true
+    gruppo_movimenti: oil
   - id: NG=F
     fonte: yahoo
     nome: "Henry Hub natural gas"
@@ -556,6 +655,8 @@ serie:
     trasformazione: livello
     decimali: 3
     riserva: {fonte: fred, id: DHHNGSP, nota: "daily spot price, not futures"}
+    movimenti: true
+    gruppo_movimenti: gas_us
   - id: TTF=F
     fonte: yahoo
     nome: "TTF natural gas (Europe)"
@@ -567,6 +668,8 @@ serie:
     riserva: {fonte: fred, id: PNGASEUUSDM, unita: $/MMBtu, nota: "IMF monthly average"}
 
   # --- Metalli preziosi (nessuna riserva gratuita) -------------------
+    movimenti: true
+    gruppo_movimenti: gas_eu
   - id: GC=F
     fonte: yahoo
     nome: "Gold"
@@ -575,6 +678,8 @@ serie:
     categoria: metalli_preziosi
     unita: "$/oz"
     trasformazione: livello
+    movimenti: true
+    gruppo_movimenti: precious_metals
   - id: SI=F
     fonte: yahoo
     nome: "Silver"
@@ -585,6 +690,8 @@ serie:
     trasformazione: livello
 
   # --- Metalli industriali ------------------------------------------
+    movimenti: true
+    gruppo_movimenti: precious_metals
   - id: HG=F
     fonte: yahoo
     nome: "Copper"
@@ -595,6 +702,8 @@ serie:
     trasformazione: livello
     decimali: 3
     riserva: {fonte: fred, id: PCOPPUSDM, unita: $/tonne, nota: "IMF monthly average"}
+    movimenti: true
+    gruppo_movimenti: industrial_metals
   - id: ALI=F
     fonte: yahoo
     nome: "Aluminium (COMEX)"
@@ -606,6 +715,8 @@ serie:
     riserva: {fonte: fred, id: PALUMUSDM, nota: "IMF monthly average"}
 
   # --- Agricoli -----------------------------------------------------
+    movimenti: true
+    gruppo_movimenti: industrial_metals
   - id: ZW=F
     fonte: yahoo
     nome: "Wheat"
@@ -615,6 +726,8 @@ serie:
     unita: "cents/bushel"
     trasformazione: livello
     riserva: {fonte: fred, id: PWHEAMTUSDM, unita: $/tonne, nota: "IMF monthly average"}
+    movimenti: true
+    gruppo_movimenti: grains
   - id: ZC=F
     fonte: yahoo
     nome: "Corn"
@@ -627,6 +740,8 @@ serie:
 
   # --- Serie calcolate per i grafici di analisi ----------------------
   # Calcolate solo se entrambe le componenti vengono da Yahoo (mai spot FRED − future Yahoo)
+    movimenti: true
+    gruppo_movimenti: grains
   - id: SPREAD_BRENT_WTI
     fonte: calcolata
     componenti: [BZ=F, CL=F]
@@ -673,6 +788,9 @@ serie:
     unita: "%"
     trasformazione: livello
     decimali: 3
+    movimenti: true
+    gruppo_movimenti: jp_rates
+    etichetta_breve: "Japan 2Y yield"
   - id: JGB_10Y
     fonte: mof
     nome: "JGB 10Y"
@@ -682,6 +800,9 @@ serie:
     trasformazione: livello
     decimali: 3
     riserva: {fonte: fred, id: IRLTLT01JPM156N, nota: "OECD monthly average"}
+    movimenti: true
+    gruppo_movimenti: jp_rates
+    etichetta_breve: "Japan 10Y yield"
   - id: JGB_30Y
     fonte: mof
     nome: "JGB 30Y"
@@ -690,6 +811,9 @@ serie:
     unita: "%"
     trasformazione: livello
     decimali: 3
+    movimenti: true
+    gruppo_movimenti: jp_rates
+    etichetta_breve: "Japan 30Y yield"
   - id: CPIm/001
     fonte: statjp
     nome: "Japan CPI headline"
@@ -719,6 +843,8 @@ serie:
     unita: "JPY per USD"
     trasformazione: livello
     riserva: {fonte: fred, id: DEXJPUS}
+    movimenti: true
+    gruppo_movimenti: jpy
   - id: ^N225
     fonte: yahoo
     nome: "Nikkei 225"
@@ -729,6 +855,8 @@ serie:
     decimali: 0
 
   # --- Cina ----------------------------------------------------------
+    movimenti: true
+    gruppo_movimenti: asia_equities
   - id: WS_CBPOL/D.CN
     fonte: bis
     nome: "PBoC 1-year LPR"
@@ -752,6 +880,8 @@ serie:
     trasformazione: livello
     decimali: 4
     riserva: {fonte: fred, id: DEXCHUS}
+    movimenti: true
+    gruppo_movimenti: cny
   - id: 510300.SS
     fonte: yahoo
     nome: "CSI 300 (ETF 510300)"
@@ -760,6 +890,8 @@ serie:
     unita: "CNY"
     trasformazione: livello
     decimali: 3
+    movimenti: true
+    gruppo_movimenti: asia_equities
   - id: ^HSI
     fonte: yahoo
     nome: "Hang Seng"
@@ -770,6 +902,8 @@ serie:
     decimali: 0
 
   # --- Corea del Sud -------------------------------------------------
+    movimenti: true
+    gruppo_movimenti: asia_equities
   - id: WS_CBPOL/D.KR
     fonte: bis
     nome: "BoK base rate"
@@ -803,6 +937,8 @@ serie:
     trasformazione: livello
     decimali: 1
     riserva: {fonte: fred, id: DEXKOUS}
+    movimenti: true
+    gruppo_movimenti: krw
   - id: ^KS11
     fonte: yahoo
     nome: "KOSPI"
@@ -813,6 +949,8 @@ serie:
     decimali: 0
 
   # --- Confronto globale (solo le serie che non appartengono già a un'altra pagina) ---
+    movimenti: true
+    gruppo_movimenti: asia_equities
   - id: WS_CBPOL/D.US
     fonte: bis
     nome: "Fed policy rate"
@@ -867,6 +1005,8 @@ serie:
     trasformazione: livello
     decimali: 0
     riserva: {fonte: fred, id: SP500, nota: "on FRED only from Oct 2016"}
+    movimenti: true
+    gruppo_movimenti: us_equities
   - id: ^NDX
     fonte: yahoo
     nome: "Nasdaq 100"
@@ -876,6 +1016,8 @@ serie:
     trasformazione: livello
     decimali: 0
     riserva: {fonte: fred, id: NASDAQ100}
+    movimenti: true
+    gruppo_movimenti: us_equities
   - id: ^RUT
     fonte: yahoo
     nome: "Russell 2000"
@@ -884,6 +1026,8 @@ serie:
     unita: "points"
     trasformazione: livello
     decimali: 0
+    movimenti: true
+    gruppo_movimenti: us_equities
   - id: ^SPXEW
     fonte: yahoo
     nome: "S&P 500 Equal Weight"
@@ -894,6 +1038,8 @@ serie:
     decimali: 0
   # Concentrazione del mercato: sale = il titolo "medio" batte le grandi capitalizzazioni;
   # scende = a trainare l'S&P 500 sono pochi giganti. Entrambe le componenti da Yahoo.
+    movimenti: true
+    gruppo_movimenti: us_equities
   - id: SP500_EW_SU_CW
     fonte: calcolata
     nome: "S&P 500 Equal Weight / S&P 500 ratio"
@@ -914,6 +1060,8 @@ serie:
     unita: "points"
     trasformazione: livello
     decimali: 0
+    movimenti: true
+    gruppo_movimenti: ea_equities
   - id: ^GDAXIP
     fonte: yahoo
     nome: "DAX (price index)"
@@ -923,6 +1071,8 @@ serie:
     unita: "points"
     trasformazione: livello
     decimali: 0
+    movimenti: true
+    gruppo_movimenti: ea_equities
   - id: ^FCHI
     fonte: yahoo
     nome: "CAC 40"
@@ -931,6 +1081,8 @@ serie:
     unita: "points"
     trasformazione: livello
     decimali: 0
+    movimenti: true
+    gruppo_movimenti: ea_equities
   - id: FTSEMIB.MI
     fonte: yahoo
     nome: "FTSE MIB"
@@ -939,6 +1091,8 @@ serie:
     unita: "points"
     trasformazione: livello
     decimali: 0
+    movimenti: true
+    gruppo_movimenti: ea_equities
   - id: EXV1.DE
     fonte: yahoo
     nome: "European banks (STOXX Europe 600 Banks ETF)"
@@ -948,6 +1102,8 @@ serie:
     trasformazione: livello
     decimali: 2
   # --- Mondo ---------------------------------------------------------
+    movimenti: true
+    gruppo_movimenti: ea_equities
   - id: ACWI
     fonte: yahoo
     nome: "MSCI ACWI (iShares ETF)"
@@ -959,6 +1115,8 @@ serie:
     decimali: 2
   # Cambi per la conversione in USD del Confronto globale: "valuta per dollaro" (come JPY=X, CNY=X, KRW=X).
   # EUR=X = euro per dollaro; HKD=X = dollari di Hong Kong per dollaro (cambio agganciato al dollaro).
+    movimenti: true
+    gruppo_movimenti: world_equities
   - id: EUR=X
     fonte: yahoo
     nome: "USD/EUR"
