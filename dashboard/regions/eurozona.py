@@ -20,7 +20,6 @@ TUTTI_10A = "YC/B.U2.EUR.4F.G_N_C.SV_C_YM.SR_10Y"
 
 HICP = "HICP/M.U2.N.000000.4D0.ANR"
 HICP_CORE = "HICP/M.U2.N.XEF000.4D0.ANR"
-HY_EURO = "BAMLHE00EHYIOAS"
 
 # Azioni (Yahoo Finance): le definizioni stanno in config.yaml, qui solo gli id
 EURO_STOXX_50, DAX, CAC_40, FTSE_MIB, BANCHE = "^STOXX50E", "^GDAXIP", "^FCHI", "FTSEMIB.MI", "EXV1.DE"
@@ -76,30 +75,11 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                             evidenzia_inversioni=True, periodo_iniziale="Max", largo=True,
                             note=["curve-inversion", "bands-cepr"]),
                 ]),
-        Sezione("spread-sovrani", "Sovereign spreads",
-                "How much extra yield investors demand to lend to a country "
-                "compared with Germany: it measures perceived risk (debt, politics, "
-                "the survival of the euro).",
-                grafici=[
-                    storico("eur-spread-paesi", "BTP-Bund and OAT-Bund 10-year spreads (MONTHLY data)",
-                            ["SPREAD_BTP_BUND", "SPREAD_OAT_BUND"], periodo_iniziale="Max", largo=True,
-                            note=["monthly-sovereign-yields", "bands-cepr"]),
-                    storico("eur-spread-tutti", "All euro-area government bonds minus AAA, 10 years (daily)",
-                            ["EA_TUTTI_MENO_AAA_10A"], periodo_iniziale="Max", largo=True,
-                            note=["ea-all-minus-aaa", "bands-cepr"]),
-                ]),
         Sezione("inflazione", "Inflation", "Change in consumer prices (HICP) compared with a year earlier.",
                 grafici=[
                     storico("eur-inflazione", "HICP headline and core (% y/y)", [HICP, HICP_CORE],
                             riferimento=(2, ""), periodo_iniziale="10Y", largo=True,
                             note=["hicp-core", "target-ecb", "bands-cepr"]),
-                ]),
-        Sezione("credito", "Credit",
-                "Extra yield investors demand on euro corporate bonds compared with government bonds.",
-                grafici=[
-                    storico("eur-hy", "High Yield OAS in euro (ICE BofA)", [HY_EURO], periodo_iniziale="Max",
-                            largo=True,
-                            note=["ice-oas-history", "ea-ig-not-available"]),
                 ]),
         Sezione("azioni", "Equities",
                 "The main euro-area equity indices and European banks, in euro.",

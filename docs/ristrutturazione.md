@@ -12,8 +12,8 @@ Piano approvato dall'utente il 01/10/2026, con le scelte della sezione 0 e due a
 | 2 | Inglese (testi, numeri, unità, date), campo `paese`, palette fissa per Paese, campo "Come leggerlo" | **fatto e in `main`** |
 | 3 | Footer dei grafici (fonte + link + note), registro `contenuti/note.yaml`, pagine Method e Series status | **fatto e in `main`** |
 | 4a | Mercati: Commodities | **fatto e in `main`** |
-| 4b | Mercati: FX | **fatto sul ramo** `ristrutturazione/step-4b`, in attesa dell'ok per il merge |
-| 4c | Mercati: Credit | da fare |
+| 4b | Mercati: FX | **fatto e in `main`** |
+| 4c | Mercati: Credit | **fatto sul ramo** `ristrutturazione/step-4c`, in attesa dell'ok per il merge |
 | 4d | Mercati: Equities (con colonna "Last", vedi sotto) | da fare |
 | 4e | Mercati: Rates & curves | da fare |
 | 5 | Economies (hub + 5 segnaposto + UNRATE in USA); `regioni` → `pagine` nel config; via le vecchie pagine e il Confronto globale | da fare |
@@ -308,3 +308,7 @@ Il workflow GitHub non cambia (pubblica già tutta `site/`).
 - 01/10/2026: step 4b (FX) sul ramo `ristrutturazione/step-4b`: pagina `/markets/fx/` (`dashboard/mercati/fx.py`) con 5 numeri chiave, sezioni "Currencies compared" (`gl-valute`), "Exchange rates in levels" (EUR/USD, USD/JPY, USD/CNY, USD/KRW in griglia 2×2) e "The broad dollar" (`usa-dollaro`), ognuno con "How to read it".
   I 6 grafici sono stati tolti dalle pagine dei Paesi (sezioni "Exchange rate" di Giappone, Cina, Corea, Eurozona; sezione "Currencies" del Confronto globale; `usa-dollaro` da USA). Decisione: i 4 cambi non hanno più le bande CEPR (EUR/USD le aveva): sono rapporti tra due economie;
   l'indice del dollaro mantiene le bande NBER. Nuova nota `broad-dollar-index`. Navigazione "Previous / Next" tra pagine attive dello stesso hub (precedente/successiva: `FX ‹ › Commodities`).
+- 01/10/2026: step 4b unito in `main` (riga USD/JPY con l'esempio di agosto 2024, verificata in `main` dopo il merge).
+- 01/10/2026: step 4c (Credit) sul ramo `ristrutturazione/step-4c`: pagina `/markets/credit/` (`dashboard/mercati/credit.py`) con 6 numeri chiave e sezioni "High yield: US vs euro area" (nuovo grafico `mk-credit-hy`, assorbe `eur-hy`),
+  "US credit in detail" (`usa-oas`, `usa-baa`) e "Sovereign spreads" (`eur-spread-paesi`, `eur-spread-tutti`), tutti con "How to read it". Tolti dalle pagine USA ed Eurozona le sezioni Credit e Sovereign spreads.
+  Rinominate cinque serie in `config.yaml` per distinguere USA ed euro (es. "US high-yield spread (OAS)", "Euro high-yield spread (OAS)"). Bande NBER su `usa-oas`/`usa-baa` e CEPR sugli spread sovrani; nessuna banda sul confronto USA-euro.
