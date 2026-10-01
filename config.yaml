@@ -809,7 +809,7 @@ serie:
   # =================================================================
   # AZIONI OCCIDENTALI (fonte Yahoo Finance, verificate il 01/10/2026)
   # Tutti prezzi di chiusura SENZA dividendi (auto_adjust=False in yahoo.py), per coerenza tra indici ed ETF.
-  # Eccezione da sapere: il DAX (^GDAXI) è per definizione un indice "performance" (dividendi reinvestiti).
+  # DAX: ^GDAXI è total return (dividendi reinvestiti), quindi si usa ^GDAXIP, il DAX K (Kursindex, di prezzo), dal 03/2013.
   # Riserva FRED solo dove esiste: S&P 500 (SP500, solo dal 10/2016 per licenza) e Nasdaq 100 (NASDAQ100).
   # Nessuna riserva gratuita per Russell 2000, S&P 500 Equal Weight, indici europei, ACWI.
   # Ogni indice è definito UNA volta qui: i grafici delle altre tab (Confronto globale) lo riusano per id.
@@ -877,9 +877,9 @@ serie:
     trasformazione: livello
     riepilogo: true
     decimali: 0
-  - id: ^GDAXI
+  - id: ^GDAXIP
     fonte: yahoo
-    nome: DAX
+    nome: DAX (indice di prezzo)
     regione: eurozona
     categoria: borsa
     unita: punti

@@ -24,7 +24,7 @@ HY_EURO = "BAMLHE00EHYIOAS"
 EURUSD = "EXR/D.USD.EUR.SP00.A"
 
 # Azioni (Yahoo Finance): le definizioni stanno in config.yaml, qui solo gli id
-EURO_STOXX_50, DAX, CAC_40, FTSE_MIB, BANCHE = "^STOXX50E", "^GDAXI", "^FCHI", "FTSEMIB.MI", "EXV1.DE"
+EURO_STOXX_50, DAX, CAC_40, FTSE_MIB, BANCHE = "^STOXX50E", "^GDAXIP", "^FCHI", "FTSEMIB.MI", "EXV1.DE"
 AZIONI = [EURO_STOXX_50, DAX, CAC_40, FTSE_MIB, BANCHE]
 
 NOTA_RECESSIONI = "Bande grigie: recessioni dell'area euro datate dal CEPR."
@@ -119,10 +119,10 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                     base100("eur-indici-azionari", "Borse e banche europee (base 100)", AZIONI,
                             periodo_iniziale="5A", largo=True,
                             nota="Normalizzati a 100 all'inizio del periodo scelto con i pulsanti 1A / 5A / 10A / Max; "
-                                 "con \"Max\" si parte dal 2008, quando esistono tutte le linee. Prezzi di chiusura "
-                                 "senza dividendi (non \"adjusted\"), in euro. ATTENZIONE: il DAX è per definizione "
-                                 "un indice \"performance\" (dividendi reinvestiti), quindi su periodi lunghi sale più "
-                                 "degli altri a parità di mercato. \"Banche europee\" è l'ETF iShares STOXX Europe 600 "
+                                 "con \"Max\" si parte dal 2013, quando esistono tutte le linee (il DAX di prezzo su Yahoo parte da marzo 2013). "
+                                 "Prezzi di chiusura senza dividendi (non \"adjusted\"), in euro. DAX: si usa il DAX K "
+                                 "(Kursindex, indice di prezzo); l'indice DAX \"ufficiale\" reinveste i dividendi e non "
+                                 "sarebbe confrontabile con gli altri. \"Banche europee\" è l'ETF iShares STOXX Europe 600 "
                                  "Banks (Xetra, ticker EXV1): include anche banche non dell'area euro (es. Regno Unito, "
                                  "Svizzera) e NON è l'Euro Stoxx Banks, che su Yahoo non è disponibile. L'ETF distribuisce "
                                  "i dividendi: nel prezzo si vedono come piccoli cali."),

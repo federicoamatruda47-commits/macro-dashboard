@@ -103,10 +103,11 @@ site/                    OUTPUT generato (non versionato: lo ricrea la GitHub Ac
 
 ### Azioni occidentali e benchmark (verificate il 01/10/2026)
 - Yahoo, indici giornalieri: `^GSPC` (dal 1927), `^NDX` (1985), `^RUT` (1987), `^SPXEW` S&P 500 Equal Weight (dal 12/2006; `^SP500EW` è lo stesso indice),
-  `^STOXX50E` (dal 2007), `^GDAXI` (1987), `^FCHI` (1990), `FTSEMIB.MI` (1997). Riserva FRED solo per `^GSPC` (`SP500`, dal 10/2016) e `^NDX` (`NASDAQ100`);
+  `^STOXX50E` (dal 2007), `^GDAXIP` DAX K di prezzo (dal 03/2013), `^FCHI` (1990), `FTSEMIB.MI` (1997). Riserva FRED solo per `^GSPC` (`SP500`, dal 10/2016) e `^NDX` (`NASDAQ100`);
   `RU2000PR` non esiste. Per l'equal-weight non servono gli ETF `RSP`/`SPY` (dal 2003): il rapporto degli indici (`SP500_EW_SU_CW`, ×100) è quasi identico.
-- **DAX = indice "performance"** (dividendi reinvestiti, non esiste una versione di prezzo su Yahoo: `^GDAXP` non risponde): su periodi lunghi sale molto più degli altri
-  (base 100 dal 2008: DAX 323, Euro Stoxx 50 147). Scritto nella nota del grafico.
+- **DAX**: `^GDAXI` è l'indice "performance" (dividendi reinvestiti, 323 contro ~146 degli altri in base 100 dal 2008): fuorviante nel confronto.
+  Si usa `^GDAXIP` (Yahoo "DAX K", Kursindex = indice di prezzo, dal 05/03/2013, verificato: il rapporto `^GDAXI`/`^GDAXIP` cresce del ~3% annuo, cioè i dividendi).
+  Costo: il "Max" del grafico a base 100 dell'Eurozona parte dal 2013 (prima dal 2008). `^GDAXP` e simili non esistono.
 - **Banche europee**: `^SX7E` (Euro Stoxx Banks) e `^SX7P` non esistono su Yahoo. Si usa l'ETF `EXV1.DE` (iShares STOXX Europe 600 Banks, in €, dal 01/2008,
   Xetra: l'ultimo dato è spesso del giorno prima), che include banche non dell'area euro (UK, Svizzera). `BNK.PA` parte solo dal 2024.
 - **MSCI ACWI**: `^ACWI` non esiste; si usa l'ETF `ACWI` (dal 03/2008, in $). L'ETF distribuisce dividendi, che nel prezzo non adjusted compaiono come piccoli cali.
