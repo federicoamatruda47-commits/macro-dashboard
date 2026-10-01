@@ -108,6 +108,42 @@ def confronta(baseline: dict, corrente: dict, mappa: dict) -> list[str]:
     return problemi
 
 
+def controlla_pagina_paese() -> list[str]:
+    """economies/country.html (una pagina per tutti i Paesi, step 10b): ogni Paese dell'elenco ha il suo file di dati, nessun file in più,
+    peso della pagina (compresso, come lo scarica il browser) e di ogni file sotto i limiti."""
+    import gzip
+    problemi = []
+    pagina = RADICE / "site" / "economies" / "country.html"
+    cartella = RADICE / "site" / "economies" / "dati"
+    if not pagina.exists():
+        return ["Manca economies/country.html"]
+    html = pagina.read_text(encoding="utf-8")
+    codici = re.findall(r'<a href="country\.html\?c=([A-Z]{3})" data-c=', html)
+    file_dati = {f.stem for f in cartella.glob("*.json")} - {"ultimi-valori"}
+    for codice in sorted(set(codici) - file_dati):
+        problemi.append(f"Paese nell'elenco senza file di dati: {codice}")
+    for codice in sorted(file_dati - set(codici)):
+        problemi.append(f"File di dati senza Paese nell'elenco: {codice}")
+    if len(codici) != len(set(codici)):
+        problemi.append("Paesi ripetuti nell'elenco di country.html")
+    compresso = lambda f: len(gzip.compress(f.read_bytes(), 6))  # noqa: E731
+    pesi = {f.stem: compresso(f) for f in cartella.glob("*.json")}
+    massimo = max((v for k, v in pesi.items() if k != "ultimi-valori"), default=0)
+    pagina_gz, js_gz = compresso(pagina), compresso(RADICE / "site" / "paese.js")
+    print(f"  country.html     {pagina.stat().st_size / 1e6:6.2f} MB ({pagina_gz / 1e3:.0f} KB compressi) · paese.js {js_gz / 1e3:.0f} KB compressi · "
+          f"{len(file_dati)} file di dati, il più grande {massimo / 1e3:.1f} KB compressi · ultimi-valori.json {pesi.get('ultimi-valori', 0) / 1e3:.1f} KB compressi")
+    if pagina_gz > 60_000:
+        problemi.append(f"country.html pesa {pagina_gz / 1e3:.0f} KB compressi (limite 60)")
+    if massimo > 12_000:
+        problemi.append(f"Un file di dati pesa {massimo / 1e3:.1f} KB compressi (limite 12)")
+    if pesi.get("ultimi-valori", 0) > 60_000:
+        problemi.append("ultimi-valori.json supera i 60 KB compressi")
+    # Tutto il necessario per un Paese (pagina + codice + dati) sta sotto 1 MB compresso, Plotly (0,40 MB) compreso
+    if pagina_gz + js_gz + massimo + 420_000 > 1_000_000:
+        problemi.append("Pagina del Paese oltre 1 MB compresso (Plotly compreso)")
+    return problemi
+
+
 def controlla_sito(baseline: dict, mappa: dict) -> int:
     """Guarda le pagine HTML generate: ogni grafico (anche "non disponibile") ha un <article id="chart-<id>">."""
     trovati: dict[str, list[str]] = {}
@@ -119,7 +155,7 @@ def controlla_sito(baseline: dict, mappa: dict) -> int:
               f"{len(re.findall(r'<article class=\"scheda-grafico', html)):3d} grafici")
         for id_grafico in re.findall(r'<article class="scheda-grafico[^"]*" id="chart-([^"]+)"', html):
             trovati.setdefault(id_grafico, []).append(nome)
-    problemi = []
+    problemi = controlla_pagina_paese()
     for id_grafico, dove in sorted(trovati.items()):
         if len(dove) > 1:
             problemi.append(f"Grafico doppio nel sito: {id_grafico} in {dove}")

@@ -346,3 +346,71 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .interruttore-tema:hover { border-color: var(--accento); color: var(--testo); }
 .interruttore-tema:focus-visible { outline: 2px solid var(--accento); outline-offset: 2px; }
 .interruttore-tema .icona { font-size: 1.05rem; line-height: 1; }
+
+/* =====================================================================
+   Pagina del Paese (economies/country.html): selettore, elenco, grafici, tabella "IMF outlook"
+   ===================================================================== */
+.selettore-paese {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 6px 12px;
+  margin-top: 16px; padding: 10px 12px;
+  background: var(--superficie); border: 1px solid var(--bordo); border-radius: 10px;
+}
+.selettore-paese[hidden] { display: none; }
+@media (min-width: 900px) and (min-height: 760px) { .selettore-paese { position: sticky; top: 108px; z-index: 5; } }   /* resta in vista solo se lo schermo è alto abbastanza */
+.selettore-etichetta { grid-column: 1 / -1; font-size: 0.8rem; color: var(--testo-2); }
+.selettore-campo { position: relative; min-width: 0; }
+#cerca-paese {
+  width: 100%; box-sizing: border-box; min-height: 44px; padding: 8px 12px;
+  font: inherit; color: var(--testo); background: var(--pagina); border: 1px solid var(--asse); border-radius: 8px;
+}
+#cerca-paese:focus-visible { outline: 2px solid var(--accento); outline-offset: 1px; }
+.selettore-risultati {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 10; margin: 0; padding: 4px; list-style: none;
+  max-height: min(60vh, 440px); overflow-y: auto;
+  background: var(--superficie); border: 1px solid var(--asse); border-radius: 8px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+.selettore-risultati[hidden] { display: none; }
+.selettore-risultati li { display: flex; justify-content: space-between; gap: 12px; align-items: center; min-height: 44px; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+.selettore-risultati li small { color: var(--testo-tenue); font-variant-numeric: tabular-nums; }
+.selettore-risultati li[aria-selected="true"] { background: var(--griglia); }
+.selettore-risultati li.nessuno { cursor: default; color: var(--testo-2); }
+.selettore-vicini { display: flex; gap: 6px; }
+.pulsante-paese {
+  min-height: 44px; padding: 6px 12px; font: inherit; font-size: 0.85rem; color: var(--testo-2);
+  background: none; border: 1px solid var(--griglia); border-radius: 8px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center;
+}
+.pulsante-paese:hover { color: var(--testo); border-color: var(--asse); }
+.pulsante-paese:focus-visible { outline: 2px solid var(--accento); outline-offset: 1px; }
+.selettore-stato { grid-column: 1 / -1; margin: 0; min-height: 0; font-size: 0.78rem; color: var(--testo-tenue); }
+.selettore-stato:empty { display: none; }
+@media (max-width: 600px) {
+  .selettore-paese { position: static; grid-template-columns: 1fr; }
+  .selettore-vicini .pulsante-paese { flex: 1; justify-content: center; }
+}
+.paese-info { margin: 16px 0 0; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.paese-info:empty { display: none; }
+.elenco-paesi { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 2px 14px; margin: 4px 0 0; padding: 0; list-style: none; }
+.elenco-paesi li { padding: 5px 0; }
+.elenco-paesi a { display: inline-block; min-height: 24px; }
+@media (max-width: 600px) { .elenco-paesi { grid-template-columns: 1fr 1fr; } .elenco-paesi li { padding: 9px 0; } }
+.etichetta-fonte { display: inline-block; padding: 0 5px; border: 1px solid var(--griglia); border-radius: 4px; color: var(--testo-tenue); font-size: 0.68rem; vertical-align: 1px; }
+.grafico-paese { height: 300px; margin-top: 6px; }
+@media (max-width: 600px) { .grafico-paese { height: 260px; } }
+.periodi-paese, .scala-paese { display: flex; gap: 2px; }
+.periodi-paese button, .scala-paese button {
+  min-width: 40px; min-height: 32px; padding: 2px 8px; border: 1px solid var(--griglia); border-radius: 6px;
+  background: none; color: var(--testo-2); font: inherit; font-size: 0.8rem; cursor: pointer;
+}
+.scala-paese { margin-left: auto; }
+.periodi-paese button[aria-pressed="true"], .scala-paese button[aria-pressed="true"] { background: var(--testo); border-color: var(--testo); color: var(--superficie); }
+.periodi-paese button:focus-visible, .scala-paese button:focus-visible { outline: 2px solid var(--accento); outline-offset: 1px; }
+.note-grafico { margin: 4px 0 0; font-size: 0.82rem; color: var(--testo-2); }
+.note-grafico[hidden] { display: none; }
+.note-grafico p { margin: 2px 0; }
+.tabella-outlook th, .tabella-outlook td { white-space: nowrap; }
+.tabella-outlook th[scope="row"] { font-weight: 500; }
+.tabella-outlook .num { text-align: right; font-variant-numeric: tabular-nums; }
+.tabella-outlook .stima { background: var(--griglia); color: var(--testo-2); }
+.tabella-outlook .unita-riga, .tabella-outlook .anno-effettivo { color: var(--testo-tenue); font-size: 0.75rem; font-weight: 400; }
+.link-economia a { white-space: nowrap; }
+[hidden] { display: none !important; }

@@ -17,6 +17,7 @@ gruppi:
   fx: Currencies
   commodities: Commodities
   countries: Country coverage and data not included
+  country-pages: Country pages (annual data by country)
 
 note:
   # ---------------------------------------------------------------- conventions
@@ -357,3 +358,50 @@ note:
     testo: >-
       Not included: 3-year yield (the daily data is only available through the Bank of Korea ECOS API, which requires
       a registration with a Korean phone number). The 10-year yield is monthly only.
+
+  # ---------------------------------------------------------------- country pages (annual data: IMF WEO and World Bank)
+  weo-estimates:
+    gruppo: country-pages
+    titolo: IMF estimates and projections
+    testo: >-
+      IMF data comes from the World Economic Outlook (WEO), published in April and October and revised every time. For each country and indicator the IMF
+      flags the "latest actual year", the last year with a figure reported by national statistics; later years are IMF estimates (years already past but
+      not yet confirmed) and projections, up to 2031. They are drawn dashed (lines) or lighter (bars) and the tooltip says so. The latest actual year
+      differs between countries and indicators, so the year is always written next to the value. A few countries have no projections at all (the IMF
+      data stop at the last actual year), and for a few the data stop long before: the page says so under the chart. The projections of the years further
+      ahead are less certain than the nearer ones.
+  fiscal-year:
+    gruppo: country-pages
+    titolo: Fiscal years in the IMF data
+    testo: >-
+      For some countries the IMF reports fiscal years instead of calendar years, for some or all indicators (public finances for about thirty countries, national
+      accounts and prices for fewer). A fiscal year is shown under the year in which it starts: for India, 2024 means the fiscal year 2024/25 (April 2024
+      to March 2025). The note appears under the charts concerned. Fiscal years can differ in length from country to country, so comparisons between
+      countries are approximate.
+  ilo-modelled:
+    gruppo: country-pages
+    titolo: ILO modelled estimates (unemployment and employment)
+    testo: >-
+      The unemployment rate and the employment ratio on the country pages are modelled estimates of the International Labour Organization (ILO), taken
+      from the World Bank. They are built with a statistical model that uses labour-force surveys where they exist and fills the gaps, with the same
+      definition for every country. They are therefore comparable across countries but they are not the figures published by each national statistical
+      office, which can differ slightly. The employment ratio is the share of the population aged 15 or over that has a job, so it also depends on
+      retirement ages and on the participation of women and young people.
+  wgi-score:
+    gruppo: country-pages
+    titolo: Control of corruption score (WGI)
+    testo: >-
+      The World Bank's Worldwide Governance Indicators combine many surveys and expert assessments of how well public power is kept from private gain.
+      Since the 2025 update (WGI 2.0) the result is a score on an absolute 0-100 scale anchored to fixed reference points (it replaces the old percentile
+      rank, which is no longer published), recalculated back to 1996. It measures perceptions, not corruption itself. The band is the 90% confidence
+      interval: it is wide for countries covered by few sources, and differences smaller than the band are not meaningful. Data exist for 1996, 1998 and
+      2000 and every year from 2002: the earlier years are shown as separate points.
+  country-coverage-annual:
+    gruppo: country-pages
+    titolo: Countries on the country pages
+    testo: >-
+      The country pages cover every country and territory in the IMF World Economic Outlook or in the World Bank data (aggregates such as "World" or
+      "Euro area" are not included). Some small countries and territories are only in the World Bank data: for them GDP, growth and GDP per head come from
+      the World Bank, with no projections, and the pages have no inflation, public finances or current account. Taiwan is only in the IMF data (the name is
+      the IMF's) and has no World Bank indicators. The IMF codes for Kosovo and for the West Bank and Gaza are replaced by the ISO codes used by the World
+      Bank. The two sources are never mixed in the same chart.

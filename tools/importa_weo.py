@@ -39,7 +39,7 @@ def main() -> int:
     catalogo = annuali.indicatori_di(annuali.carica_catalogo(carica_config(RADICE / "config.yaml")), annuali.FONTE_IMF)
     equivalenze = {i.codice: i.ultimo_effettivo_da for i in catalogo if i.ultimo_effettivo_da}
     try:
-        dati, ultimo, pubblicazione = leggi_file_weo(argomenti.file.read_bytes(), {i.codice for i in catalogo})
+        dati, ultimo, fiscale, pubblicazione = leggi_file_weo(argomenti.file.read_bytes(), {i.codice for i in catalogo})
     except ErroreFonte as errore:
         print(f"ERRORE: {errore}")
         return 1
@@ -47,7 +47,12 @@ def main() -> int:
     if pubblicazione is None:
         print("ERRORE: il file non riporta la data di pubblicazione: usa --pubblicato AAAA-MM-GG")
         return 1
+    # Stessi passaggi dello script (aggiorna_weo.py): codici ISO al posto di KOS e WBG, ultimo anno di PPPPC da NGDPD
+    dati = annuali.applica_alias(dati)
+    ultimo, fiscale = annuali.alias_chiavi(ultimo), annuali.alias_chiavi(fiscale)
+    ultimo_originale = dict(ultimo)
     ultimo = annuali.completa_ultimo_effettivo(ultimo, dati, equivalenze)
+    fiscale = annuali.completa_fiscale(fiscale, ultimo_originale, dati, equivalenze)
     print(f"Letti {len(dati):,} dati e {len(ultimo)} ultimi anni effettivi da {argomenti.file.name} (WEO pubblicato {pubblicazione})")
 
     if argomenti.confronta:
@@ -60,11 +65,11 @@ def main() -> int:
         print(f"Valori: {d.uguali:,} uguali, {d.cambiate} diversi, {d.aggiunte} solo nel file, {d.rimosse} solo nello snapshot")
         for esempio in d.esempi:
             print("   ", esempio)
-        du = annuali.differenze_ultimo(esistente.ultimo_effettivo, ultimo)
+        du = annuali.differenze_ultimo(esistente.ultimo_effettivo, ultimo, esistente.fiscale, fiscale)
         print(f"Ultimo anno effettivo: {len(du)} coppie diverse" + (f", es. {du[:6]}" if du else ""))
         return 0 if d.identici and not du else 2
 
-    annuali.scrivi_snapshot(argomenti.cartella, dati, annuali.meta_weo(pubblicazione, [i.codice for i in catalogo], equivalenze), ultimo)
+    annuali.scrivi_snapshot(argomenti.cartella, dati, annuali.meta_weo(pubblicazione, [i.codice for i in catalogo], equivalenze), ultimo, fiscale=fiscale)
     print(f"Snapshot scritto in {argomenti.cartella}")
     return 0
 

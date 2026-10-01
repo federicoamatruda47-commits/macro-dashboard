@@ -170,7 +170,8 @@ class TestCatalogo(unittest.TestCase):
         config = yaml.safe_load((RADICE / "config.yaml").read_text(encoding="utf-8"))
         catalogo = annuali.carica_catalogo(config)
         codici_imf = {i.codice for i in annuali.indicatori_di(catalogo, "imf")}
-        self.assertTrue({"NGDPD", "NGDP_RPCH", "PPPPC", "PCPIPCH", "GGXCNL_NGDP", "GGXWDG_NGDP", "BCA_NGDPD", "LP"} <= codici_imf)
+        self.assertTrue({"NGDPD", "NGDP_RPCH", "PPPPC", "PCPIPCH", "GGXCNL_NGDP", "GGXWDG_NGDP", "BCA_NGDPD"} <= codici_imf)
+        self.assertFalse({"NGDPDPC", "LP"} & codici_imf)                      # tolti: la pagina del Paese non li usa
         wgi = [i for i in annuali.indicatori_di(catalogo, "wb") if i.sorgente_wb == 3]
         self.assertEqual({i.codice for i in wgi}, {"GOV_WGI_CC.SC", "GOV_WGI_CC.SC_LB", "GOV_WGI_CC.SC_UB"})   # solo punteggio e intervallo, nessun rango
         self.assertFalse([i for i in catalogo if "RNK" in i.codice or "PER" in i.codice.split(".")])
@@ -230,7 +231,7 @@ FILE_WEO = (
 
 class TestImportatoreFile(unittest.TestCase):
     def test_lettura_del_file_weo(self):
-        dati, ultimo, pubblicazione = imf_file.leggi_file_weo(FILE_WEO, {"NGDP_RPCH", "NGDPD"})
+        dati, ultimo, fiscale, pubblicazione = imf_file.leggi_file_weo(FILE_WEO, {"NGDP_RPCH", "NGDPD"})
         self.assertIsNone(pubblicazione)               # il formato vecchio non riporta la data
         self.assertEqual(sorted(dati["indicatore"].unique()), ["NGDPD", "NGDP_RPCH"])        # OTHER escluso
         self.assertEqual(sorted(dati["paese"].unique()), ["IND", "ITA"])                      # niente righe di nota
@@ -243,7 +244,7 @@ class TestImportatoreFile(unittest.TestCase):
     def test_codifiche_diverse(self):
         for codifica in ("utf-16", "utf-8-sig", "cp1252"):
             testo = FILE_WEO.replace("Italy", "Italy ü") if codifica != "cp1252" else FILE_WEO.replace("Italy", "Italy é")
-            dati, _, _ = imf_file.leggi_file_weo(testo.encode(codifica), {"NGDP_RPCH"})
+            dati, _, _, _ = imf_file.leggi_file_weo(testo.encode(codifica), {"NGDP_RPCH"})
             self.assertEqual(len(dati), 6, codifica)
 
     def test_file_non_valido(self):
@@ -260,7 +261,7 @@ class TestImportatoreFile(unittest.TestCase):
         for paese, gruppo in dati.groupby("paese"):
             celle = [annuali.formatta_valore(gruppo.set_index("anno")["valore"].get(a, float("nan"))) if a in set(gruppo["anno"]) else "n/a" for a in (2024, 2025, 2026)]
             righe.append(f"1\t{paese}\tNGDP_RPCH\t{paese}\td\tn\tPercent change\t\t\t" + "\t".join(celle) + "\t2025")
-        letti, ultimo, _ = imf_file.leggi_file_weo("\n".join(righe) + "\n", {"NGDP_RPCH"})
+        letti, ultimo, _, _ = imf_file.leggi_file_weo("\n".join(righe) + "\n", {"NGDP_RPCH"})
         self.assertEqual(annuali.testo_dati_csv(letti), annuali.testo_dati_csv(dati))
         self.assertTrue(annuali.differenze(dati, letti, tolleranza=0.0006).identici)
         self.assertEqual(ultimo, {("ITA", "NGDP_RPCH"): 2025, ("DEU", "NGDP_RPCH"): 2025})
@@ -489,3 +490,59 @@ class TestControllaAttivita(unittest.TestCase):
         with mock.patch.object(m, "gh", return_value=elenco):
             self.assertEqual(m.issue_aperta(m.TITOLO), 6)          # la più vecchia, se per sbaglio ce ne sono due
             self.assertIsNone(m.issue_aperta("[PROVA] " + m.TITOLO))
+
+
+CSV_PORTALE = (
+    '"DATASET","SERIES_CODE","OBS_MEASURE","COUNTRY","INDICATOR","FREQUENCY","SCALE","UNIT","PUBLICATION_DATE","LATEST_ACTUAL_ANNUAL_DATA","2023","2024","2025"\n'
+    '"IMF.RES:WEO(9.0.0)","ITA.NGDPD.A","OBS_VALUE","Italy","GDP","Annual","Billions","US dollar","2026-04-14T13:00:00Z","2025","2380.129","2372.5","2550.111"\n'
+    '"IMF.RES:WEO(9.0.0)","IND.NGDP_RPCH.A","OBS_VALUE","India","GDP","Annual","Units","Percent","2026-04-14T13:00:00Z","FY2024/25","8.2","6.5","6.4"\n'
+    '"IMF.RES:WEO(9.0.0)","KOS.NGDP_RPCH.A","OBS_VALUE","Kosovo","GDP","Annual","Units","Percent","2026-04-14T13:00:00Z","2024","4.1","","3.9"\n'
+    '"IMF.RES:WEO(9.0.0)","ITA.PPPPC.A","OBS_VALUE","Italy","GDP","Annual","Units","","2026-04-14T13:00:00Z","","60000","62000","63537.964"\n'
+    '"IMF.RES:WEO(9.0.0)","G001.NGDPD.A","OBS_VALUE","World","GDP","Annual","Billions","US dollar","2026-04-14T13:00:00Z","2025","100","101","102"\n'
+)
+
+
+class TestFormatoPortaleEAnnoFiscale(unittest.TestCase):
+    def test_csv_del_portale(self):
+        dati, ultimo, fiscale, pubblicazione = imf_file.leggi_file_weo(CSV_PORTALE.encode("utf-8-sig"), {"NGDPD", "NGDP_RPCH", "PPPPC"})
+        self.assertEqual(pubblicazione, "2026-04-14")                     # la data del WEO, non quella dello scaricamento
+        self.assertEqual(sorted(dati["paese"].unique()), ["IND", "ITA", "KOS"])        # niente aggregati (G001)
+        self.assertEqual(ultimo[("IND", "NGDP_RPCH")], 2024)
+        self.assertEqual(fiscale, {("IND", "NGDP_RPCH")})
+        self.assertNotIn(("ITA", "PPPPC"), ultimo)                        # come nel file vero: PPPPC senza ultimo anno effettivo
+        self.assertEqual(len(dati[dati.paese == "KOS"]), 2)               # il valore vuoto è saltato
+
+    def test_alias_dei_codici_e_completamento_dell_anno_fiscale(self):
+        dati, ultimo, fiscale, _ = imf_file.leggi_file_weo(CSV_PORTALE, {"NGDPD", "NGDP_RPCH", "PPPPC"})
+        dati, ultimo, fiscale = annuali.applica_alias(dati), annuali.alias_chiavi(ultimo), annuali.alias_chiavi(fiscale)
+        self.assertEqual(sorted(dati["paese"].unique()), ["IND", "ITA", "XKX"])        # KOS -> XKX
+        self.assertIn(("XKX", "NGDP_RPCH"), ultimo)
+        originale = dict(ultimo)
+        ultimo = annuali.completa_ultimo_effettivo(ultimo, dati, {"PPPPC": "NGDPD"})
+        self.assertEqual(ultimo[("ITA", "PPPPC")], 2025)                  # anno copiato da NGDPD
+        # Un indicatore senza attributo eredita anche il segno "anno fiscale" dell'indicatore di riferimento
+        fiscale_con_ref = annuali.completa_fiscale(fiscale | {("ITA", "NGDPD")}, originale, dati, {"PPPPC": "NGDPD"})
+        self.assertIn(("ITA", "PPPPC"), fiscale_con_ref)
+        self.assertNotIn(("ITA", "PPPPC"), annuali.completa_fiscale(fiscale, originale, dati, {"PPPPC": "NGDPD"}))
+
+    def test_il_flag_anno_fiscale_si_scrive_e_si_rilegge(self):
+        with tempfile.TemporaryDirectory() as cartella:
+            radice = Path(cartella)
+            ultimo = {("IND", "NGDP_RPCH"): 2024, ("ITA", "NGDP_RPCH"): 2025}
+            annuali.scrivi_snapshot(radice / annuali.CARTELLE["imf"], dati_finti(), {"pubblicato": "2026-04-14"}, ultimo, fiscale={("IND", "NGDP_RPCH")})
+            testo = (radice / annuali.CARTELLE["imf"] / "ultimo_effettivo.csv").read_text(encoding="utf-8")
+            self.assertEqual(testo, "paese,indicatore,anno,anno_fiscale\nIND,NGDP_RPCH,2024,1\nITA,NGDP_RPCH,2025,\n")
+            letto = annuali.leggi_snapshot(radice, "imf")
+            self.assertEqual(letto.fiscale, {("IND", "NGDP_RPCH")})
+            self.assertEqual(letto.ultimo_effettivo[("ITA", "NGDP_RPCH")], 2025)
+
+    def test_differenze_contano_anche_il_segno_fiscale(self):
+        a = {("IND", "A"): 2024}
+        self.assertEqual(annuali.differenze_ultimo(a, a, set(), {("IND", "A")}), [("IND", "A", 2024, 2024)])
+        self.assertEqual(annuali.differenze_ultimo(a, a, {("IND", "A")}, {("IND", "A")}), [])
+
+    def test_e_anno_fiscale(self):
+        self.assertTrue(annuali.e_anno_fiscale("FY2024/25"))
+        self.assertFalse(annuali.e_anno_fiscale("2025"))
+        self.assertFalse(annuali.e_anno_fiscale(""))
+        self.assertFalse(annuali.e_anno_fiscale(None))

@@ -1,0 +1,196 @@
+# Contenuto della pagina del Paese (economies/country.html?c=ISO3): sezioni, grafici e righe "How to read it" (testi in inglese).
+# La pagina è disegnata da static/paese.js con i dati di site/economies/dati/<ISO3>.json (dashboard/paesi.py); qui si decide COSA mostrare.
+#
+# sezioni[].grafici[]:
+#   id           id del grafico (indirizzo condivisibile: country.html?c=ITA#chart-gdp_growth)
+#   titolo       titolo sopra il grafico
+#   forma        barre | linea | barre-linea (barre + linea) | banda (linea con intervallo, solo WGI)
+#   etichette    nome breve di ogni serie nella legenda (solo grafici con più serie)
+#   serie        indicatori del catalogo (config.yaml: indicatori) da disegnare, nell'ordine; la prima è la principale
+#                (le tre serie del PIL che esistono anche presso la Banca Mondiale passano alla Banca Mondiale solo per i Paesi senza dati FMI)
+#   unita, decimali   unità e cifre decimali nei tooltip e nelle schede
+#   riga0        true = linea di riferimento a zero
+#   scala_log    true = il grafico passa da solo a una scala logaritmica simmetrica (log10(1+|y|) col segno) se nella finestra visibile c'è almeno un valore
+#                sopra il 100%; due pulsanti Linear / Log permettono di scegliere a mano (la scelta resta finché non si cambia Paese)
+#   fonte        imf (WEO; per i Paesi senza FMI la Banca Mondiale) | wb (Banca Mondiale: lavoro, popolazione, WGI)
+#   come_leggerlo  una o due frasi per chi non è del settore, prudenti e fattuali (regole in CLAUDE.md). Esempi SOLO di episodi chiusi da almeno due anni:
+#                  mai valori correnti né classifiche, perché il WEO di ottobre li cambierebbe.
+#   note         id delle note di contenuti/note.yaml richiamate sotto il grafico
+# Le sette schede in cima alla pagina: l'ultimo anno EFFETTIVO accanto al valore
+numeri_chiave:
+  - {id: gdp_nominal, nome: Nominal GDP}
+  - {id: gdp_per_capita_ppp, nome: GDP per head, PPP}
+  - {id: population, nome: Population}
+  - {id: gdp_growth, nome: Real GDP growth}
+  - {id: inflation_average, nome: Inflation}
+  - {id: unemployment_ilo, nome: "Unemployment (ILO modelled)"}
+  - {id: government_debt, nome: Government debt}
+
+# Colonne della tabella "IMF outlook": ultimo anno effettivo, poi l'anno del WEO e i due successivi, poi l'ultimo anno del WEO (calcolati dallo snapshot)
+outlook:
+  titolo: IMF outlook
+  indicatori: [gdp_growth, inflation_average, government_balance, government_debt, current_account]
+  come_leggerlo: >-
+    IMF staff forecasts from the World Economic Outlook, revised every April and October. The further ahead the year, the more uncertain the forecast;
+    shaded figures are estimates or projections, not yet confirmed by national statistics.
+  note: [weo-estimates, fiscal-year]
+
+sezioni:
+  - id: output
+    titolo: Output & growth
+    descrizione: How big the economy is, how fast it grows and how many people share it.
+    grafici:
+      - id: gdp_growth
+        titolo: Real GDP growth
+        forma: barre
+        serie: [gdp_growth]
+        unita: "% y/y"
+        decimali: 1
+        riga0: true
+        fonte: imf
+        come_leggerlo: >-
+          How much the economy's output grew compared with the year before, after removing price changes. Lighter bars after the last actual year are
+          IMF estimates and projections. Big swings are usually shocks: Italy's output fell 8.9% in 2020 and rebounded 8.9% in 2021.
+        note: [weo-estimates, fiscal-year]
+      - id: gdp_nominal
+        titolo: Nominal GDP
+        forma: linea
+        serie: [gdp_nominal]
+        unita: USD bn
+        decimali: 0
+        fonte: imf
+        come_leggerlo: >-
+          The value of everything the economy produces, in US dollars at that year's exchange rate. It moves with growth, prices and the exchange rate,
+          so a country can look smaller in dollars just because its currency weakened.
+        note: [weo-estimates, fiscal-year]
+      - id: gdp_per_capita_ppp
+        titolo: GDP per head, PPP
+        forma: linea
+        serie: [gdp_per_capita_ppp]
+        unita: international $
+        decimali: 0
+        fonte: imf
+        come_leggerlo: >-
+          Output per person, adjusted for price differences between countries so that incomes can be compared. Very small financial centres often sit
+          at the top of any ranking, so it is more telling to compare with economies of a similar kind.
+        note: [weo-estimates, fiscal-year]
+      - id: population
+        titolo: Population
+        forma: linea
+        serie: [population]
+        unita: millions
+        decimali: 1
+        fonte: wb
+        come_leggerlo: >-
+          Number of residents, from the World Bank. Population changes slowly, so the line is usually smooth. Sharp drops or jumps usually reflect
+          wars, large migrations or census revisions.
+        note: []
+
+  - id: prices
+    titolo: Prices
+    descrizione: How fast consumer prices rise.
+    grafici:
+      - id: inflation_average
+        titolo: Inflation
+        forma: linea
+        serie: [inflation_average]
+        unita: "% y/y"
+        decimali: 1
+        riga0: true
+        fonte: imf
+        scala_log: true                               # scala logaritmica simmetrica se nella finestra visibile c'è un anno sopra il 100%
+        tooltip_extra: [inflation_end_of_period]      # nel tooltip, accanto alla media annua
+        come_leggerlo: >-
+          Average inflation over the year: how much consumer prices rose compared with the previous year. The tooltip also shows December-on-December
+          inflation, which can differ a lot when prices move fast: in Italy 2022 averaged 8.7% but ended the year at 12.2%.
+        note: [weo-estimates, fiscal-year]
+
+  - id: labour
+    titolo: Labour
+    descrizione: How many people are looking for work and how many have a job.
+    grafici:
+      - id: unemployment_ilo
+        titolo: Unemployment rate (ILO modelled estimate)
+        forma: linea
+        serie: [unemployment_ilo]
+        unita: "% of labour force"
+        decimali: 1
+        fonte: wb
+        come_leggerlo: >-
+          Share of the labour force without a job. These are ILO modelled estimates, built to be comparable across countries, so they can differ
+          from national figures by a few tenths of a percentage point.
+        note: [ilo-modelled]
+      - id: employment_ilo
+        titolo: Employment ratio, 15+ (ILO modelled estimate)
+        forma: linea
+        serie: [employment_ilo]
+        unita: "% of population 15+"
+        decimali: 1
+        fonte: wb
+        come_leggerlo: >-
+          Share of everyone aged 15 or over who has a job (ILO modelled estimate). It depends on retirement ages and on how many women and young
+          people work, not only on unemployment.
+        note: [ilo-modelled]
+
+  - id: public-finances
+    titolo: Public finances
+    descrizione: What the general government (all levels) earns, spends and owes.
+    grafici:
+      - id: government_balance
+        titolo: Government balance
+        forma: barre-linea
+        serie: [government_balance, government_primary_balance]
+        etichette: {government_balance: Overall balance, government_primary_balance: Primary balance}
+        unita: "% of GDP"
+        decimali: 1
+        riga0: true
+        fonte: imf
+        come_leggerlo: >-
+          Government revenue minus spending, as a share of GDP: below zero is a deficit. The line is the primary balance, which leaves out interest
+          payments. Greece, for example, ran a small overall surplus in 2024 and a much larger one before interest.
+        note: [weo-estimates, fiscal-year]
+      - id: government_debt
+        titolo: Government debt
+        forma: linea
+        serie: [government_debt]
+        unita: "% of GDP"
+        decimali: 1
+        fonte: imf
+        come_leggerlo: >-
+          Gross debt of the general government as a share of GDP. A high ratio is not by itself a crisis: who holds the debt, in which currency and at
+          what interest rate matter too.
+        note: [weo-estimates, fiscal-year]
+
+  - id: external
+    titolo: External
+    descrizione: The country's transactions with the rest of the world.
+    grafici:
+      - id: current_account
+        titolo: Current account balance
+        forma: barre
+        serie: [current_account]
+        unita: "% of GDP"
+        decimali: 1
+        riga0: true
+        fonte: imf
+        come_leggerlo: >-
+          Net trade with the rest of the world, including income and transfers, as a share of GDP. A surplus means the country lends to the rest of
+          the world, a deficit that it borrows.
+        note: [weo-estimates, fiscal-year]
+
+  - id: governance
+    titolo: Governance
+    descrizione: How institutions are perceived, from the World Bank's Worldwide Governance Indicators.
+    grafici:
+      - id: corruption_score
+        titolo: Control of corruption, score (0-100)
+        forma: banda
+        serie: [corruption_score, corruption_score_low, corruption_score_high]
+        etichette: {corruption_score: Score}
+        unita: score 0-100
+        decimali: 0
+        fonte: wb
+        come_leggerlo: >-
+          How well public power is kept from private gain, as perceived by surveys and experts, on a 0-100 score (higher is better); the band is the 90%
+          interval. Differences smaller than the band are not meaningful.
+        note: [wgi-score]

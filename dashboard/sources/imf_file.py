@@ -20,11 +20,11 @@ import re
 import pandas as pd
 
 from . import errori
-from ..annuali import anno_effettivo
+from ..annuali import alias_chiavi, anno_effettivo, applica_alias, completa_fiscale, completa_ultimo_effettivo, e_anno_fiscale  # noqa: F401
 
 COLONNE_NECESSARIE = ("ISO", "WEO Subject Code")     # formato tabulato
 MANCANTI = {"", "n/a", "na", "--", "-", "…", "nan"}
-Risultato = tuple[pd.DataFrame, dict[tuple[str, str], int], str | None]
+Risultato = tuple[pd.DataFrame, dict[tuple[str, str], int], set[tuple[str, str]], str | None]
 
 
 def decodifica(contenuto: bytes) -> str:
@@ -66,8 +66,8 @@ def _aggiungi_anni(righe_dati: list, riga: list[str], anni: list[tuple[int, int]
 
 
 def leggi_file_weo(contenuto: bytes | str, codici: set[str]) -> Risultato:
-    """(dati con colonne paese, indicatore, anno, valore; ultimo anno effettivo per (paese, indicatore); data di pubblicazione "2026-04-14" se il file la riporta)
-    per i codici richiesti. Riconosce da solo il formato del file (vedi la descrizione in alto)."""
+    """(dati con colonne paese, indicatore, anno, valore; ultimo anno effettivo per (paese, indicatore); coppie con anni fiscali; data di pubblicazione
+    "2026-04-14" se il file la riporta) per i codici richiesti. Non applica gli alias dei codici né i completamenti: lo fa l'importatore. Riconosce da solo il formato del file (vedi la descrizione in alto)."""
     testo = decodifica(contenuto) if isinstance(contenuto, bytes) else contenuto
     testo = testo.lstrip("﻿")
     if "SERIES_CODE" in testo.split("\n", 1)[0]:
@@ -82,6 +82,7 @@ def _leggi_csv_portale(testo: str, codici: set[str]) -> Risultato:
     anni = _anni(intestazione)
     righe_dati: list = []
     ultimo: dict[tuple[str, str], int] = {}
+    fiscale: set[tuple[str, str]] = set()
     pubblicazione = None
     for riga in righe[1:]:
         if len(riga) <= posizione["SERIES_CODE"]:
@@ -92,14 +93,17 @@ def _leggi_csv_portale(testo: str, codici: set[str]) -> Risultato:
         paese, codice = parti[0], parti[1]
         _aggiungi_anni(righe_dati, riga, anni, paese, codice)
         if "LATEST_ACTUAL_ANNUAL_DATA" in posizione and posizione["LATEST_ACTUAL_ANNUAL_DATA"] < len(riga):
-            effettivo = anno_effettivo(riga[posizione["LATEST_ACTUAL_ANNUAL_DATA"]])
+            testo = riga[posizione["LATEST_ACTUAL_ANNUAL_DATA"]]
+            effettivo = anno_effettivo(testo)
             if effettivo is not None:
                 ultimo[(paese, codice)] = effettivo
+            if e_anno_fiscale(testo):
+                fiscale.add((paese, codice))
         if pubblicazione is None and "PUBLICATION_DATE" in posizione and posizione["PUBLICATION_DATE"] < len(riga):
             pubblicazione = riga[posizione["PUBLICATION_DATE"]].strip()[:10] or None
     if not righe_dati:
         raise errori.ErroreFonte("the WEO file contains none of the indicators of the catalogue")
-    return pd.DataFrame(righe_dati, columns=["paese", "indicatore", "anno", "valore"]), ultimo, pubblicazione
+    return pd.DataFrame(righe_dati, columns=["paese", "indicatore", "anno", "valore"]), ultimo, fiscale, pubblicazione
 
 
 def _leggi_testo_tabulato(testo: str, codici: set[str]) -> Risultato:
@@ -107,6 +111,7 @@ def _leggi_testo_tabulato(testo: str, codici: set[str]) -> Risultato:
     intestazione = None
     righe_dati: list = []
     ultimo: dict[tuple[str, str], int] = {}
+    fiscale: set[tuple[str, str]] = set()
     for riga in lettore:
         if intestazione is None:
             if all(c in riga for c in COLONNE_NECESSARIE):
@@ -121,11 +126,14 @@ def _leggi_testo_tabulato(testo: str, codici: set[str]) -> Risultato:
             continue   # righe di nota in fondo, altri indicatori, Paesi senza codice ISO
         _aggiungi_anni(righe_dati, riga, anni, paese, codice)
         if "Estimates Start After" in posizione and posizione["Estimates Start After"] < len(riga):
-            effettivo = anno_effettivo(riga[posizione["Estimates Start After"]].strip().strip('"'))
+            testo = riga[posizione["Estimates Start After"]].strip().strip('"')
+            effettivo = anno_effettivo(testo)
             if effettivo is not None:
                 ultimo[(paese, codice)] = effettivo
+            if e_anno_fiscale(testo):
+                fiscale.add((paese, codice))
     if intestazione is None:
         raise errori.ErroreFonte("the file does not look like a WEO download (no 'SERIES_CODE' or 'ISO' and 'WEO Subject Code' columns)")
     if not righe_dati:
         raise errori.ErroreFonte("the WEO file contains none of the indicators of the catalogue")
-    return pd.DataFrame(righe_dati, columns=["paese", "indicatore", "anno", "valore"]), ultimo, None
+    return pd.DataFrame(righe_dati, columns=["paese", "indicatore", "anno", "valore"]), ultimo, fiscale, None

@@ -57,6 +57,9 @@ menu:
   - {titolo: Method & sources, figli: [method, method/series]}
 
 # Le pagine del sito (vedi docs/ristrutturazione.md). Una pagina per voce, all'indirizzo site/<id>/.
+#   completa       solo pagine di Economies del livello A: true quando la pagina è finita (step 11-13). I link "→ Economy" e "Full page →" portano a una
+#                  pagina di livello A SOLO se è completa; finché non lo è, portano alla pagina del Paese economies/country.html?c=<ISO3>
+#   paese          solo schede "later" dell'hub: la chiave del blocco `paesi` a cui rimandano (la destinazione la decide dashboard/paesi.py)
 #   id             percorso della pagina (markets/commodities -> site/markets/commodities/index.html)
 #   nome           titolo (H1)
 #   titolo_menu    voce del menu se diversa dal nome
@@ -114,22 +117,26 @@ pagine:
   - id: economies/usa
     nome: United States
     gruppo: economies
+    completa: false
     stato: attiva
     descrizione: The US economy. For now the labour market; growth, prices and the Fed will follow.
     numeri_chiave: ["UNRATE"]
   - id: economies/italy
     nome: Italy
     gruppo: economies
+    completa: false
     stato: in-arrivo
     descrizione: "Italy's economy: growth, jobs, prices, public finances and the BTP-Bund spread."
   - id: economies/euro-area
     nome: Euro area
     gruppo: economies
+    completa: false
     stato: in-arrivo
     descrizione: "The euro-area economy: growth, jobs, inflation and the ECB."
   - id: economies/uk
     nome: United Kingdom
     gruppo: economies
+    completa: false
     stato: in-arrivo
     descrizione: "The UK economy: growth, jobs, inflation and the Bank of England."
   - id: economies/compare
@@ -140,16 +147,19 @@ pagine:
   - id: economies/japan
     nome: Japan
     gruppo: economies
+    paese: jp
     stato: dopo
     descrizione: The Japanese economy.
   - id: economies/china
     nome: China
     gruppo: economies
+    paese: cn
     stato: dopo
     descrizione: The Chinese economy.
   - id: economies/south-korea
     nome: South Korea
     gruppo: economies
+    paese: kr
     stato: dopo
     descrizione: The South Korean economy.
 
@@ -192,6 +202,7 @@ panoramica:
 #   ultimo_effettivo_da  solo imf: se l'FMI non indica l'ultimo anno con dato reale di questo indicatore (accade per PPPPC),
 #                lo si copia da un altro indicatore (qui NGDPD, stesso Paese): è lo stesso aggiornamento dei conti nazionali
 #   nota         avvertenza breve per chi legge i dati
+#   divisore     per portare il valore dello snapshot all'unità mostrata (dollari -> miliardi: 1000000000; persone -> milioni: 1000000)
 # Scelte (docs/economies-fonti.md): macro dal WEO (194 Paesi); Banca Mondiale solo per lavoro (stime ILO modellate), popolazione storica e WGI;
 # i codici WB dell'inflazione, del debito e delle partite correnti sono stati scartati per copertura scarsa; disoccupazione WEO (LUR) scartata (115 Paesi).
 indicatori:
@@ -200,31 +211,74 @@ indicatori:
   - {id: gdp_growth, nome: Real GDP growth, unita: "% y/y", fonte: imf, codice: NGDP_RPCH, sezione: output, decimali: 1}
   - {id: gdp_per_capita_ppp, nome: "GDP per capita, PPP", unita: international $, fonte: imf, codice: PPPPC, sezione: output, decimali: 0,
      ultimo_effettivo_da: NGDPD, nota: "The IMF does not flag the latest actual year of this indicator: the one of nominal GDP is used."}
-  - {id: gdp_per_capita_usd, nome: "GDP per capita, current USD", unita: USD, fonte: imf, codice: NGDPDPC, sezione: output, decimali: 0}
   - {id: inflation_average, nome: "Inflation, average consumer prices", unita: "% y/y", fonte: imf, codice: PCPIPCH, sezione: prices, decimali: 1}
   - {id: inflation_end_of_period, nome: "Inflation, end of period", unita: "% y/y", fonte: imf, codice: PCPIEPCH, sezione: prices, decimali: 1}
   - {id: government_balance, nome: General government net lending/borrowing, unita: "% of GDP", fonte: imf, codice: GGXCNL_NGDP, sezione: public-finances, decimali: 1}
   - {id: government_primary_balance, nome: General government primary balance, unita: "% of GDP", fonte: imf, codice: GGXONLB_NGDP, sezione: public-finances, decimali: 1}
   - {id: government_debt, nome: General government gross debt, unita: "% of GDP", fonte: imf, codice: GGXWDG_NGDP, sezione: public-finances, decimali: 1}
   - {id: current_account, nome: Current account balance, unita: "% of GDP", fonte: imf, codice: BCA_NGDPD, sezione: external, decimali: 1}
-  - {id: population_imf, nome: Population (IMF), unita: millions, fonte: imf, codice: LP, sezione: output, decimali: 1}
   # ---------------------------------------------------------------- Banca Mondiale: WDI
   - {id: unemployment_ilo, nome: Unemployment rate (ILO modelled estimate), unita: "% of labour force", fonte: wb, codice: SL.UEM.TOTL.ZS, sezione: labour, decimali: 1,
      nota: "ILO modelled estimate, not a national statistic: comparable across countries but it can differ from the official figure."}
   - {id: employment_ilo, nome: "Employment-to-population ratio, 15+ (ILO modelled estimate)", unita: "% of population 15+", fonte: wb, codice: SL.EMP.TOTL.SP.ZS, sezione: labour, decimali: 1,
      nota: "ILO modelled estimate, not a national statistic; population 15+, so it moves with population ageing."}
-  - {id: population, nome: Population (World Bank), unita: persons, fonte: wb, codice: SP.POP.TOTL, sezione: output, decimali: 0}
-  - {id: gdp_nominal_wb, nome: Nominal GDP (World Bank), unita: current USD, fonte: wb, codice: NY.GDP.MKTP.CD, sezione: output, decimali: 0,
-     nota: "Longer history than the IMF (from 1960): used for the years before 1980."}
+  - {id: population, nome: Population, unita: millions, fonte: wb, codice: SP.POP.TOTL, sezione: output, decimali: 1, divisore: 1000000}
+  - {id: gdp_nominal_wb, nome: Nominal GDP (World Bank), unita: USD bn, fonte: wb, codice: NY.GDP.MKTP.CD, sezione: output, decimali: 1, divisore: 1000000000,
+     nota: "Used only for the countries that have no IMF data (the pages never mix the two sources)."}
   - {id: gdp_growth_wb, nome: Real GDP growth (World Bank), unita: "% y/y", fonte: wb, codice: NY.GDP.MKTP.KD.ZG, sezione: output, decimali: 1,
-     nota: "Longer history than the IMF (from 1961): used for the years before 1980."}
+     nota: "Used only for the countries that have no IMF data."}
   - {id: gdp_per_capita_ppp_wb, nome: "GDP per capita, PPP (World Bank)", unita: international $, fonte: wb, codice: NY.GDP.PCAP.PP.CD, sezione: output, decimali: 0,
-     nota: "From 1990. Use one source per chart: the PPP rounds of the IMF and of the World Bank are not the same."}
+     nota: "From 1990. Used only for the countries that have no IMF data: the PPP rounds of the IMF and of the World Bank are not the same."}
   # ---------------------------------------------------------------- Banca Mondiale: WGI (sorgente 3). Solo il punteggio 0-100 con l'intervallo al 90%: nessun rango.
   - {id: corruption_score, nome: "Control of Corruption, score (0-100)", unita: score 0-100, fonte: wb, codice: GOV_WGI_CC.SC, sorgente_wb: 3, sezione: governance, decimali: 0,
      nota: "Perception-based composite on an absolute 0-100 scale (WGI 2025 method). It is a score, not a rank."}
   - {id: corruption_score_low, nome: "Control of Corruption, lower bound of the 90% interval", unita: score 0-100, fonte: wb, codice: GOV_WGI_CC.SC_LB, sorgente_wb: 3, sezione: governance, decimali: 0}
   - {id: corruption_score_high, nome: "Control of Corruption, upper bound of the 90% interval", unita: score 0-100, fonte: wb, codice: GOV_WGI_CC.SC_UB, sorgente_wb: 3, sezione: governance, decimali: 0}
+
+# I Paesi con serie di mercato o con una pagina di livello A (le chiavi sono quelle del campo `paese` delle serie e del blocco `colori`).
+# Servono ai link "→ Economy" dei grafici Markets e al riquadro Markets nella pagina del Paese (dashboard/paesi.py).
+#   iso3     codice ISO3 (assente per l'area euro, che non è un Paese del livello B)
+#   nome     nome sul sito (se diverso da quello della Banca Mondiale)
+#   pagina   id della pagina di livello A, se esiste: il link la usa solo quando la pagina è `completa` (vedi `pagine`)
+#   mercati  serie del riquadro Markets nella pagina del Paese (id di `serie`), con il link alla pagina Markets del grafico più adatto
+# Regola della destinazione: pagina A se completa; altrimenti economies/country.html?c=<ISO3>; l'area euro non ha il livello B: senza pagina
+# completa non ha link. Chiavi come `global` o i gruppi di materie prime non sono Paesi: nessun link.
+paesi:
+  us: {iso3: USA, nome: United States, pagina: economies/usa, mercati: [DFF, DGS10, ^GSPC, VIXCLS], vai: [markets/rates, markets/equities]}
+  it: {iso3: ITA, nome: Italy, pagina: economies/italy, mercati: [IRS/M.IT.L.L40.CI.0000.EUR.N.Z, SPREAD_BTP_BUND, FTSEMIB.MI], vai: [markets/rates, markets/credit, markets/equities]}
+  ea: {nome: Euro area, pagina: economies/euro-area}
+  uk: {iso3: GBR, nome: United Kingdom, pagina: economies/uk}
+  de: {iso3: DEU, nome: Germany, mercati: [IRS/M.DE.L.L40.CI.0000.EUR.N.Z, ^GDAXIP], vai: [markets/rates, markets/equities]}
+  fr: {iso3: FRA, nome: France, mercati: [IRS/M.FR.L.L40.CI.0000.EUR.N.Z, SPREAD_OAT_BUND, ^FCHI], vai: [markets/rates, markets/credit, markets/equities]}
+  jp: {iso3: JPN, nome: Japan, mercati: [WS_CBPOL/D.JP, JGB_10Y, ^N225, JPY=X], vai: [markets/rates, markets/equities, markets/fx]}
+  cn: {iso3: CHN, nome: China, mercati: [WS_CBPOL/D.CN, 510300.SS, CNY=X], vai: [markets/rates, markets/equities, markets/fx]}
+  kr: {iso3: KOR, nome: South Korea, nome_fonte: "Korea, Rep.", mercati: [WS_CBPOL/D.KR, ^KS11, KRW=X], vai: [markets/rates, markets/equities, markets/fx]}
+
+# Nomi più semplici da cercare di quelli della Banca Mondiale ("Korea, Dem. People's Rep." -> North Korea): codice ISO3 -> nome sul sito
+# REGOLA DEI NOMI (anche in CLAUDE.md): nomi brevi e comuni in inglese ("Egypt", non "Egypt, Arab Rep."); per Taiwan, Kosovo e Cisgiordania e Gaza il nome
+# della fonte, senza interpretazioni nostre. Ogni nome cambiato tiene accanto il nome ORIGINALE della fonte (nome_fonte): un test controlla che sia
+# ancora quello della Banca Mondiale. Nella pagina si cerca per entrambi.
+nomi_paesi:
+  BHS: {nome: The Bahamas, nome_fonte: "Bahamas, The"}
+  COD: {nome: Democratic Republic of the Congo, nome_fonte: "Congo, Dem. Rep."}
+  COG: {nome: Republic of the Congo, nome_fonte: "Congo, Rep."}
+  EGY: {nome: Egypt, nome_fonte: "Egypt, Arab Rep."}
+  FSM: {nome: Micronesia, nome_fonte: "Micronesia, Fed. Sts."}
+  GMB: {nome: The Gambia, nome_fonte: "Gambia, The"}
+  HKG: {nome: Hong Kong, nome_fonte: "Hong Kong SAR, China"}
+  IRN: {nome: Iran, nome_fonte: "Iran, Islamic Rep."}
+  MAC: {nome: Macao, nome_fonte: "Macao SAR, China"}
+  PRK: {nome: North Korea, nome_fonte: "Korea, Dem. People's Rep."}
+  RUS: {nome: Russia, nome_fonte: Russian Federation}
+  SVK: {nome: Slovakia, nome_fonte: Slovak Republic}
+  SOM: {nome: Somalia, nome_fonte: "Somalia, Fed. Rep."}
+  SYR: {nome: Syria, nome_fonte: Syrian Arab Republic}
+  VEN: {nome: Venezuela, nome_fonte: "Venezuela, RB"}
+  YEM: {nome: Yemen, nome_fonte: "Yemen, Rep."}
+
+# Paesi che la Banca Mondiale non ha nel suo elenco: nome (come lo scrive l'FMI) e regione (nella pagina del Paese compaiono solo i dati FMI).
+paesi_aggiuntivi:
+  TWN: {nome: Taiwan Province of China, nome_fonte: Taiwan Province of China, regione: East Asia & Pacific}
 
 # Recessioni disegnate come bande grigie, per le regioni senza una serie scaricabile.
 # (Per gli USA si usa la serie FRED USREC, più in basso.)
