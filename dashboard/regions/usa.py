@@ -71,16 +71,6 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                     periodo_iniziale="10Y", largo=True,
                     note=["target-fed", "bands-nber"]),
         ]),
-        Sezione("credito", "Credit",
-                "Extra yield investors demand on corporate bonds compared with Treasuries.",
-                grafici=[
-                    storico("usa-baa", "Baa (Moody's) spread vs 10Y Treasury", ["BAA10Y"],
-                            periodo_iniziale="Max",
-                            note=["baa-history"]),
-                    storico("usa-oas", "Investment Grade and High Yield OAS (ICE BofA)",
-                            ["BAMLC0A0CM", "BAMLH0A0HYM2"], periodo_iniziale="Max",
-                            note=["ice-oas-history"]),
-                ]),
         Sezione("azioni", "Equities",
                 "The main US equity indices: price changes and, below, how much of the S&P 500's rise "
                 "depends on a few very large stocks.",

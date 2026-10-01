@@ -86,7 +86,7 @@ menu:
   - {titolo: Home, pagina: home}
   - {titolo: Countries, figli: [usa, eurozona, giappone, cina, corea]}
   - {pagina: globale}
-  - {titolo: Markets, figli: [markets, markets/fx, markets/commodities]}
+  - {titolo: Markets, figli: [markets, markets/credit, markets/fx, markets/commodities]}
   - {titolo: Method & sources, figli: [method, method/series]}
 
 # Le NUOVE pagine del sito (ristrutturazione, vedi docs/ristrutturazione.md). Una pagina per voce, all'indirizzo site/<id>/.
@@ -113,8 +113,9 @@ pagine:
   - id: markets/credit
     nome: Credit
     gruppo: markets
-    stato: in-arrivo
+    stato: attiva
     descrizione: Corporate bond spreads and sovereign spreads, the price of risk in bond markets.
+    numeri_chiave: ["BAMLH0A0HYM2", "BAMLHE00EHYIOAS", "BAMLC0A0CM", "BAA10Y", "SPREAD_BTP_BUND", "EA_TUTTI_MENO_AAA_10A"]
   - id: markets/equities
     nome: Equities
     gruppo: markets
@@ -305,7 +306,7 @@ serie:
   # --- Credito ------------------------------------------------------
   - id: BAA10Y
     fonte: fred
-    nome: "Baa spread vs 10Y Treasury"
+    nome: "US Baa spread vs 10Y Treasury"
     regione: usa
     paese: us
     categoria: credito
@@ -314,7 +315,7 @@ serie:
     riepilogo: true
   - id: BAMLC0A0CM
     fonte: fred
-    nome: "OAS Investment Grade"
+    nome: "US investment-grade spread (OAS)"
     regione: usa
     paese: us
     categoria: credito
@@ -323,7 +324,7 @@ serie:
     riepilogo: false
   - id: BAMLH0A0HYM2
     fonte: fred
-    nome: "OAS High Yield"
+    nome: "US high-yield spread (OAS)"
     regione: usa
     paese: us
     categoria: credito
@@ -522,7 +523,7 @@ serie:
   - id: EA_TUTTI_MENO_AAA_10A
     fonte: calcolata
     componenti: [YC/B.U2.EUR.4F.G_N_C.SV_C_YM.SR_10Y, YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y]
-    nome: "All minus AAA spread 10Y"
+    nome: "Euro-area spread vs AAA, 10Y"
     regione: eurozona
     paese: ea
     categoria: spread_sovrani
@@ -558,7 +559,7 @@ serie:
   # Nessuna fonte gratuita per lo spread Investment Grade in euro.
   - id: BAMLHE00EHYIOAS
     fonte: fred
-    nome: "OAS High Yield euro"
+    nome: "Euro high-yield spread (OAS)"
     regione: eurozona
     paese: ea
     categoria: credito
