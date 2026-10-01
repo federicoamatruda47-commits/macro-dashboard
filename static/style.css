@@ -121,7 +121,7 @@ code { font-size: 0.85em; }
 .in-arrivo { margin: 48px 0; text-align: center; color: var(--testo-2); }
 
 /* ---- Elenco delle pagine nella home ---- */
-.griglia-pagine { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.griglia-kpi.griglia-pagine { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
 .scheda-pagina {
   display: block; padding: 14px;
   background: var(--superficie); border: 1px solid var(--bordo); border-radius: 10px;
@@ -137,7 +137,7 @@ code { font-size: 0.85em; }
 /* ---- Scheda riassuntiva (KPI) ---- */
 .griglia-kpi {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
   gap: 10px;
 }
 .kpi {
@@ -147,8 +147,10 @@ code { font-size: 0.85em; }
 }
 .kpi h3 { color: var(--testo-2); font-weight: 500; font-size: 0.85rem; }
 .kpi-valore { margin: 2px 0 0; font-size: 1.6rem; font-weight: 600; }
+.kpi-unita { color: var(--testo-tenue); font-size: 0.75rem; font-weight: 400; white-space: nowrap; }
 .kpi-data { margin: 0 0 8px; color: var(--testo-tenue); font-size: 0.78rem; }
 .kpi-variazioni { margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.kpi-variazioni-4 { grid-template-columns: repeat(2, 1fr); }
 .kpi-variazioni dt { color: var(--testo-tenue); font-size: 0.72rem; }
 .kpi-variazioni dd { margin: 0; font-size: 0.8rem; font-variant-numeric: tabular-nums; color: var(--testo-2); white-space: nowrap; }
 /* Telefono: due schede per riga, variazioni una sotto l'altra */
@@ -266,3 +268,4 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .nota-voce dd { margin: 4px 0 0; color: var(--testo-2); font-size: 0.88rem; max-width: 85ch; }
 .nota-voce .usi { display: block; margin-top: 4px; color: var(--testo-tenue); font-size: 0.8rem; }
 .nota-voce:target { border-color: var(--accento); }
+.scheda-in-arrivo { opacity: 0.7; }

@@ -10,6 +10,8 @@ from dataclasses import dataclass, field
 HOME = "home"
 PAGINA_METODO = "method"
 PAGINA_SERIE = "method/series"
+# Pagine che hanno cambiato indirizzo: il vecchio indirizzo resta come pagina che rimanda al nuovo
+REINDIRIZZAMENTI = {"commodities": "markets/commodities"}
 
 
 def percorso(id_pagina: str) -> str:
@@ -32,6 +34,8 @@ class VoceMenu:
 
 def titoli_pagine(config: dict) -> dict[str, str]:
     titoli = {r["id"]: r["nome"] for r in config["regioni"]}
+    for p in config.get("pagine", []):
+        titoli[p["id"]] = p.get("titolo_menu", p["nome"])
     titoli[HOME] = "Home"
     titoli[PAGINA_METODO] = "Sources & method"
     titoli[PAGINA_SERIE] = "Series status"

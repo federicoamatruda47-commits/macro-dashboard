@@ -10,8 +10,8 @@ Piano approvato dall'utente il 01/10/2026, con le scelte della sezione 0 e due a
 | 0 | Rete di sicurezza: inventario dei 56 grafici e delle serie + controllo automatico "nulla è perso / nulla è doppio" | **fatto e in `main`** |
 | 1 | Motore multipagina (base template, menu a 2 righe, link relativi); le 7 tab diventano 7 pagine, stesso contenuto | **fatto e in `main`** |
 | 2 | Inglese (testi, numeri, unità, date), campo `paese`, palette fissa per Paese, campo "Come leggerlo" | **fatto e in `main`** |
-| 3 | Footer dei grafici (fonte + link + note), registro `contenuti/note.yaml`, pagine Method e Series status | **fatto sul ramo** `ristrutturazione/step-3`, in attesa dell'ok per il merge |
-| 4a | Mercati: Commodities | da fare |
+| 3 | Footer dei grafici (fonte + link + note), registro `contenuti/note.yaml`, pagine Method e Series status | **fatto e in `main`** |
+| 4a | Mercati: Commodities | **fatto sul ramo** `ristrutturazione/step-4a`, in attesa dell'ok per il merge |
 | 4b | Mercati: FX | da fare |
 | 4c | Mercati: Credit | da fare |
 | 4d | Mercati: Equities (con colonna "Last", vedi sotto) | da fare |
@@ -25,6 +25,12 @@ Flusso di lavoro: un ramo per step (`ristrutturazione/step-N`); a fine step riep
 
 Strumenti di controllo: `python tools/inventario.py controlla` (deve passare a ogni step), `python tools/inventario.py sito` (dopo `python build.py`: controlla le pagine HTML vere e ne stampa il peso), `python tools/controlla_link.py` (link interni rotti, dopo `build.py`), `python tools/inventario.py salva`
 (solo allo step 0, rigenera la baseline), `python tools/valida_palette.py --pairs all` (colori dei Paesi; da rilanciare se se ne cambia uno). Mappa vecchio grafico → nuovo posto: [mappa-grafici.yaml](mappa-grafici.yaml).
+
+## Regole per le righe "How to read it" (richieste dall'utente il 01/10/2026, valgono per tutto lo step 4)
+
+- linguaggio semplice, una o due frasi, comprensibili a chi non è del settore;
+- prudenti e fattuali: descrivono relazioni storiche ("historically", "has tended to"), mai previsioni o certezze, e citano le eccezioni importanti quando servono (es. oro e tassi reali dopo il 2022);
+- alla fine di ogni pagina si mostra all'utente una tabella con tutte le righe "How to read it" della pagina, da rivedere prima del merge.
 
 ## Aggiunte richieste dall'utente
 
@@ -292,3 +298,9 @@ Il workflow GitHub non cambia (pubblica già tutta `site/`).
   Sotto ogni grafico: "How to read it" (quando c'è), `Source: <fonte> ↗ (N series) · Notes: <titoli>`, `Latest data`. Link alla serie costruiti in `dashboard/fonti_url.py` (FRED, BCE, BIS, DBnomics, Yahoo, MoF verificati a mano/con richieste).
   Le tabelle "Stato delle serie" per pagina sono sparite (ora c'è Series status); le sezioni "Data not included" di Cina e Corea sono note nel registro. Verifiche: `controlla`, `sito` (56/56), `controlla_link.py` (435 link interni ok), verifica a frasi che nessuna vecchia nota sia sparita
   (le righe "Source: BIS, daily data" sono sostituite dal piè con la fonte; è stata aggiunta la nota `index-daily-closes`).
+- 01/10/2026: step 3 unito in `main`.
+- 01/10/2026: step 4a (Commodities) sul ramo `ristrutturazione/step-4a`. Nuovo meccanismo per le pagine nuove: blocco `pagine:` in `config.yaml` (hub `markets` + 5 pagine, solo commodities `attiva`, le altre "coming soon" nell'hub),
+  registro `dashboard/mercati/` (costruttore per pagina), pagina hub `/markets/`, pagina `/markets/commodities/` con titolo, una riga, 6 numeri chiave con unità e YTD, chips "On this page", sezioni e 13 grafici ciascuno con "How to read it".
+  Il vecchio `/commodities/` resta come pagina che rimanda al nuovo (anche con `#chart-...`). La regione `commodities` resta nel config solo come appartenenza delle serie (`senza_pagina: true`).
+  I colori dei gruppi di materie prime sono stati cambiati per non confonderli con il blu degli USA (energia = rosso del Giappone, preziosi = ambra dell'area euro, industriali = viola della Corea, agricoli = verde dell'Italia).
+  Nel piano al posto di `dashboard/pagine/` si usa `dashboard/mercati/` (e `dashboard/economie/` allo step 5) perché `dashboard/pagine.py` è già il modulo del menu.

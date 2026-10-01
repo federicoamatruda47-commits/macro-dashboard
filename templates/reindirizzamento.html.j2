@@ -1,0 +1,15 @@
+<!doctype html>
+{# Pagina minima nel vecchio indirizzo di una pagina spostata: rimanda al nuovo (anche con il frammento #chart-...). #}
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Page moved · Macro dashboard</title>
+  <meta http-equiv="refresh" content="0; url={{ destinazione }}">
+  <link rel="canonical" href="{{ destinazione }}">
+  <script>location.replace("{{ destinazione }}" + location.hash);</script>
+</head>
+<body>
+  <p>This page has moved to <a href="{{ destinazione }}">{{ nome }}</a>.</p>
+</body>
+</html>

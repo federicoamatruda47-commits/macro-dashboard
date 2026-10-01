@@ -37,19 +37,18 @@
 
 {# ---- Scheda riassuntiva (KPI) ---- #}
 {% macro riepilogo(r) %}
-<section class="blocco" aria-labelledby="riepilogo-{{ r.id }}">
-  <h2 id="riepilogo-{{ r.id }}">Key numbers</h2>
-  <p class="descrizione">Latest value and change versus 1 week, 1 month and 1 year earlier
-    (equity indices also year to date).
-    Rates change in basis points (bp = 0.01%), inflation in percentage points (pp), indices in %.</p>
+<section class="blocco" aria-labelledby="riepilogo-{{ r.slug }}">
+  <h2 id="riepilogo-{{ r.slug }}">Key numbers</h2>
+  <p class="descrizione">Latest value and its change over the last week (1W), month (1M), year to date (YTD, where shown) and year (1Y).
+    Changes in rates are in basis points (bp = 0.01%), changes in inflation in percentage points (pp), changes in prices and indices in %.</p>
   <div class="griglia-kpi">
     {% for k in r.riepilogo %}
     <article class="kpi{% if not k.ok %} kpi-errore{% endif %}">
       <h3>{{ k.nome }}</h3>
       {% if k.ok %}
-      <p class="kpi-valore">{{ k.valore }}</p>
+      <p class="kpi-valore">{{ k.valore }}{% if k.unita %} <span class="kpi-unita">{{ k.unita }}</span>{% endif %}</p>
       <p class="kpi-data{% if k.ritardo %} in-ritardo{% endif %}">as of {{ k.data }}{% if k.ritardo %} · stale{% endif %}</p>
-      <dl class="kpi-variazioni">
+      <dl class="kpi-variazioni{% if k.variazioni|length == 4 %} kpi-variazioni-4{% endif %}">
         {% for v in k.variazioni %}
         <div><dt>{{ v.etichetta }}</dt><dd>{{ v.testo }}</dd></div>
         {% endfor %}

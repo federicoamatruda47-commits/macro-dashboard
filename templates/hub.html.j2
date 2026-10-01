@@ -1,0 +1,35 @@
+{% extends "base.html.j2" %}
+{% from "_componenti.html.j2" import avvisi %}
+{# Pagina indice di una sezione (es. Markets): una scheda per ogni pagina figlia. Le pagine non ancora pronte sono segnate "coming soon". #}
+
+{% block titolo %}{{ pagina.nome }} · Macro dashboard{% endblock %}
+{% block descrizione %}{{ pagina.descrizione }}{% endblock %}
+
+{% block contenuto %}
+<section class="intestazione-pagina">
+  <h1>{{ pagina.nome }}</h1>
+  <p class="descrizione">{{ pagina.descrizione }}</p>
+  <p class="aggiornamento">Updated <strong>{{ aggiornato }}</strong></p>
+</section>
+
+{{ avvisi(errori, in_ritardo, riserve, totale_serie, "", radice) }}
+
+<section class="blocco" aria-labelledby="pagine-hub">
+  <h2 id="pagine-hub">Pages</h2>
+  <div class="griglia-kpi griglia-pagine">
+    {% for f in figlie %}
+    {% if f.in_arrivo %}
+    <div class="scheda-pagina scheda-in-arrivo">
+      <h3>{{ f.nome }} <span class="presto">coming soon</span></h3>
+      <p>{{ f.descrizione }}</p>
+    </div>
+    {% else %}
+    <a class="scheda-pagina" href="{{ f.href }}">
+      <h3>{{ f.nome }}</h3>
+      <p>{{ f.descrizione }}</p>
+    </a>
+    {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -5,16 +5,15 @@ Per aggiungere una regione (es. India):
   2. aggiungi qui:  "india": india.costruisci,
   3. in config.yaml metti `attiva: true` per la regione e aggiungi le sue serie
 
-Una "regione" può anche essere una pagina tematica, come le commodities.
+Le pagine di mercato (commodities...) sono in dashboard/mercati/.
 """
 
-from . import cina, commodities, corea, eurozona, giappone, globale, usa
+from . import cina, corea, eurozona, giappone, globale, usa
 from .modello import Grafico, Sezione
 
 REGIONI = {
     "usa": usa.costruisci,
     "eurozona": eurozona.costruisci,
-    "commodities": commodities.costruisci,
     "giappone": giappone.costruisci,
     "cina": cina.costruisci,
     "corea": corea.costruisci,

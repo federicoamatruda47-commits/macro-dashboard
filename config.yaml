@@ -56,11 +56,12 @@ regioni:
     nome: Euro area
     descrizione: ECB policy rate, the AAA curve (Bund proxy), sovereign spreads, HICP inflation, credit, equities and EUR/USD.
     attiva: true
-  # Non è una regione geografica, ma usa la stessa struttura (dashboard/regions/commodities.py)
+  # Le materie prime non sono più una pagina "regione" (ora sono la pagina markets/commodities, vedi "pagine"),
+  # ma le loro serie appartengono ancora a questa regione. "senza_pagina" = non si genera una pagina per questa voce.
   - id: commodities
     nome: Commodities
-    descrizione: Energy, metals and agricultural prices, with a performance table and a comparison with US rates.
     attiva: true
+    senza_pagina: true
   # Asia (fase 3): tre paesi, nessuna banda di recessione (nessuna fonte ufficiale e automatica)
   - id: giappone
     nome: Japan
@@ -85,8 +86,52 @@ menu:
   - {titolo: Home, pagina: home}
   - {titolo: Countries, figli: [usa, eurozona, giappone, cina, corea]}
   - {pagina: globale}
-  - {pagina: commodities}
+  - {titolo: Markets, figli: [markets, markets/commodities]}
   - {titolo: Method & sources, figli: [method, method/series]}
+
+# Le NUOVE pagine del sito (ristrutturazione, vedi docs/ristrutturazione.md). Una pagina per voce, all'indirizzo site/<id>/.
+#   id             percorso della pagina (markets/commodities -> site/markets/commodities/index.html)
+#   nome           titolo (H1)
+#   titolo_menu    voce del menu se diversa dal nome
+#   descrizione    UNA riga su cosa mostra la pagina
+#   tipo           "hub" = pagina indice con le schede delle sue pagine figlie (quelle con gruppo = id dell'hub)
+#   gruppo         id dell'hub a cui appartiene
+#   stato          "attiva" (si genera; serve il costruttore in dashboard/mercati/__init__.py) oppure "in-arrivo" (solo scheda nell'hub)
+#   numeri_chiave  serie mostrate come schede in cima alla pagina; ytd: true = con anche la variazione da inizio anno
+# Il vecchio blocco "regioni" sparirà allo step 5, quando tutte le pagine saranno qui.
+pagine:
+  - id: markets
+    nome: Markets
+    titolo_menu: Overview
+    tipo: hub
+    descrizione: Rates, credit, equities, currencies and commodities, with countries compared on the same chart.
+  - id: markets/rates
+    nome: Rates & curves
+    gruppo: markets
+    stato: in-arrivo
+    descrizione: Policy rates, government yield curves, inflation and real rates across economies.
+  - id: markets/credit
+    nome: Credit
+    gruppo: markets
+    stato: in-arrivo
+    descrizione: Corporate bond spreads and sovereign spreads, the price of risk in bond markets.
+  - id: markets/equities
+    nome: Equities
+    gruppo: markets
+    stato: in-arrivo
+    descrizione: Stock market indices compared, in local currency or in dollars, and market volatility.
+  - id: markets/fx
+    nome: FX
+    gruppo: markets
+    stato: in-arrivo
+    descrizione: Major currencies against the dollar and the broad dollar index.
+  - id: markets/commodities
+    nome: Commodities
+    gruppo: markets
+    stato: attiva
+    descrizione: Energy, metals and agricultural prices, how they have changed recently, and how they relate to US interest rates.
+    numeri_chiave: ["BZ=F", "CL=F", "NG=F", "GC=F", "HG=F", "ZW=F"]
+    ytd: true
 
 # Recessioni disegnate come bande grigie, per le regioni senza una serie scaricabile.
 # (Per gli USA si usa la serie FRED USREC, più in basso.)
@@ -122,8 +167,8 @@ colori:
   kr: {nome: South Korea,    gruppo: paese, chiaro: "#8b59f9", scuro: "#7942e2"}
   uk: {nome: United Kingdom, gruppo: paese, chiaro: "#5183c1", scuro: "#3a6ca8"}
   fr: {nome: France,         gruppo: paese, chiaro: "#1a6937", scuro: "#2f7a47"}
-  energia:             {nome: Energy,            gruppo: materia_prima, alias: ea}
-  metalli_preziosi:    {nome: Precious metals,   gruppo: materia_prima, alias: uk}
+  energia:             {nome: Energy,            gruppo: materia_prima, alias: jp}
+  metalli_preziosi:    {nome: Precious metals,   gruppo: materia_prima, alias: ea}
   metalli_industriali: {nome: Industrial metals, gruppo: materia_prima, alias: kr}
   agricoli:            {nome: Agricultural,      gruppo: materia_prima, alias: it}
   mondo:               {nome: World benchmark,   gruppo: neutro, chiaro: "#52514e", scuro: "#c3c2b7"}
