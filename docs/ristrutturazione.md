@@ -14,8 +14,9 @@ Piano approvato dall'utente il 01/10/2026, con le scelte della sezione 0 e due a
 | 4a | Mercati: Commodities | **fatto e in `main`** |
 | 4b | Mercati: FX | **fatto e in `main`** |
 | 4c | Mercati: Credit | **fatto e in `main`** |
-| 4d | Mercati: Equities (con colonna "Last", vedi sotto) | **fatto sul ramo** `ristrutturazione/step-4d`, in attesa dell'ok per il merge |
-| 4e | Mercati: Rates & curves | da fare |
+| 4d | Mercati: Equities (con colonna "Last", vedi sotto) | **fatto e in `main`** |
+| 4e-1 | Mercati: Rates & curves, parte 1 (tassi di policy, curve, rendimenti a 10 anni, pendenza e inversioni) | **fatto sul ramo** `ristrutturazione/step-4e1`, in attesa dell'ok per il merge |
+| 4e-2 | Mercati: Rates & curves, parte 2 (inflazione e tassi reali) | da fare |
 | 5 | Economies (hub + 5 segnaposto + UNRATE in USA); `regioni` → `pagine` nel config; via le vecchie pagine e il Confronto globale | da fare |
 | 6 | Overview (14 numeri chiave con sparkline, "What changed this week", schede, avvisi); diventa `/` | da fare |
 | 7 | Rifinitura: peso pagine, link rotti, README e screenshot, CLAUDE.md, codice morto (opz.: nomi interni in inglese) | da fare |
@@ -317,3 +318,8 @@ Il workflow GitHub non cambia (pubblica già tutta `site/`).
   (United States / Euro area / Asia / World) con la colonna "Last" (ultimo livello) e le variazioni 1W / 1M / YTD / 1Y, sezioni "Equity indices compared" (`gl-borse`, interruttore Local currency / In USD), "Regional detail" (`usa-indici-azionari`, `eur-indici-azionari`, `usa-concentrazione`)
   e "Volatility" (`usa-vix`), con "How to read it". Tolti dalle pagine dei Paesi i grafici di borsa; `jp-nikkei`, `cn-csi300`, `cn-hangseng`, `kr-kospi` assorbiti da `gl-borse` e dalla tabella (il livello in punti resta nella colonna "Last").
   Nuovo meccanismo `Sezione.gruppi_performance` per le tabelle con righe di titolo; nuova nota `vix-definition`; nella pagina USA la sezione "Financial conditions and labour" diventa "Labour" (resta solo la disoccupazione, che andrà in Economies/USA allo step 5).
+- 01/10/2026: step 4d unito in `main` (frase sui dividendi nella riga del confronto borse, verificata in `main`). L'utente ha deciso di dividere lo step 4e in 4e-1 (tassi di policy e curve) e 4e-2 (inflazione e tassi reali).
+- 01/10/2026: step 4e-1 sul ramo `ristrutturazione/step-4e1`: pagina `/markets/rates/` (`dashboard/mercati/rates.py`) con 6 numeri chiave (Fed funds, deposito BCE, Treasury 10Y, AAA 10Y, JGB 10Y, 10Y-2Y USA) e sezioni "Policy rates" (`gl-policy`, nuovo `mk-rates-fed-ecb`),
+  "Government yield curves" (`usa-curva-oggi`, `eur-curva-oggi`), "10-year yields compared" (`gl-rendimenti`), "Curve slope and inversions" (nuovo `mk-rates-slope` con area rossa delle inversioni, `usa-spread`) e "Yields by country" (`usa-rendimenti`, `eur-rendimenti`, `jp-jgb`).
+  Assorbiti: `usa-dff` + `eur-dfr` in `mk-rates-fed-ecb`; `jp-policy`, `cn-lpr`, `kr-policy` in `gl-policy`; `kr-ktb` in `gl-rendimenti`; `eur-pendenza` in `mk-rates-slope`. Tolte dalle pagine dei Paesi le sezioni di tassi, curve e rendimenti: restano solo
+  inflazione, tassi reali (USA) e disoccupazione, che si spostano nello step 4e-2 e nello step 5. Nuove note `fed-ecb-rates`, `curve-snapshot`, `aaa-bund-proxy`.

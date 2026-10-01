@@ -8,9 +8,6 @@ from .. import charts
 from ..data import Serie, trova_serie
 from .modello import Grafico, Sezione
 
-# Scadenze della curva: (etichetta sull'asse, id della serie)
-SCADENZE = [("3M", "DGS3MO"), ("2Y", "DGS2"), ("5Y", "DGS5"), ("10Y", "DGS10"), ("30Y", "DGS30")]
-
 
 def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
     """Restituisce le sezioni della pagina USA (config non serve: le recessioni arrivano da USREC)."""
@@ -26,28 +23,7 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
         figura = charts.linee_storiche(lista(*ids), recessioni=recessioni, **opzioni_figura)
         return Grafico(id=id_grafico, titolo=titolo, figura=figura, serie_ids=list(ids), **opzioni_grafico)
 
-    # La curva "oggi vs 1 mese vs 1 anno" ha una forma diversa dagli altri grafici
-    figura_curva, _ = charts.curva_rendimenti([(etichetta, trova_serie(serie, i)) for etichetta, i in SCADENZE])
-    grafico_curva = Grafico(
-        id="usa-curva-oggi", titolo="Treasury curve: today, 1 month ago, 1 year ago",
-        figura=figura_curva, serie_ids=[i for _, i in SCADENZE], storico=False,
-    )
-
     return [
-        Sezione("politica-monetaria", "Monetary policy", grafici=[
-            storico("usa-dff", "Effective Fed funds rate", ["DFF"], periodo_iniziale="Max", largo=True),
-        ]),
-        Sezione("curva", "Treasury curve",
-                "Yields on US government bonds by maturity. A negative 10Y-2Y or 10Y-3M spread "
-                "(an inverted curve) has often preceded recessions.",
-                grafici=[
-                    grafico_curva,
-                    storico("usa-rendimenti", "Yields by maturity over time",
-                            [i for _, i in SCADENZE], periodo_iniziale="10Y"),
-                    storico("usa-spread", "10Y-2Y and 10Y-3M spreads", ["T10Y2Y", "T10Y3M"],
-                            evidenzia_inversioni=True, periodo_iniziale="Max", largo=True,
-                            note=["curve-inversion", "bands-nber"]),
-                ]),
         Sezione("tassi-reali", "Real rates and expected inflation",
                 "Yield on the inflation-indexed Treasury (TIPS) and the inflation expected by the market "
                 "(breakeven = nominal minus real). Data from 2003.",
