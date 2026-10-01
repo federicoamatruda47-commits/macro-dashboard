@@ -12,6 +12,8 @@
   <title>{% block titolo %}Macro dashboard{% endblock %}</title>
   <meta name="description" content="{% block descrizione %}Macroeconomic dashboard updated every day: rates, yield curves, inflation, credit, equities, currencies and commodities.{% endblock %}">
   {# ?v=... cambia a ogni generazione: il browser scarica sempre il CSS aggiornato #}
+  {# Icona della scheda del browser: un piccolo grafico a linea, scritta qui dentro (niente file in più, niente errore 404) #}
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232e4aa6'/%3E%3Cpolyline points='5,22 12,14 18,19 27,8' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="{{ radice }}style.css?v={{ versione }}">
   <style>{{ css_colori|safe }}</style>
 </head>

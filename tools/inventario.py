@@ -129,6 +129,12 @@ def controlla_sito(baseline: dict, mappa: dict) -> int:
             problemi.append(f"Grafico mancante nel sito: {id_grafico}")
     for id_grafico in sorted(set(trovati) - attesi - set(mappa.get("nuovi", {}))):
         problemi.append(f"Grafico nel sito che né la baseline né la mappa conoscono: {id_grafico}")
+    # ogni grafico sta nella pagina promessa dalla mappa (docs/mappa-grafici.yaml)
+    promesse = {**{i: v["pagina"] for i, v in mappa["grafici"].items()}, **{i: v["pagina"] for i, v in mappa.get("nuovi", {}).items()}}
+    for id_grafico, dove in sorted(trovati.items()):
+        previsto = promesse.get(id_grafico, "").strip("/")
+        if previsto and dove != [previsto]:
+            problemi.append(f"Grafico {id_grafico} in {dove}, ma la mappa dice /{previsto}/")
     totale = sum(len(v) for v in trovati.values())
     print(f"Grafici nel sito: {totale} ({len(pagine)} pagine); baseline: {len(attesi)}")
     for p in problemi:
