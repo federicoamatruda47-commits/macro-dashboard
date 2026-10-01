@@ -71,6 +71,27 @@ note:
       buttons, but never earlier than the first date on which all the visible lines exist. The rebasing is done by the
       page, so changing the period changes every value.
   # ---------------------------------------------------------------- rates
+  fed-ecb-rates:
+    gruppo: rates
+    titolo: Fed and ECB rates
+    testo: >-
+      The effective Fed funds rate (series DFF on FRED, daily) is the average rate banks actually pay each other overnight:
+      it sits inside the Fed's target range. The ECB deposit facility rate (ECB Data Portal, with a FRED fallback) is the rate
+      banks earn on money deposited at the ECB, today the ECB's main tool. The BIS series in the chart above report the
+      midpoint of the Fed's target range instead.
+  curve-snapshot:
+    gruppo: rates
+    titolo: How the curve snapshot is dated
+    testo: >-
+      "Today" is the latest day on which every maturity has a value. "1 month ago" and "1 year ago" use the last day on
+      or before that date on which every maturity has a value.
+  aaa-bund-proxy:
+    gruppo: rates
+    titolo: AAA curve as a Bund proxy
+    testo: >-
+      The ECB estimates a yield curve for euro-area government bonds rated AAA (Germany, the Netherlands and a few others),
+      daily from September 2004. It is used as an approximation of German Bund yields, because daily yields on German Bunds
+      alone are not freely available. The curve of all euro-area government bonds ("G_N_C") has the same history.
   usa-tips-breakeven:
     gruppo: rates
     titolo: TIPS and breakeven history

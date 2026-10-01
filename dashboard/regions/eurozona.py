@@ -9,15 +9,6 @@ from .. import charts
 from ..data import Serie, trova_serie
 from .modello import Grafico, Sezione
 
-DFR = "FM/D.U2.EUR.4F.KR.DFR.LEV"
-
-# Curva AAA dell'area euro (BCE): usata come approssimazione dei Bund tedeschi
-AAA = "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_"
-SCADENZE = [("3M", AAA + "3M"), ("1Y", AAA + "1Y"), ("2Y", AAA + "2Y"),
-            ("5Y", AAA + "5Y"), ("10Y", AAA + "10Y"), ("30Y", AAA + "30Y")]
-AAA_2A, AAA_10A = AAA + "2Y", AAA + "10Y"
-TUTTI_10A = "YC/B.U2.EUR.4F.G_N_C.SV_C_YM.SR_10Y"
-
 HICP = "HICP/M.U2.N.000000.4D0.ANR"
 HICP_CORE = "HICP/M.U2.N.XEF000.4D0.ANR"
 
@@ -39,33 +30,7 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                                        etichetta_recessioni="CEPR recession", **opzioni_figura)
         return Grafico(id=id_grafico, titolo=titolo, figura=figura, serie_ids=list(ids), **opzioni_grafico)
 
-    figura_curva, _ = charts.curva_rendimenti([(etichetta, trova_serie(serie, i)) for etichetta, i in SCADENZE])
-    grafico_curva = Grafico(
-        id="eur-curva-oggi", titolo="Euro-area AAA curve (Bund proxy): today, 1 month ago, 1 year ago",
-        figura=figura_curva, serie_ids=[i for _, i in SCADENZE], storico=False,
-    )
-
     return [
-        Sezione("politica-monetaria", "Monetary policy",
-                "The deposit facility rate (DFR) is the rate the ECB pays banks on the liquidity "
-                "they deposit: today it is the main tool the ECB uses to steer market rates.",
-                grafici=[
-                    storico("eur-dfr", "ECB deposit facility rate (DFR)", [DFR], periodo_iniziale="Max",
-                            largo=True, note=["bands-cepr"]),
-                ]),
-        Sezione("curva", "AAA curve of the euro area (Bund proxy)",
-                "Yields estimated by the ECB on euro-area government bonds rated AAA "
-                "(Germany, the Netherlands and a few others). Daily data from 2004. Daily yields "
-                "on German Bunds alone are not freely available: "
-                "this curve is a good approximation.",
-                grafici=[
-                    grafico_curva,
-                    storico("eur-rendimenti", "AAA curve of the euro area (Bund proxy): 2 and 10 years",
-                            [AAA_2A, AAA_10A], periodo_iniziale="10Y"),
-                    storico("eur-pendenza", "Slope of the AAA curve: 10Y - 2Y", ["EA_AAA_10A_2A"],
-                            evidenzia_inversioni=True, periodo_iniziale="Max", largo=True,
-                            note=["curve-inversion", "bands-cepr"]),
-                ]),
         Sezione("inflazione", "Inflation", "Change in consumer prices (HICP) compared with a year earlier.",
                 grafici=[
                     storico("eur-inflazione", "HICP headline and core (% y/y)", [HICP, HICP_CORE],

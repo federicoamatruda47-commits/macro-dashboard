@@ -86,7 +86,7 @@ menu:
   - {titolo: Home, pagina: home}
   - {titolo: Countries, figli: [usa, eurozona, giappone, cina, corea]}
   - {pagina: globale}
-  - {titolo: Markets, figli: [markets, markets/credit, markets/equities, markets/fx, markets/commodities]}
+  - {titolo: Markets, figli: [markets, markets/rates, markets/credit, markets/equities, markets/fx, markets/commodities]}
   - {titolo: Method & sources, figli: [method, method/series]}
 
 # Le NUOVE pagine del sito (ristrutturazione, vedi docs/ristrutturazione.md). Una pagina per voce, all'indirizzo site/<id>/.
@@ -108,8 +108,9 @@ pagine:
   - id: markets/rates
     nome: Rates & curves
     gruppo: markets
-    stato: in-arrivo
-    descrizione: Policy rates, government yield curves, inflation and real rates across economies.
+    stato: attiva
+    descrizione: Policy rates, government yield curves, 10-year yields and the slope of the curve across economies.
+    numeri_chiave: ["DFF", "FM/D.U2.EUR.4F.KR.DFR.LEV", "DGS10", "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y", "JGB_10Y", "T10Y2Y"]
   - id: markets/credit
     nome: Credit
     gruppo: markets
