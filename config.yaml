@@ -806,19 +806,90 @@ serie:
     unita: "% a/a"
     trasformazione: livello
     riepilogo: true
+  # =================================================================
+  # AZIONI OCCIDENTALI (fonte Yahoo Finance, verificate il 01/10/2026)
+  # Tutti prezzi di chiusura SENZA dividendi (auto_adjust=False in yahoo.py), per coerenza tra indici ed ETF.
+  # Eccezione da sapere: il DAX (^GDAXI) è per definizione un indice "performance" (dividendi reinvestiti).
+  # Riserva FRED solo dove esiste: S&P 500 (SP500, solo dal 10/2016 per licenza) e Nasdaq 100 (NASDAQ100).
+  # Nessuna riserva gratuita per Russell 2000, S&P 500 Equal Weight, indici europei, ACWI.
+  # Ogni indice è definito UNA volta qui: i grafici delle altre tab (Confronto globale) lo riusano per id.
+  # =================================================================
+  # --- Stati Uniti ---------------------------------------------------
   - id: ^GSPC
     fonte: yahoo
     nome: S&P 500
-    regione: globale
+    regione: usa
     categoria: borsa
     unita: punti
     trasformazione: livello
     riepilogo: true
     decimali: 0
+    riserva: {fonte: fred, id: SP500, nota: "su FRED solo dal 10/2016"}
+  - id: ^NDX
+    fonte: yahoo
+    nome: Nasdaq 100
+    regione: usa
+    categoria: borsa
+    unita: punti
+    trasformazione: livello
+    riepilogo: true
+    decimali: 0
+    riserva: {fonte: fred, id: NASDAQ100}
+  - id: ^RUT
+    fonte: yahoo
+    nome: Russell 2000
+    regione: usa
+    categoria: borsa
+    unita: punti
+    trasformazione: livello
+    riepilogo: true
+    decimali: 0
+  - id: ^SPXEW
+    fonte: yahoo
+    nome: S&P 500 Equal Weight
+    regione: usa
+    categoria: borsa
+    unita: punti
+    trasformazione: livello
+    riepilogo: true
+    decimali: 0
+  # Concentrazione del mercato: sale = il titolo "medio" batte le grandi capitalizzazioni;
+  # scende = a trainare l'S&P 500 sono pochi giganti. Entrambe le componenti da Yahoo.
+  - id: SP500_EW_SU_CW
+    fonte: calcolata
+    nome: Rapporto S&P 500 Equal Weight / S&P 500
+    regione: usa
+    categoria: azioni
+    unita: rapporto (×100)
+    trasformazione: livello
+    riepilogo: false
+    componenti: [^SPXEW, ^GSPC]
+    operazione: rapporto
+    fattore: 100
+    decimali: 1
+  # --- Eurozona ------------------------------------------------------
   - id: ^STOXX50E
     fonte: yahoo
     nome: Euro Stoxx 50
-    regione: globale
+    regione: eurozona
+    categoria: borsa
+    unita: punti
+    trasformazione: livello
+    riepilogo: true
+    decimali: 0
+  - id: ^GDAXI
+    fonte: yahoo
+    nome: DAX
+    regione: eurozona
+    categoria: borsa
+    unita: punti
+    trasformazione: livello
+    riepilogo: true
+    decimali: 0
+  - id: ^FCHI
+    fonte: yahoo
+    nome: CAC 40
+    regione: eurozona
     categoria: borsa
     unita: punti
     trasformazione: livello
@@ -827,9 +898,116 @@ serie:
   - id: FTSEMIB.MI
     fonte: yahoo
     nome: FTSE MIB
-    regione: globale
+    regione: eurozona
     categoria: borsa
     unita: punti
     trasformazione: livello
     riepilogo: true
+    decimali: 0
+  - id: EXV1.DE
+    fonte: yahoo
+    nome: Banche europee – STOXX Europe 600 Banks (ETF)
+    regione: eurozona
+    categoria: borsa
+    unita: euro
+    trasformazione: livello
+    riepilogo: true
+    decimali: 2
+  # --- Mondo ---------------------------------------------------------
+  - id: ACWI
+    fonte: yahoo
+    nome: MSCI ACWI (ETF iShares)
+    regione: globale
+    categoria: borsa
+    unita: dollari
+    trasformazione: livello
+    riepilogo: true
+    decimali: 2
+  # Cambi per la conversione in USD del Confronto globale: "valuta per dollaro" (come JPY=X, CNY=X, KRW=X).
+  # EUR=X = euro per dollaro; HKD=X = dollari di Hong Kong per dollaro (cambio agganciato al dollaro).
+  - id: EUR=X
+    fonte: yahoo
+    nome: USD/EUR
+    regione: globale
+    categoria: cambio
+    unita: euro per dollaro
+    trasformazione: livello
+    riepilogo: false
+    decimali: 4
+  - id: HKD=X
+    fonte: yahoo
+    nome: USD/HKD
+    regione: globale
+    categoria: cambio
+    unita: dollari di Hong Kong per dollaro
+    trasformazione: livello
+    riepilogo: false
+    decimali: 4
+    riserva: {fonte: fred, id: DEXHKUS}
+  # Borse in USD = indice in valuta locale / cambio "valuta per dollaro" (solo se indice e cambio vengono da Yahoo)
+  - id: ^STOXX50E_USD
+    fonte: calcolata
+    nome: Euro Stoxx 50 in USD
+    regione: globale
+    categoria: borsa
+    unita: punti in USD
+    trasformazione: livello
+    riepilogo: false
+    componenti: [^STOXX50E, EUR=X]
+    operazione: rapporto
+    decimali: 0
+  - id: FTSEMIB.MI_USD
+    fonte: calcolata
+    nome: FTSE MIB in USD
+    regione: globale
+    categoria: borsa
+    unita: punti in USD
+    trasformazione: livello
+    riepilogo: false
+    componenti: [FTSEMIB.MI, EUR=X]
+    operazione: rapporto
+    decimali: 0
+  - id: ^N225_USD
+    fonte: calcolata
+    nome: Nikkei 225 in USD
+    regione: globale
+    categoria: borsa
+    unita: punti in USD
+    trasformazione: livello
+    riepilogo: false
+    componenti: [^N225, JPY=X]
+    operazione: rapporto
+    decimali: 0
+  - id: ^KS11_USD
+    fonte: calcolata
+    nome: KOSPI in USD
+    regione: globale
+    categoria: borsa
+    unita: punti in USD
+    trasformazione: livello
+    riepilogo: false
+    componenti: [^KS11, KRW=X]
+    operazione: rapporto
+    decimali: 0
+  - id: 510300.SS_USD
+    fonte: calcolata
+    nome: CSI 300 (ETF) in USD
+    regione: globale
+    categoria: borsa
+    unita: punti in USD
+    trasformazione: livello
+    riepilogo: false
+    componenti: [510300.SS, CNY=X]
+    operazione: rapporto
+    decimali: 2
+  - id: ^HSI_USD
+    fonte: calcolata
+    nome: Hang Seng in USD
+    regione: globale
+    categoria: borsa
+    unita: punti in USD
+    trasformazione: livello
+    riepilogo: false
+    componenti: [^HSI, HKD=X]
+    operazione: rapporto
     decimali: 0

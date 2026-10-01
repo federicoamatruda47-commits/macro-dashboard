@@ -78,7 +78,8 @@
       {% if r.riepilogo %}
       <section class="blocco" aria-labelledby="riepilogo-{{ r.id }}">
         <h2 id="riepilogo-{{ r.id }}">In sintesi</h2>
-        <p class="descrizione">Ultimo valore e variazione rispetto a 1 settimana, 1 mese e 1 anno prima.
+        <p class="descrizione">Ultimo valore e variazione rispetto a 1 settimana, 1 mese e 1 anno prima
+          (per le borse anche da inizio anno).
           Tassi in punti base (pb = 0,01%), inflazione in punti percentuali (pp), indici in %.</p>
         <div class="griglia-kpi">
           {% for k in r.riepilogo %}
@@ -112,7 +113,7 @@
         <div class="tabella-scorrevole">
           <table class="performance">
             {# "secondaria" = colonna nascosta sul telefono, per lasciare spazio alle variazioni #}
-            <thead><tr><th>Commodity</th><th class="num">Ultimo</th><th>Unità</th><th class="secondaria">Data</th>
+            <thead><tr><th>{{ sez.etichetta_performance }}</th><th class="num">Ultimo</th><th>Unità</th><th class="secondaria">Data</th>
               <th class="num">1 sett.</th><th class="num">1 mese</th><th class="num">Da inizio anno</th><th class="num">1 anno</th><th class="secondaria">Fonte</th></tr></thead>
             <tbody>
               {% for p in sez.performance %}
@@ -144,6 +145,15 @@
                 {% for p in ["1A", "5A", "10A", "Max"] %}
                 <button type="button" data-grafico="{{ g.id }}" data-periodo="{{ p }}"
                         aria-pressed="{{ 'true' if p == g.periodo_iniziale else 'false' }}">{{ p }}</button>
+                {% endfor %}
+              </div>
+              {% endif %}
+              {# Interruttore tra due versioni dello stesso grafico (es. valuta locale / USD) #}
+              {% if g.varianti and g.json %}
+              <div class="varianti" role="group" aria-label="Versione del grafico">
+                {% for v in g.varianti %}
+                <button type="button" data-grafico="{{ g.id }}" data-variante="{{ v.id }}"
+                        aria-pressed="{{ 'true' if loop.first else 'false' }}">{{ v.etichetta }}</button>
                 {% endfor %}
               </div>
               {% endif %}

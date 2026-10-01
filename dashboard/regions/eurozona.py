@@ -23,6 +23,10 @@ HICP_CORE = "HICP/M.U2.N.XEF000.4D0.ANR"
 HY_EURO = "BAMLHE00EHYIOAS"
 EURUSD = "EXR/D.USD.EUR.SP00.A"
 
+# Azioni (Yahoo Finance): le definizioni stanno in config.yaml, qui solo gli id
+EURO_STOXX_50, DAX, CAC_40, FTSE_MIB, BANCHE = "^STOXX50E", "^GDAXI", "^FCHI", "FTSEMIB.MI", "EXV1.DE"
+AZIONI = [EURO_STOXX_50, DAX, CAC_40, FTSE_MIB, BANCHE]
+
 NOTA_RECESSIONI = "Bande grigie: recessioni dell'area euro datate dal CEPR."
 
 
@@ -40,6 +44,11 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                           if k in opzioni_grafico}
         figura = charts.linee_storiche(lista(*ids), recessioni=recessioni,
                                        etichetta_recessioni="Recessione CEPR", **opzioni_figura)
+        return Grafico(id=id_grafico, titolo=titolo, figura=figura, serie_ids=list(ids), **opzioni_grafico)
+
+    def base100(id_grafico, titolo, ids, **opzioni_grafico) -> Grafico:
+        """Confronto a base 100: la ribasatura all'inizio del periodo scelto la fa il JavaScript."""
+        figura = charts.linee_base100([(s, False) for s in lista(*ids)])
         return Grafico(id=id_grafico, titolo=titolo, figura=figura, serie_ids=list(ids), **opzioni_grafico)
 
     figura_curva, _ = charts.curva_rendimenti([(etichetta, trova_serie(serie, i)) for etichetta, i in SCADENZE])
@@ -102,6 +111,21 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                             nota="Su FRED la serie parte da ottobre 2023 (limite di licenza ICE). "
                                  "Lo spread Investment Grade in euro non è incluso: non esiste una "
                                  "fonte gratuita."),
+                ]),
+        Sezione("azioni", "Azioni",
+                "I principali indici azionari dell'area euro e le banche europee, in euro.",
+                tabella_performance=AZIONI, etichetta_performance="Indice",
+                grafici=[
+                    base100("eur-indici-azionari", "Borse e banche europee (base 100)", AZIONI,
+                            periodo_iniziale="5A", largo=True,
+                            nota="Normalizzati a 100 all'inizio del periodo scelto con i pulsanti 1A / 5A / 10A / Max; "
+                                 "con \"Max\" si parte dal 2008, quando esistono tutte le linee. Prezzi di chiusura "
+                                 "senza dividendi (non \"adjusted\"), in euro. ATTENZIONE: il DAX è per definizione "
+                                 "un indice \"performance\" (dividendi reinvestiti), quindi su periodi lunghi sale più "
+                                 "degli altri a parità di mercato. \"Banche europee\" è l'ETF iShares STOXX Europe 600 "
+                                 "Banks (Xetra, ticker EXV1): include anche banche non dell'area euro (es. Regno Unito, "
+                                 "Svizzera) e NON è l'Euro Stoxx Banks, che su Yahoo non è disponibile. L'ETF distribuisce "
+                                 "i dividendi: nel prezzo si vedono come piccoli cali."),
                 ]),
         Sezione("cambio", "Cambio", grafici=[
             storico("eur-eurusd", "EUR/USD (dollari per 1 euro)", [EURUSD], periodo_iniziale="10A", largo=True,

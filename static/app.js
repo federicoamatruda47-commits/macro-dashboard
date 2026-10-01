@@ -95,7 +95,7 @@
     data.forEach((traccia) => {
       const slot = traccia.meta && traccia.meta.slot;
       if (!slot) return;
-      const colore = t.serie[slot - 1];
+      const colore = traccia.meta.neutro ? t.testo : t.serie[slot - 1]; // "neutro" = benchmark
       traccia.line = Object.assign({}, traccia.line, { color: colore });
       if (traccia.marker) traccia.marker = Object.assign({}, traccia.marker, { color: colore });
     });
@@ -126,10 +126,12 @@
   // Grafici "base 100" (confronti di valute e borse): tutte le linee valgono 100 nella stessa data iniziale.
   // La data è l'inizio del periodo scelto, ma mai prima della prima data in cui ESISTONO tutte le serie.
   // `originali` = dati grezzi [{x, y}] di ogni traccia. Restituisce l'intervallo del tempo e i nuovi valori.
+  // Se il grafico ha due varianti (valuta locale / USD), per la data iniziale e finale contano solo le linee visibili.
   function base100(originali, periodo) {
+    const attive = originali.filter((o) => o.visibile !== false);
     let inizio = "";
-    originali.forEach((o) => { if (o.x.length && giorno(o.x[0]) > inizio) inizio = giorno(o.x[0]); });
-    const fine = giorno(ultimaData(originali));
+    attive.forEach((o) => { if (o.x.length && giorno(o.x[0]) > inizio) inizio = giorno(o.x[0]); });
+    const fine = giorno(ultimaData(attive));
     const anni = ANNI_PERIODO[periodo];
     if (anni) {
       const d = new Date(fine);
@@ -153,7 +155,7 @@
     const meta = layout.meta || {};
     const estremi = {};
     data.forEach((tr) => {
-      if (!tr.x || !tr.y) return;
+      if (!tr.x || !tr.y || tr.visible === false) return; // le linee nascoste (altra variante) non contano
       const asse = asseDellaTraccia(tr);
       const e = estremi[asse] || (estremi[asse] = { min: Infinity, max: -Infinity });
       for (let i = 0; i < tr.x.length; i++) {
@@ -197,6 +199,28 @@
       b.setAttribute("aria-pressed", b.dataset.periodo === periodo ? "true" : "false");
     });
   }
+
+  // Pulsanti "valuta locale / in USD": mostrano solo le linee della variante scelta (le altre sono nascoste)
+  const periodoAttuale = (el) => {
+    const premuto = document.querySelector('.periodi button[data-grafico="' + el.id + '"][aria-pressed="true"]');
+    return premuto ? premuto.dataset.periodo : "Max"; // dopo uno zoom manuale nessun pulsante è premuto
+  };
+
+  async function impostaVariante(el, variante) {
+    el._originali.forEach((o) => { o.visibile = !o.variante || o.variante === variante; });
+    await Plotly.restyle(el, { visible: el._originali.map((o) => o.visibile) });
+    document.querySelectorAll('.varianti button[data-grafico="' + el.id + '"]').forEach((b) => {
+      b.setAttribute("aria-pressed", b.dataset.variante === variante ? "true" : "false");
+    });
+    await impostaPeriodo(el, periodoAttuale(el));
+  }
+
+  document.querySelectorAll(".varianti button").forEach((pulsante) => {
+    pulsante.addEventListener("click", () => {
+      const el = document.getElementById(pulsante.dataset.grafico);
+      if (disegnati.has(el.id)) impostaVariante(el, pulsante.dataset.variante);
+    });
+  });
 
   async function impostaPeriodo(el, periodo) {
     let x = intervalloX(el.data, periodo);
@@ -250,7 +274,14 @@
     if (periodo) {
       let x = intervalloX(data, periodo);
       if (layout.meta && layout.meta.base100) {
-        el._originali = data.map((tr) => ({ x: tr.x, y: tr.y }));
+        // La prima variante (es. valuta locale) è quella mostrata all'apertura; le linee dell'altra restano nascoste
+        const prima = (layout.meta.varianti || [])[0];
+        el._originali = data.map((tr) => {
+          const variante = tr.meta && tr.meta.variante;
+          const visibile = !variante || variante === prima;
+          tr.visible = visibile;
+          return { x: tr.x, y: tr.y, variante: variante, visibile: visibile };
+        });
         const r = base100(el._originali, periodo);
         x = r.x;
         data.forEach((tr, i) => { tr.y = r.y[i]; });

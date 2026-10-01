@@ -155,15 +155,16 @@ code { font-size: 0.85em; }
   border: 1px solid var(--bordo); border-radius: 10px;
 }
 .scheda-testa { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
-.periodi { display: flex; gap: 2px; }
-.periodi button {
+.periodi, .varianti { display: flex; gap: 2px; }
+.varianti button { padding: 2px 10px !important; }
+.periodi button, .varianti button {
   min-width: 40px; min-height: 32px; padding: 2px 8px;
   border: 1px solid var(--griglia); border-radius: 6px;
   background: none; color: var(--testo-2);
   font: inherit; font-size: 0.8rem; cursor: pointer;
 }
-.periodi button[aria-pressed="true"] { background: var(--testo); border-color: var(--testo); color: var(--superficie); }
-.periodi button:focus-visible { outline: 2px solid var(--accento); outline-offset: 1px; }
+.periodi button[aria-pressed="true"], .varianti button[aria-pressed="true"] { background: var(--testo); border-color: var(--testo); color: var(--superficie); }
+.periodi button:focus-visible, .varianti button:focus-visible { outline: 2px solid var(--accento); outline-offset: 1px; }
 
 .grafico { height: 340px; margin-top: 6px; }
 .scheda-grafico.largo .grafico { height: 400px; }

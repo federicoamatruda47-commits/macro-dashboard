@@ -18,8 +18,14 @@ INFLAZIONE = [("USA", "WS_LONG_CPI/M.US.771"), ("Eurozona", "WS_LONG_CPI/M.XM.77
 # questi ultimi si invertono, così per ogni linea "sale" = la valuta si rafforza sul dollaro
 VALUTE = [("Euro", "EXR/D.USD.EUR.SP00.A", False), ("Yen", "JPY=X", True),
           ("Yuan", "CNY=X", True), ("Won", "KRW=X", True)]
-BORSE = [("S&P 500", "^GSPC"), ("Euro Stoxx 50", "^STOXX50E"), ("FTSE MIB", "FTSEMIB.MI"),
-         ("Nikkei 225", "^N225"), ("CSI 300 (ETF)", "510300.SS"), ("KOSPI", "^KS11")]
+# Borse: (nome, indice in valuta locale, stesso indice convertito in USD). L'S&P 500 è già in dollari.
+# Gli indici sono definiti una volta sola in config.yaml; le versioni in USD sono serie calcolate
+# (indice / cambio "valuta per dollaro") e vengono dalla stessa fonte, Yahoo.
+BORSE = [("S&P 500", "^GSPC", None), ("Euro Stoxx 50", "^STOXX50E", "^STOXX50E_USD"),
+         ("FTSE MIB", "FTSEMIB.MI", "FTSEMIB.MI_USD"), ("Nikkei 225", "^N225", "^N225_USD"),
+         ("CSI 300 (ETF)", "510300.SS", "510300.SS_USD"), ("KOSPI", "^KS11", "^KS11_USD"),
+         ("Hang Seng", "^HSI", "^HSI_USD")]
+BENCHMARK = ("MSCI ACWI (ETF)", "ACWI")  # indice mondiale, già in dollari: stessa linea in entrambe le versioni
 
 
 def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
@@ -37,6 +43,35 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
         voci = [(charts.con_nome(trova_serie(serie, i), nome), invertita) for nome, i, invertita in elenco]
         return Grafico(id=id_grafico, titolo=titolo, figura=charts.linee_base100(voci),
                        serie_ids=[i for _, i, _ in elenco], **opzioni_grafico)
+
+    def borse() -> Grafico:
+        """Borse a base 100 con interruttore valuta locale / USD: le linee delle due versioni stanno nella
+        stessa figura e il JavaScript mostra solo quelle della versione scelta."""
+        voci = []
+        for slot, (nome, locale, usd) in enumerate(BORSE, start=1):
+            voci.append((charts.con_nome(trova_serie(serie, locale), nome), False,
+                         {"slot": slot, **({"variante": "locale"} if usd else {})}))
+            if usd:
+                voci.append((charts.con_nome(trova_serie(serie, usd), nome), False,
+                             {"slot": slot, "variante": "usd"}))
+        nome_bm, id_bm = BENCHMARK
+        voci.append((charts.con_nome(trova_serie(serie, id_bm), nome_bm), False, {"slot": 8, "benchmark": True}))
+        # Nell'avviso "non disponibile" compaiono le versioni in USD solo se mancano (es. cambio non scaricato)
+        ids = [i for _, i, _ in BORSE] + [id_bm]
+        ids += [u for _, _, u in BORSE if u and not trova_serie(serie, u).ok]
+        return Grafico(
+            id="gl-borse", titolo="Borse a confronto (base 100)", figura=charts.linee_base100(voci),
+            serie_ids=ids, periodo_iniziale="5A", largo=True,
+            varianti=[("locale", "Valuta locale"), ("usd", "In USD")],
+            nota="Con \"Valuta locale\" la performance non tiene conto dei cambi (S&P 500 e MSCI ACWI sono già in "
+                 "dollari); con \"In USD\" ogni indice è diviso per il cambio Yahoo Finance dello stesso giorno, "
+                 "quindi include l'effetto valuta. Tratteggiato: MSCI ACWI, indice mondiale di riferimento "
+                 "(rappresentato dall'ETF iShares ACWI, in dollari). Tutti i prezzi sono chiusure senza dividendi "
+                 "(non \"adjusted\"), per coerenza tra indici ed ETF: l'ETF ACWI distribuisce dividendi, che nel "
+                 "prezzo si vedono come piccoli cali. Il CSI 300 è rappresentato da un ETF (ticker 510300), non "
+                 "dall'indice, e parte dal 2012: con \"Max\" tutte le linee partono dalla stessa data. Hang Seng: "
+                 "il dollaro di Hong Kong è agganciato al dollaro USA, quindi la conversione incide poco. "
+                 "Le chiusure dei mercati e del cambio non avvengono alla stessa ora: piccole differenze di un giorno.")
 
     return [
         Sezione("tassi-policy", "Tassi di policy",
@@ -80,12 +115,7 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                                  "esistono tutte le valute."),
                 ]),
         Sezione("borse", "Borse",
-                "Indici azionari nelle valute locali, normalizzati a 100 all'inizio del periodo scelto.",
-                grafici=[
-                    base100("gl-borse", "Borse a confronto (base 100)", [(n, i, False) for n, i in BORSE],
-                            periodo_iniziale="5A", largo=True,
-                            nota="Indici di prezzo in valuta locale: la performance non tiene conto dei cambi. "
-                                 "Il CSI 300 è rappresentato da un ETF (ticker 510300), non dall'indice, "
-                                 "e parte dal 2012: con \"Max\" tutte le linee partono dalla stessa data."),
-                ]),
+                "Indici azionari, in valuta locale o convertiti in dollari, normalizzati a 100 all'inizio "
+                "del periodo scelto.",
+                grafici=[borse()]),
     ]

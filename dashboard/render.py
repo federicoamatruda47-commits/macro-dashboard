@@ -60,13 +60,15 @@ def data_it(data: pd.Timestamp | None) -> str:
 def _scheda_riepilogo(s: Serie, oggi: pd.Timestamp) -> dict:
     """Dati di una scheda della sezione riassuntiva."""
     scheda = {"nome": s.nome, "id": s.id, "ok": s.ok, "errore": s.errore}
+    # Le borse mostrano anche la variazione da inizio anno (come la tabella delle commodities)
+    periodi = PERIODI_PERFORMANCE if s.categoria == "borsa" else None
     if s.ok:
         scheda.update(
             valore=valore_con_unita(s.ultimo_valore, s.unita, s.decimali),
             data=data_it(s.ultima_data),
             ritardo=s.in_ritardo(oggi),
             variazioni=[{"etichetta": etichetta, "testo": testo_variazione(v, s.unita)}
-                        for etichetta, v in variazioni(s).items()],
+                        for etichetta, v in variazioni(s, periodi).items()],
         )
     return scheda
 
@@ -104,6 +106,7 @@ def _dati_grafico(grafico: Grafico, serie: dict[str, Serie], oggi: pd.Timestamp)
         "periodo_iniziale": grafico.periodo_iniziale,
         "largo": grafico.largo,
         "alto": grafico.alto,
+        "varianti": [{"id": i, "etichetta": e} for i, e in grafico.varianti],
         "json": _figura_json(grafico),
         "ultimi_dati": [{"nome": s.nome, "data": data_it(s.ultima_data), "ritardo": s.in_ritardo(oggi)}
                         for s in usate if s.ok],
@@ -151,6 +154,7 @@ def prepara_contesto(config: dict, serie: dict[str, Serie]) -> dict:
                 sezioni.append({
                     "id": sezione.id, "titolo": sezione.titolo, "descrizione": sezione.descrizione,
                     "grafici": [_dati_grafico(g, serie, oggi) for g in sezione.grafici],
+                    "etichetta_performance": sezione.etichetta_performance,
                     "performance": [_riga_performance(trova_serie(serie, i), oggi)
                                     for i in sezione.tabella_performance],
                 })

@@ -11,6 +11,11 @@ from .modello import Grafico, Sezione
 # Scadenze della curva: (etichetta sull'asse, id della serie)
 SCADENZE = [("3M", "DGS3MO"), ("2A", "DGS2"), ("5A", "DGS5"), ("10A", "DGS10"), ("30A", "DGS30")]
 
+# Azioni (Yahoo Finance): le definizioni delle serie stanno in config.yaml, qui solo gli id
+SP500, NASDAQ100, RUSSELL2000, SP500_EW = "^GSPC", "^NDX", "^RUT", "^SPXEW"
+AZIONI = [SP500, NASDAQ100, RUSSELL2000, SP500_EW]
+RAPPORTO_EW = "SP500_EW_SU_CW"
+
 
 def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
     """Restituisce le sezioni della pagina USA (config non serve: le recessioni arrivano da USREC)."""
@@ -24,6 +29,11 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
         opzioni_figura = {k: opzioni_grafico.pop(k) for k in ("riferimento", "evidenzia_inversioni")
                           if k in opzioni_grafico}
         figura = charts.linee_storiche(lista(*ids), recessioni=recessioni, **opzioni_figura)
+        return Grafico(id=id_grafico, titolo=titolo, figura=figura, serie_ids=list(ids), **opzioni_grafico)
+
+    def base100(id_grafico, titolo, ids, **opzioni_grafico) -> Grafico:
+        """Confronto a base 100: la ribasatura all'inizio del periodo scelto la fa il JavaScript."""
+        figura = charts.linee_base100([(s, False) for s in lista(*ids)])
         return Grafico(id=id_grafico, titolo=titolo, figura=figura, serie_ids=list(ids), **opzioni_grafico)
 
     # La curva "oggi vs 1 mese vs 1 anno" ha una forma diversa dagli altri grafici
@@ -75,6 +85,25 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                             nota="Gli OAS ICE BofA su FRED partono da ottobre 2023: per motivi di "
                                  "licenza FRED pubblica solo gli ultimi anni. Per lo storico lungo "
                                  "guarda lo spread Baa - Treasury 10A."),
+                ]),
+        Sezione("azioni", "Azioni",
+                "I principali indici azionari USA: variazioni di prezzo e, sotto, quanto il rialzo "
+                "dell'S&P 500 dipende da pochi titoli molto grandi.",
+                tabella_performance=AZIONI, etichetta_performance="Indice",
+                grafici=[
+                    base100("usa-indici-azionari", "Indici azionari USA (base 100)", [SP500, NASDAQ100, RUSSELL2000],
+                            periodo_iniziale="5A", largo=True,
+                            nota="Normalizzati a 100 all'inizio del periodo scelto con i pulsanti 1A / 5A / 10A / Max. "
+                                 "Prezzi di chiusura degli indici senza dividendi (non \"adjusted\"). "
+                                 "S&P 500: 500 grandi società; Nasdaq 100: le 100 maggiori non finanziarie del "
+                                 "Nasdaq (molta tecnologia); Russell 2000: piccole società."),
+                    storico("usa-concentrazione", "Concentrazione: S&P 500 Equal Weight / S&P 500", [RAPPORTO_EW],
+                            periodo_iniziale="Max", largo=True,
+                            nota="Rapporto (×100) tra l'indice S&P 500 con tutti i titoli dello stesso peso e "
+                                 "l'S&P 500 pesato per capitalizzazione. Se scende, il mercato si concentra su pochi "
+                                 "giganti: il titolo \"medio\" va peggio dell'indice. Se sale, il rialzo si allarga. "
+                                 "Conta la direzione, non il livello (dipende dalla data di partenza degli indici, "
+                                 "12/2006). Indici di prezzo, senza dividendi. Bande grigie: recessioni NBER."),
                 ]),
         Sezione("condizioni", "Condizioni finanziarie e lavoro", grafici=[
             storico("usa-vix", "VIX (volatilità attesa S&P 500)", ["VIXCLS"], periodo_iniziale="5A"),

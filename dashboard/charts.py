@@ -197,30 +197,42 @@ def con_nome(s: Serie, nome: str) -> Serie:
     return replace(s, nome=nome)
 
 
-def linee_base100(serie: list[tuple[Serie, bool]]) -> go.Figure | None:
+def linee_base100(serie: list[tuple]) -> go.Figure | None:
     """Confronto di serie con scale diverse: tutte partono da 100 all'inizio del periodo scelto.
 
-    `serie` è una lista di coppie (Serie, invertita). invertita=True usa 1/valore: serve per i cambi
-    quotati "valuta estera per dollaro" (USD/JPY...), così per ogni linea "sale" = la valuta si rafforza.
+    `serie` è una lista di coppie (Serie, invertita), con un terzo elemento facoltativo (dizionario):
+      slot       numero del colore (predefinito: la posizione in lista)
+      variante   id della variante in cui la linea è visibile (vedi Grafico.varianti); senza, è sempre visibile
+      benchmark  True = linea più spessa e tratteggiata, nel colore neutro del testo (es. indice mondiale)
+    invertita=True usa 1/valore: serve per i cambi quotati "valuta estera per dollaro" (USD/JPY...),
+    così per ogni linea "sale" = la valuta si rafforza.
     Qui i dati sono quelli grezzi: la ribasatura a 100 la fa il JavaScript (static/app.js) a ogni cambio
-    di periodo, partendo dalla prima data in cui esistono TUTTE le serie.
+    di periodo, partendo dalla prima data in cui esistono TUTTE le serie (visibili).
     """
-    disponibili = [(s, inv) for s, inv in serie if s.ok]
-    if not disponibili:
+    voci = [(s, inv, (extra[0] if extra else {})) for s, inv, *extra in serie]
+    if not any(s.ok for s, _, _ in voci):
         return None
     figura = go.Figure(layout=_layout_base(""))
     _aggiungi_linea_riferimento(figura, 100, "")
-    figura.layout.meta = {**dict(figura.layout.meta), "base100": True}
+    varianti = list(dict.fromkeys(o["variante"] for _, _, o in voci if "variante" in o))
+    figura.layout.meta = {**dict(figura.layout.meta), "base100": True, **({"varianti": varianti} if varianti else {})}
 
-    for slot, (s, inv) in enumerate(serie, start=1):  # lo slot segue la posizione in lista
+    for posizione, (s, inv, opzioni) in enumerate(voci, start=1):
         if not s.ok:
             continue
+        slot = opzioni.get("slot", posizione)
         valori = 1 / s.dati[s.dati != 0] if inv else s.dati
         dati = alleggerisci(valori)
+        meta = {"slot": slot}
+        linea = dict(width=2, color=PALETTE[(slot - 1) % len(PALETTE)])
+        if "variante" in opzioni:
+            meta["variante"] = opzioni["variante"]
+        if opzioni.get("benchmark"):
+            meta["neutro"] = True  # il JavaScript usa il colore del testo, adatto a tema chiaro e scuro
+            linea.update(width=3.5, dash="dash")
         figura.add_trace(go.Scatter(
             x=_date(dati), y=[round(v, 8) for v in dati.tolist()], mode="lines", name=s.nome,
-            line=dict(width=2, color=PALETTE[slot - 1]), meta={"slot": slot},
-            hovertemplate=f"%{{y:.1f}}<extra>{s.nome}</extra>",
+            line=linea, meta=meta, hovertemplate=f"%{{y:.1f}}<extra>{s.nome}</extra>",
         ))
     return figura
 

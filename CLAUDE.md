@@ -10,6 +10,8 @@ Roadmap in 3 fasi:
 2. **Eurozona** (fatta): DFR, curva AAA (proxy Bund), spread sovrani, HICP, HY in euro, EUR/USD. Fonte BCE, riserva FRED
 3. **Asia** (fatta): tab Giappone, Cina, Corea del Sud + tab **Confronto globale** (fonti: BIS, Ministero delle Finanze giapponese, Statistics Bureau of Japan via DBnomics, FRED/OCSE, Yahoo)
 
+Sezione **Azioni** (fatta) nelle tab USA ed Eurozona e benchmark ACWI con interruttore valuta locale/USD nel Confronto globale (fonte Yahoo).
+
 Tab tematica **Commodities** (fatta): tabella di performance, energia, metalli preziosi e industriali, agricoli,
 grafici commodities vs tassi USA. Fonte Yahoo Finance (future continui), riserva FRED (spot o medie mensili FMI).
 
@@ -51,6 +53,16 @@ grafici commodities vs tassi USA. Fonte Yahoo Finance (future continui), riserva
   l'avviso resterebbe acceso per sempre) e in fondo alla pagina si scrive una nota (`regions/asia.sezione_non_inclusi`).
 - Asia: nessuna banda di recessione (nessuna fonte ufficiale e automatica). Grafici "base 100" (`charts.linee_base100`): il JavaScript
   ribasa a 100 all'inizio del periodo scelto, ma non prima della prima data in cui esistono tutte le serie (`base100()` in `static/app.js`).
+- **Azioni**: sempre prezzi di chiusura senza dividendi (`auto_adjust=False` in `yahoo.py`), scritto in nota. Ogni indice ha **una sola
+  definizione** in `config.yaml` (regione = tab di appartenenza); i grafici delle altre tab lo riusano per id (es. `^GSPC` è in `usa`
+  e il Confronto globale lo legge da lì). Le schede "In sintesi" prendono le serie con `riepilogo: true` della loro regione; per le serie
+  con `categoria: borsa` mostrano anche la variazione da inizio anno. `Sezione.tabella_performance` + `etichetta_performance` = tabella con 1S/1M/YTD/1A.
+- **Grafici con due varianti** (`Grafico.varianti`, interruttore "Valuta locale / In USD"): la figura contiene le linee di entrambe, ognuna con
+  `meta.variante`; `app.js` mostra solo quelle della variante scelta e ribasa a 100 considerando solo le linee visibili. Le linee senza variante
+  (S&P 500, ACWI: già in USD) sono sempre visibili. In `charts.linee_base100` il 3° elemento facoltativo di ogni voce è `{slot, variante, benchmark}`
+  (benchmark = linea spessa tratteggiata, colore del testo). Le borse in USD sono serie `calcolata` (indice / cambio "valuta per dollaro", tutto Yahoo):
+  se un cambio passa alla riserva FRED la serie in USD è "non disponibile" con avviso, come da regola sulle serie calcolate.
+- Gli id dei grafici non devono coincidere con gli id delle sezioni (`<regione>-<sezione>`, es. `usa-azioni`): l'elemento duplicato non si disegna.
 - Non fare commit o push senza richiesta esplicita dell'utente.
 
 ## Struttura
@@ -88,6 +100,18 @@ static/app.js            tab, disegno Plotly, pulsanti 1A/5A/10A/Max, colori dal
 site/                    OUTPUT generato (non versionato: lo ricrea la GitHub Action)
 .github/workflows/aggiorna-dashboard.yml   build giornaliera + pubblicazione su Pages
 ```
+
+### Azioni occidentali e benchmark (verificate il 01/10/2026)
+- Yahoo, indici giornalieri: `^GSPC` (dal 1927), `^NDX` (1985), `^RUT` (1987), `^SPXEW` S&P 500 Equal Weight (dal 12/2006; `^SP500EW` è lo stesso indice),
+  `^STOXX50E` (dal 2007), `^GDAXI` (1987), `^FCHI` (1990), `FTSEMIB.MI` (1997). Riserva FRED solo per `^GSPC` (`SP500`, dal 10/2016) e `^NDX` (`NASDAQ100`);
+  `RU2000PR` non esiste. Per l'equal-weight non servono gli ETF `RSP`/`SPY` (dal 2003): il rapporto degli indici (`SP500_EW_SU_CW`, ×100) è quasi identico.
+- **DAX = indice "performance"** (dividendi reinvestiti, non esiste una versione di prezzo su Yahoo: `^GDAXP` non risponde): su periodi lunghi sale molto più degli altri
+  (base 100 dal 2008: DAX 323, Euro Stoxx 50 147). Scritto nella nota del grafico.
+- **Banche europee**: `^SX7E` (Euro Stoxx Banks) e `^SX7P` non esistono su Yahoo. Si usa l'ETF `EXV1.DE` (iShares STOXX Europe 600 Banks, in €, dal 01/2008,
+  Xetra: l'ultimo dato è spesso del giorno prima), che include banche non dell'area euro (UK, Svizzera). `BNK.PA` parte solo dal 2024.
+- **MSCI ACWI**: `^ACWI` non esiste; si usa l'ETF `ACWI` (dal 03/2008, in $). L'ETF distribuisce dividendi, che nel prezzo non adjusted compaiono come piccoli cali.
+- Cambi per la conversione in USD (Yahoo, "valuta per dollaro"): `EUR=X`, `JPY=X`, `CNY=X`, `KRW=X`, `HKD=X` (dal 2001; riserva FRED `DEXHKUS`; HKD agganciato al dollaro).
+  `EURUSD=X` è l'inverso di `EUR=X`; si è scelto `EUR=X` per usare sempre il rapporto indice / cambio. FRED non offre una riserva con lo stesso verso per l'euro.
 
 ## Come si aggiunge…
 - **una serie**: un blocco in `config.yaml`; se deve apparire in un grafico, aggiungerla in `regions/<regione>.py`.
