@@ -1,4 +1,4 @@
-# Ristrutturazione del sito (piano approvato)
+# Ristrutturazione del sito (piano approvato) — COMPLETATA il 01/10/2026
 
 Piano approvato dall'utente il 01/10/2026, con le scelte della sezione 0 e due aggiunte (vedi sotto).
 **Questo file è la fonte di verità per ripartire dopo un'interruzione: aggiornare la tabella "Stato" alla fine di ogni step.**
@@ -19,7 +19,8 @@ Piano approvato dall'utente il 01/10/2026, con le scelte della sezione 0 e due a
 | 4e-2 | Mercati: Rates & curves, parte 2 (inflazione e tassi reali) | **fatto e in `main`** (con lo step 4 completo) |
 | 5 | Economies (hub + 5 segnaposto + UNRATE in USA); `regioni` → `pagine` nel config; via le vecchie pagine e il Confronto globale | **fatto e in `main`** |
 | 6 | Overview (14 numeri chiave con sparkline, "What changed this week", schede, avvisi); diventa `/` | **fatto e in `main`** |
-| 7 | Rifinitura: peso pagine, link rotti, README e screenshot, CLAUDE.md, codice morto (opz.: nomi interni in inglese) | **quasi fatto sul ramo** `ristrutturazione/step-7` (vedi registro), in attesa di ok |
+| 7 | Rifinitura: peso pagine, link rotti, README e screenshot, CLAUDE.md, codice morto (opz.: nomi interni in inglese) | **fatto e in `main`** |
+| 8 | Interruttore del tema chiaro/scuro (◐) previsto dal wireframe | **fatto e in `main`** |
 
 Flusso di lavoro: un ramo per step (`ristrutturazione/step-N`); a fine step riepilogo all'utente e **attesa dell'ok prima del merge** su `main`
 (il merge pubblica il sito tramite GitHub Actions). Il merge si fa a fine di ogni step (non tutto alla fine), con `git push origin main`. Nessun commit/push fuori da questo flusso senza richiesta.
@@ -348,3 +349,7 @@ Il workflow GitHub non cambia (pubblica già tutta `site/`).
   README riscritto, screenshot `docs/dashboard.jpg`, CLAUDE.md riscritto (struttura, regole, flusso); nessun codice morto trovato (solo `valida_palette.peggiore`, helper di ricerca palette, tenuto).
   Controllo link esterni: 84, 57 rispondono 200; i link FRED sono andati in timeout (il sito risponde lentamente ai bot, formato standard); 4 link Yahoo (`^GDAXIP`, `510300.SS`, `EXV1.DE`, `KRW=X`) rispondono 404 alle richieste automatiche
   (Yahoo reindirizza al consenso privacy nel browser): DA VERIFICARE A MANO. Non fatto: tema chiaro/scuro con interruttore (mai implementato), nomi interni in inglese (opzionale).
+- 01/10/2026: step 7 unito in `main`; Action verificata (test, build e pubblicazione riusciti). L'utente ha controllato a mano i link Yahoo e FRED (funzionano). Le email di notifica di GitHub per le Action fallite: risposta dell'utente non chiara nel messaggio (segnaposto non compilato), quindi NON confermate.
+- 01/10/2026: interruttore del tema (◐) nella testata di ogni pagina: tre stati Auto (segue il sistema) → Light → Dark → Auto; la scelta sta solo nel `localStorage` del browser di chi visita e si applica prima del disegno (niente lampo);
+  `data-theme` su `<html>` guida sia le variabili del CSS sia i colori dei Paesi (`render.css_colori`); i grafici già disegnati si ricolorano al clic. Verificato nel browser: ciclo dei tre stati, persistenza dopo il ricaricamento, ricolorazione di un grafico, telefono a 375 px senza scorrimento orizzontale.
+  I nomi interni in italiano restano (decisione dell'utente). **Ristrutturazione completata.** Lavoro successivo: riempire le pagine di Economies (vedi CLAUDE.md).

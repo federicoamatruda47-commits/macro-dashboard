@@ -224,7 +224,10 @@ def css_colori(config: dict) -> str:
     def blocco(tema: str) -> str:
         return " ".join(f"--c-{chiave}: {valore(chiave, tema)};" for chiave in colori)
 
-    return f":root {{ {blocco('chiaro')} }}\n@media (prefers-color-scheme: dark) {{ :root {{ {blocco('scuro')} }} }}"
+    scuro = blocco("scuro")
+    return (f":root {{ {blocco('chiaro')} }}\n"
+            f"@media (prefers-color-scheme: dark) {{ :root:not([data-theme=\"light\"]) {{ {scuro} }} }}\n"
+            f":root[data-theme=\"dark\"] {{ {scuro} }}")
 
 
 def _serie_usate(sezioni, serie: dict[str, Serie]) -> list[Serie]:

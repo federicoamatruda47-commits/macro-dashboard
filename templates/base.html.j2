@@ -9,6 +9,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  {# Applica subito il tema scelto in precedenza (se c'è), prima che la pagina si disegni: niente lampo di colore #}
+  <script>try { var t = localStorage.getItem("tema"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}</script>
   <title>{% block titolo %}Macro dashboard{% endblock %}</title>
   <meta name="description" content="{% block descrizione %}Macroeconomic dashboard updated every day: rates, yield curves, inflation, credit, equities, currencies and commodities.{% endblock %}">
   {# ?v=... cambia a ogni generazione: il browser scarica sempre il CSS aggiornato #}
@@ -21,7 +23,13 @@
   {# ---- Testata e menu: restano in cima mentre si scorre ---- #}
   <header class="testata-sito">
     <div class="contenitore">
-      <a class="marchio" href="{{ radice or './' }}">Macro dashboard</a>
+      <div class="testata-riga">
+        <a class="marchio" href="{{ radice or './' }}">Macro dashboard</a>
+        {# Il testo e il titolo li aggiorna app.js (Auto / Light / Dark); senza JavaScript il pulsante non serve e resta nascosto #}
+        <button type="button" class="interruttore-tema" id="interruttore-tema" hidden>
+          <span class="icona" aria-hidden="true">◐</span><span class="etichetta-tema">Auto</span>
+        </button>
+      </div>
       <nav class="menu" aria-label="Main menu">
         <ul class="menu-riga">
           {% for v in menu %}
