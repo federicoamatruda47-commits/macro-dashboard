@@ -21,6 +21,12 @@ Piano approvato dall'utente il 01/10/2026, con le scelte della sezione 0 e due a
 | 6 | Overview (14 numeri chiave con sparkline, "What changed this week", schede, avvisi); diventa `/` | **fatto e in `main`** |
 | 7 | Rifinitura: peso pagine, link rotti, README e screenshot, CLAUDE.md, codice morto (opz.: nomi interni in inglese) | **fatto e in `main`** |
 | 8 | Interruttore del tema chiaro/scuro (◐) previsto dal wireframe | **fatto e in `main`** |
+| 9 | Economies per Paese: **verifica delle fonti** (solo ricerca, nessun codice): [economies-fonti.md](economies-fonti.md) | **fatto sul ramo `ristrutturazione/step-9`, piano rivisto, attesa ok** |
+| 10 | Economies: fondamenta (FMI + Banca Mondiale, snapshot, modello unico, pagina `country.html?c=ISO3` per il livello B, tabella `paesi:`, link "→ Economy") | da fare |
+| 11 | Economies: Stati Uniti (primo paese del livello A, con il riquadro Markets) | da fare |
+| 12 | Economies: Italia e Area euro | da fare |
+| 13 | Economies: Regno Unito, Compare, rifinitura e CLAUDE.md | da fare |
+| 14 | Overview: mappa interattiva (clic sul Paese → pagina del Paese) con elenco/ricerca dei Paesi per il telefono | da fare |
 
 Flusso di lavoro: un ramo per step (`ristrutturazione/step-N`); a fine step riepilogo all'utente e **attesa dell'ok prima del merge** su `main`
 (il merge pubblica il sito tramite GitHub Actions). Il merge si fa a fine di ogni step (non tutto alla fine), con `git push origin main`. Nessun commit/push fuori da questo flusso senza richiesta.
@@ -274,6 +280,44 @@ Il workflow GitHub non cambia (pubblica già tutta `site/`).
 6. **Overview**. *Verifica*: test del calcolo sui dati storici, schede con serie non disponibile.
 7. **Rifinitura**.
 
+## 10. Economies per Paese: piano degli step 9–14 (rivisto il 01/10/2026 dopo le decisioni dell'utente)
+
+Obiettivo: un **modello unico** di pagina per Paese, a due livelli. **A** (USA, Italia, Area euro, Regno Unito): pagine proprie, dati mensili/trimestrali da fonti nazionali o ufficiali.
+**B** (tutti gli altri paesi, ~194): **una sola pagina con selettore**, dati annuali FMI WEO + Banca Mondiale. Tabelle e verifiche: [economies-fonti.md](economies-fonti.md). Bozza di e-mail all'FMI: [bozza-email-fmi.md](bozza-email-fmi.md).
+
+### Decisioni dell'utente (01/10/2026)
+- **Livello B**: pagina unica `economies/country.html?c=ITA` (codice ISO3 nell'URL): ogni Paese ha un indirizzo diretto, così la mappa e le pagine Markets lo possono aprire. **Livello A**: pagine proprie (`economies/usa/`, ...), anche se i quattro Paesi sono anche nella pagina B (che porta un rimando alla pagina completa).
+- **Dati FMI**: snapshot nel repository, aggiornato **a ogni nuovo WEO** (aprile/ottobre; quello di ottobre 2026 esce a metà mese). Pro/contro di API contro file scaricato a mano: in economies-fonti.md (consiglio: script lanciato a mano sul PC dell'utente, con l'importatore del file come riserva). Controllo di freschezza **a semestri**: avviso oltre 210 giorni dalla pubblicazione del WEO; Banca Mondiale oltre 15 mesi.
+- **Termini FMI**: bozza di e-mail pronta in `docs/bozza-email-fmi.md`, la invia l'utente; fino alla risposta si procede solo con la citazione visibile.
+- **Debito/deficit USA**: amministrazioni pubbliche (FMI) come dato principale; federale (FRED) solo come grafico aggiuntivo, etichettato "Federal government only".
+- **Fiducia**: ESI per Italia e area euro; Michigan solo se la licenza lo consente (si legge nello step 11); niente PMI/ISM/GfK (quindi il UK non ha fiducia).
+- **Banca Mondiale**: disoccupazione e occupazione sono **stime modellate ILO** (etichetta "ILO modelled estimate" e nota nel registro). **WGI**: il percentile **non esiste più** (WGI 2.0, 2025); si usa il **punteggio 0-100** (`GOV_WGI_CC.SC`) con intervallo al 90%, etichettato "score", non "rank". Un rango tra paesi si potrebbe calcolare dagli stessi dati: da approvare.
+- **UK**: l'API ONS non è cambiata: `HF6X` (debito netto/PIL) e `AA6H` (partite correnti/PIL) esistevano, il 404 era un percorso sbagliato; prezzi delle case dall'**UK HPI di HM Land Registry** (verificato: dal 1995-01 al 2026-07).
+
+### Mappa e collegamenti Markets ↔ Economies (richiesti dall'utente)
+Il campo `paese` sulle serie **esiste già** (chiavi `us`, `ea`, `it`, `uk`, `jp`, `cn`, `kr`, `fr`, `de`, `global`, più i gruppi delle materie prime): non serve aggiungerlo, serve un **blocco `paesi:` in `config.yaml`** che per ogni chiave dica il codice ISO3, il nome e la pagina di destinazione (A se `attiva`, altrimenti `country.html?c=<ISO3>`; l'area euro non è un Paese del livello B: solo pagina A).
+1. **Step 10 — collegamenti**: blocco `paesi:`; link "→ Economy" sotto ai grafici Markets che hanno un solo Paese (per i grafici di confronto, un elenco di link ai Paesi mostrati, nel piè accanto a Source); regola "mai un link morto" (se la pagina del Paese non c'è, non si mostra). Pagina `country.html?c=` con il selettore e URL condivisibile.
+2. **Step 11–13 — riquadro Markets nella pagina del Paese** (A): ogni pagina mette in alto i numeri chiave di mercato di quel Paese (rendimento 10Y, borsa, cambio, politica monetaria) con link alla pagina Markets; per i Paesi del livello B che hanno serie di mercato (Giappone, Cina, Corea, Francia, Germania) lo stesso riquadro compare nella pagina `country.html` (generato dal campo `paese` delle serie).
+3. **Step 14 — mappa interattiva nell'Overview**: mappa mondiale (SVG con i confini Natural Earth, di pubblico dominio, semplificati; niente Plotly geo per non appesantire: ~150-250 KB). **Indicatore predefinito: PIL pro capite a PPA**; interruttori: crescita reale, inflazione, disoccupazione, debito/PIL, controllo della corruzione (score 0-100). **Si mostra sempre l'ultimo anno effettivo** (dato reale, mai una proiezione del WEO; `LATEST_ACTUAL_ANNUAL_DATA` per l'FMI, ultimo anno con valore per la Banca Mondiale), e **l'anno compare nel tooltip e nell'elenco di ogni Paese** perché i Paesi hanno anni diversi, **clic sul Paese → pagina del Paese** (A: pagina propria; B: `country.html?c=ISO3`), tooltip con il valore **e l'anno del dato**. **Accanto alla mappa un elenco dei Paesi con ricerca** (campo di testo che filtra per nome, ogni voce porta alla pagina del Paese e mostra lo stesso valore): sul telefono i Paesi piccoli non si possono cliccare sulla mappa, quindi l'elenco è la via principale a 375 px (verifica: tutti i ~194 Paesi raggiungibili da telefono senza usare la mappa). È uno step a parte perché richiede che le pagine Paese esistano e perché pesa sull'Overview (target < 1 MB compressi invariato); se lo step 13 risultasse corto si può unire.
+
+### Step
+- **Step 10: fondamenta, livello B e collegamenti.**
+  Fonti nuove `dashboard/sources/imf.py` (SDMX `api.imf.org`) e `worldbank.py` (WDI e WGI), con `NOMI_FONTI`, link in `fonti_url.py`. Strumento `tools/aggiorna_weo.py` (lanciato a mano, scrive `dati/weo/`) e un importatore del file WEO come riserva; snapshot anche per Banca Mondiale (`dati/bm/`, aggiornato a luglio/settembre). La build giornaliera legge solo gli snapshot.
+  Catalogo `indicatori:` e lista dei paesi in `config.yaml` (non ~2.300 voci di serie); frequenze `semestrale` e `annuale` nel controllo di freschezza; serie reali / stime / proiezioni distinte (`LATEST_ACTUAL_ANNUAL_DATA`, tratteggio). Modello di pagina con sezioni fisse (Output & growth, Prices, Labour, Public finances, External, Governance, IMF outlook).
+  Pagina `economies/country.html?c=ISO3` (un solo file dati compresso, < 1 MB, JavaScript che legge il parametro `c`, `noscript` con link alla scelta; Overview/hub rimandano ad essa). Blocco `paesi:` e link "→ Economy" dei grafici Markets. Note nel registro (ILO modellato, WGI, stime FMI, "non inclusi"). Test sulle funzioni pure (snapshot, freschezza a semestri).
+  *Verifica*: tutti gli indicatori per tutti i paesi, avvisi per i paesi senza dati, peso della pagina, `inventario.py`, `controlla_link.py` (anche i link con `?c=`), il WEO di ottobre 2026 aggiorna lo snapshot senza modificare il codice.
+- **Step 11: Stati Uniti** (`economies/usa`): PIL, inflazione, lavoro (disoccupazione, occupazione 25-54), debito e deficit PA dal FMI + grafico aggiuntivo federale FRED, partite correnti (NETFI/GDP), popolazione, prezzi delle case (FHFA), Michigan solo se la licenza lo consente, previsioni FMI, riquadro Markets. Riga "How to read it" per grafico e **tabella da rivedere prima del merge**.
+- **Step 12: Italia ed Area euro**: Eurostat con `EA21` (nota sul passaggio a 21 paesi), HICP BCE, ESI, prezzi delle case, deficit e debito. Da trovare: partite correnti (Eurostat `bop_c6_q` con le dimensioni giuste / BCE `BP6`; `tipsbp20` ha solo l'Italia annuale).
+- **Step 13: Regno Unito, Compare, rifinitura**: ONS (`HF6X`, `AA6H`, `J5IJ`/`DZLS`, `D7G7`, `MGSX`, `LF24`; **deficit = `DZLS` ÷ `YBHA` con numeratore e denominatore sullo stesso periodo**: somma dei 12 mesi (4 trimestri) di `DZLS` divisa per il PIL degli stessi 12 mesi (4 trimestri di `YBHA`), niente PIL di un anno diviso un deficit di un altro; test sulle funzioni pure e nota nel registro), UK HPI, pagina `compare`, schede "later" di Giappone/Cina/Corea sostituite dal livello B, CLAUDE.md e mappa grafici aggiornati.
+- **Step 14: mappa interattiva** nell'Overview, con elenco e ricerca dei Paesi (vedi sopra).
+
+Ogni step: un ramo, tabella delle righe "How to read it" da rivedere, test + `build.py` + `inventario.py` + `controlla_link.py`, **attesa dell'ok prima del merge**.
+
+### Punti aperti: chiusi dall'utente il 01/10/2026
+- **WGI**: solo il punteggio 0-100 con l'intervallo al 90%; **nessun rango** calcolato (e nessuna dicitura "rank").
+- **Mappa**: predefinito PIL pro capite a PPA; interruttori crescita reale, inflazione, disoccupazione, debito/PIL, controllo della corruzione; ultimo anno effettivo (non proiezione) con l'anno nel tooltip; elenco/ricerca dei Paesi accanto alla mappa.
+- **Se l'FMI rifiuta lo script**: si usa l'**importatore del file WEO** scaricato a mano (non si ripiega sulla sola Banca Mondiale). L'importatore va scritto comunque nello step 10, con lo stesso formato dello snapshot.
+
 ## Registro
 
 - 01/10/2026: piano approvato; creato il ramo `ristrutturazione/step-0`.
@@ -353,3 +397,7 @@ Il workflow GitHub non cambia (pubblica già tutta `site/`).
 - 01/10/2026: interruttore del tema (◐) nella testata di ogni pagina: tre stati Auto (segue il sistema) → Light → Dark → Auto; la scelta sta solo nel `localStorage` del browser di chi visita e si applica prima del disegno (niente lampo);
   `data-theme` su `<html>` guida sia le variabili del CSS sia i colori dei Paesi (`render.css_colori`); i grafici già disegnati si ricolorano al clic. Verificato nel browser: ciclo dei tre stati, persistenza dopo il ricaricamento, ricolorazione di un grafico, telefono a 375 px senza scorrimento orizzontale.
   I nomi interni in italiano restano (decisione dell'utente). **Ristrutturazione completata.** Lavoro successivo: riempire le pagine di Economies (vedi CLAUDE.md).
+- 01/10/2026: step 9 (verifica delle fonti per Economies, nessun codice) sul ramo `ristrutturazione/step-9`: tabelle in [economies-fonti.md](economies-fonti.md), piano degli step 9–13 nella sezione 10.
+- 01/10/2026: piano rivisto dopo le decisioni dell'utente: livello B in `country.html?c=ISO3`, snapshot FMI a ogni WEO con freschezza a semestri, bozza di e-mail all'FMI (`docs/bozza-email-fmi.md`), debito/deficit USA dal FMI, ESI, mappa e link Markets ↔ Economies (nuovo step 14);
+  verificato che `HF6X` e `AA6H` dell'ONS esistono (percorso sbagliato nel primo test), UK HPI funziona, il percentile WGI non esiste più (solo score 0-100). Attesa dell'ok dell'utente prima del commit.
+- 01/10/2026: piano approvato dall'utente con tre aggiunte (elenco/ricerca dei Paesi accanto alla mappa; deficit UK sullo stesso periodo; punti aperti chiusi: solo score WGI, mappa con PIL pro capite PPA e ultimo anno effettivo, importatore WEO come riserva). Step 9 unito in `main` (solo documenti). Lo step 10 si apre dopo la lettura del piano finale.
