@@ -7,7 +7,8 @@ migliaia di voci) e non si scaricano a ogni build: stanno in file CSV dentro il 
 
 Formato dello snapshot (uguale per le due fonti, scelto perché le differenze tra due versioni mostrino solo i valori cambiati):
   <cartella>/dati.csv                    paese,indicatore,anno,valore       ordinato per (paese, indicatore, anno), valori a 3 decimali
-  <cartella>/ultimo_effettivo.csv        paese,indicatore,anno              solo FMI: ultimo anno con dato reale (dopo = stima/proiezione)
+  <cartella>/ultimo_effettivo.csv        paese,indicatore,anno,anno_fiscale  solo FMI: ultimo anno con dato reale (dopo = stima/proiezione); anno_fiscale = 1 se
+                                         l'FMI lo scrive come anno fiscale ("FY2024/25": si legge 2024, l'anno in cui inizia)
   <cartella>/paesi.csv                   paese,nome,regione,tipo            solo Banca Mondiale: nome, regione e se è un Paese o un aggregato (World, Euro area...)
   <cartella>/meta.json                   date di pubblicazione dell'FMI e di aggiornamento della Banca Mondiale (nessuna data "di oggi")
 
@@ -39,7 +40,9 @@ SOGLIA_ANNUALI_GIORNI = {"semestrale": 210, "annuale": 456}
 DECIMALI_SNAPSHOT = 3
 SOGLIA_INTERI = 1_000_000      # da qui in su i valori si scrivono interi (PIL in dollari, popolazione)
 COLONNE_DATI = ["paese", "indicatore", "anno", "valore"]
-COLONNE_ULTIMO = ["paese", "indicatore", "anno"]
+COLONNE_ULTIMO = ["paese", "indicatore", "anno", "anno_fiscale"]
+# Codici dell'FMI diversi da quelli ISO usati dalla Banca Mondiale: nello snapshot si usano sempre i secondi
+ALIAS_PAESI = {"KOS": "XKX", "WBG": "PSE"}      # Kosovo, Cisgiordania e Gaza
 COLONNE_PAESI = ["paese", "nome", "regione", "tipo"]
 TIPO_PAESE = "country"
 TIPO_AGGREGATO = "aggregate"
@@ -60,6 +63,7 @@ class Indicatore:
     sorgente_wb: int = 2                 # solo Banca Mondiale: 2 = WDI, 3 = WGI
     ultimo_effettivo_da: str | None = None  # solo FMI: codice di un altro indicatore da cui prendere l'ultimo anno effettivo, se il proprio manca
     nota: str | None = None
+    divisore: float = 1.0                # per portare il valore dello snapshot all'unità mostrata (es. dollari -> miliardi: 1e9)
 
 
 @dataclass
@@ -71,6 +75,7 @@ class Snapshot:
     ultimo_effettivo: dict[tuple[str, str], int]  # (paese, codice) -> ultimo anno con dato reale
     meta: dict = field(default_factory=dict)
     paesi: pd.DataFrame | None = None    # solo Banca Mondiale: colonne paese, nome, regione, tipo
+    fiscale: set[tuple[str, str]] = field(default_factory=set)   # coppie (paese, codice) con anni fiscali (l'anno 2024 è il 2024/25)
 
     def codici_paesi(self) -> set[str]:
         """I codici dei veri Paesi presenti nei dati (esclusi gli aggregati: World, gruppi di reddito, G001...)."""
@@ -115,7 +120,8 @@ def carica_catalogo(config: dict) -> list[Indicatore]:
         if voce["fonte"] == FONTE_BM and voce.get("sorgente_wb", 2) not in (2, 3):
             raise ValueError(f"Indicatore {voce['id']}: 'sorgente_wb' deve essere 2 (WDI) o 3 (WGI)")
         catalogo.append(Indicatore(**{c: voce[c] for c in CAMPI_INDICATORE}, decimali=int(voce.get("decimali", 1)),
-                                   sorgente_wb=int(voce.get("sorgente_wb", 2)), ultimo_effettivo_da=da, nota=voce.get("nota")))
+                                   sorgente_wb=int(voce.get("sorgente_wb", 2)), ultimo_effettivo_da=da, nota=voce.get("nota"),
+                                   divisore=float(voce.get("divisore", 1))))
     return catalogo
 
 
@@ -151,6 +157,36 @@ def anno_effettivo(testo) -> int | None:
         return None
     trovato = _ANNO_EFFETTIVO.match(str(testo).strip())
     return int(trovato.group(1)) if trovato else None
+
+
+def e_anno_fiscale(testo) -> bool:
+    """True se l'FMI scrive l'ultimo anno effettivo come anno fiscale ("FY2024/25")."""
+    return isinstance(testo, str) and testo.strip().upper().startswith("FY")
+
+
+def completa_fiscale(fiscale: set[tuple[str, str]], ultimo_originale: dict[tuple[str, str], int], dati: pd.DataFrame,
+                     equivalenze: dict[str, str]) -> set[tuple[str, str]]:
+    """Come completa_ultimo_effettivo, per il segno "anno fiscale": un indicatore senza attributo (es. PPPPC) eredita quello di NGDPD."""
+    risultato = set(fiscale)
+    for codice, riferimento in equivalenze.items():
+        for paese in dati.loc[dati["indicatore"] == codice, "paese"].unique():
+            if (paese, codice) not in ultimo_originale and (paese, riferimento) in fiscale:
+                risultato.add((paese, codice))
+    return risultato
+
+
+def applica_alias(dati: pd.DataFrame) -> pd.DataFrame:
+    """Sostituisce i codici dell'FMI diversi dall'ISO (KOS, WBG) con quelli della Banca Mondiale (XKX, PSE)."""
+    copia = dati.copy()
+    copia["paese"] = copia["paese"].replace(ALIAS_PAESI)
+    return copia
+
+
+def alias_chiavi(chiavi):
+    """Lo stesso per un dizionario o un insieme con chiavi (paese, codice)."""
+    nuove = {(ALIAS_PAESI.get(p, p), i): v for (p, i), v in chiavi.items()} if isinstance(chiavi, dict) else \
+        {(ALIAS_PAESI.get(p, p), i) for p, i in chiavi}
+    return nuove
 
 
 def completa_ultimo_effettivo(ultimo: dict[tuple[str, str], int], dati: pd.DataFrame,
@@ -196,8 +232,9 @@ def testo_dati_csv(dati: pd.DataFrame) -> str:
                                      for p, i, a, v in zip(ordinati["paese"], ordinati["indicatore"], ordinati["anno"], ordinati["valore"])))
 
 
-def testo_ultimo_csv(ultimo: dict[tuple[str, str], int]) -> str:
-    return _csv_testo(COLONNE_ULTIMO, ((p, i, a) for (p, i), a in sorted(ultimo.items())))
+def testo_ultimo_csv(ultimo: dict[tuple[str, str], int], fiscale: set[tuple[str, str]] | None = None) -> str:
+    fiscale = fiscale or set()
+    return _csv_testo(COLONNE_ULTIMO, ((p, i, a, 1 if (p, i) in fiscale else "") for (p, i), a in sorted(ultimo.items())))
 
 
 def testo_meta(meta: dict) -> str:
@@ -210,12 +247,12 @@ def testo_paesi_csv(paesi: pd.DataFrame) -> str:
 
 
 def scrivi_snapshot(cartella: Path, dati: pd.DataFrame, meta: dict, ultimo: dict[tuple[str, str], int] | None = None,
-                    paesi: pd.DataFrame | None = None) -> None:
+                    paesi: pd.DataFrame | None = None, fiscale: set[tuple[str, str]] | None = None) -> None:
     """Scrive i file dello snapshot (a capo sempre "\\n", anche su Windows)."""
     cartella.mkdir(parents=True, exist_ok=True)
     (cartella / "dati.csv").write_text(testo_dati_csv(dati), encoding="utf-8", newline="\n")
     if ultimo is not None:
-        (cartella / "ultimo_effettivo.csv").write_text(testo_ultimo_csv(ultimo), encoding="utf-8", newline="\n")
+        (cartella / "ultimo_effettivo.csv").write_text(testo_ultimo_csv(ultimo, fiscale), encoding="utf-8", newline="\n")
     if paesi is not None:
         (cartella / "paesi.csv").write_text(testo_paesi_csv(paesi), encoding="utf-8", newline="\n")
     (cartella / "meta.json").write_text(testo_meta(meta), encoding="utf-8", newline="\n")
@@ -232,14 +269,17 @@ def leggi_cartella(cartella: Path, fonte: str) -> Snapshot | None:
         return None
     dati = pd.read_csv(cartella / "dati.csv", dtype={"paese": str, "indicatore": str, "anno": int, "valore": float})
     ultimo: dict[tuple[str, str], int] = {}
+    fiscale: set[tuple[str, str]] = set()
     file_ultimo = cartella / "ultimo_effettivo.csv"
     if file_ultimo.exists():
         tabella = pd.read_csv(file_ultimo, dtype={"paese": str, "indicatore": str, "anno": int})
         ultimo = {(p, i): int(a) for p, i, a in zip(tabella["paese"], tabella["indicatore"], tabella["anno"])}
+        if "anno_fiscale" in tabella:
+            fiscale = {(p, i) for p, i, f in zip(tabella["paese"], tabella["indicatore"], tabella["anno_fiscale"]) if f == 1}
     meta = json.loads((cartella / "meta.json").read_text(encoding="utf-8")) if (cartella / "meta.json").exists() else {}
     paesi = (pd.read_csv(cartella / "paesi.csv", dtype=str, keep_default_na=False)
              if (cartella / "paesi.csv").exists() else None)
-    return Snapshot(fonte=fonte, dati=dati, ultimo_effettivo=ultimo, meta=meta, paesi=paesi)
+    return Snapshot(fonte=fonte, dati=dati, ultimo_effettivo=ultimo, meta=meta, paesi=paesi, fiscale=fiscale)
 
 
 # ---------------------------------------------------------------------
@@ -376,6 +416,9 @@ def differenze(prima: pd.DataFrame, dopo: pd.DataFrame, tolleranza: float = 0.0,
     return risultato
 
 
-def differenze_ultimo(prima: dict[tuple[str, str], int], dopo: dict[tuple[str, str], int]) -> list[tuple]:
-    """Coppie (paese, indicatore) con ultimo anno effettivo diverso: [(paese, indicatore, prima, dopo)], ordinate."""
-    return sorted((p, i, prima.get((p, i)), dopo.get((p, i))) for p, i in set(prima) | set(dopo) if prima.get((p, i)) != dopo.get((p, i)))
+def differenze_ultimo(prima: dict[tuple[str, str], int], dopo: dict[tuple[str, str], int],
+                      fiscale_prima: set | None = None, fiscale_dopo: set | None = None) -> list[tuple]:
+    """Coppie (paese, indicatore) con ultimo anno effettivo (o segno "anno fiscale") diverso: [(paese, indicatore, prima, dopo)], ordinate."""
+    fp, fd = fiscale_prima or set(), fiscale_dopo or set()
+    return sorted((p, i, prima.get((p, i)), dopo.get((p, i))) for p, i in set(prima) | set(dopo)
+                  if prima.get((p, i)) != dopo.get((p, i)) or ((p, i) in fp) != ((p, i) in fd))
