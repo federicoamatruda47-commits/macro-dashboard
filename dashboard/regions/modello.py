@@ -37,3 +37,9 @@ class Sezione:
     # da inizio anno, 1Y colorate verde/rosso) sopra i grafici della sezione
     tabella_performance: list[str] = field(default_factory=list)
     etichetta_performance: str = "Commodity"  # intestazione della prima colonna di quella tabella
+    # Come tabella_performance, ma a gruppi con una riga di titolo per ognuno: coppie (titolo, id delle serie)
+    gruppi_performance: list[tuple[str, list[str]]] = field(default_factory=list)
+
+    def serie_tabella(self) -> list[str]:
+        """Gli id delle serie della tabella di performance, a gruppi o no."""
+        return self.tabella_performance + [i for _, ids in self.gruppi_performance for i in ids]

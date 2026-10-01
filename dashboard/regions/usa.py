@@ -11,11 +11,6 @@ from .modello import Grafico, Sezione
 # Scadenze della curva: (etichetta sull'asse, id della serie)
 SCADENZE = [("3M", "DGS3MO"), ("2Y", "DGS2"), ("5Y", "DGS5"), ("10Y", "DGS10"), ("30Y", "DGS30")]
 
-# Azioni (Yahoo Finance): le definizioni delle serie stanno in config.yaml, qui solo gli id
-SP500, NASDAQ100, RUSSELL2000, SP500_EW = "^GSPC", "^NDX", "^RUT", "^SPXEW"
-AZIONI = [SP500, NASDAQ100, RUSSELL2000, SP500_EW]
-RAPPORTO_EW = "SP500_EW_SU_CW"
-
 
 def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
     """Restituisce le sezioni della pagina USA (config non serve: le recessioni arrivano da USREC)."""
@@ -29,11 +24,6 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
         opzioni_figura = {k: opzioni_grafico.pop(k) for k in ("riferimento", "evidenzia_inversioni")
                           if k in opzioni_grafico}
         figura = charts.linee_storiche(lista(*ids), recessioni=recessioni, **opzioni_figura)
-        return Grafico(id=id_grafico, titolo=titolo, figura=figura, serie_ids=list(ids), **opzioni_grafico)
-
-    def base100(id_grafico, titolo, ids, **opzioni_grafico) -> Grafico:
-        """Confronto a base 100: la ribasatura all'inizio del periodo scelto la fa il JavaScript."""
-        figura = charts.linee_base100([(s, False) for s in lista(*ids)])
         return Grafico(id=id_grafico, titolo=titolo, figura=figura, serie_ids=list(ids), **opzioni_grafico)
 
     # La curva "oggi vs 1 mese vs 1 anno" ha una forma diversa dagli altri grafici
@@ -71,20 +61,7 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                     periodo_iniziale="10Y", largo=True,
                     note=["target-fed", "bands-nber"]),
         ]),
-        Sezione("azioni", "Equities",
-                "The main US equity indices: price changes and, below, how much of the S&P 500's rise "
-                "depends on a few very large stocks.",
-                tabella_performance=AZIONI, etichetta_performance="Index",
-                grafici=[
-                    base100("usa-indici-azionari", "US equity indices (base 100)", [SP500, NASDAQ100, RUSSELL2000],
-                            periodo_iniziale="5Y", largo=True,
-                            note=["rebase-base100", "price-no-dividends", "us-index-definitions"]),
-                    storico("usa-concentrazione", "Concentration: S&P 500 Equal Weight / S&P 500", [RAPPORTO_EW],
-                            periodo_iniziale="Max", largo=True,
-                            note=["equal-weight-ratio", "bands-nber"]),
-                ]),
-        Sezione("condizioni", "Financial conditions and labour", grafici=[
-            storico("usa-vix", "VIX (expected volatility of the S&P 500)", ["VIXCLS"], periodo_iniziale="5Y"),
+        Sezione("lavoro", "Labour", grafici=[
             storico("usa-disoccupazione", "Unemployment rate", ["UNRATE"], periodo_iniziale="Max",
                     largo=True),
         ]),

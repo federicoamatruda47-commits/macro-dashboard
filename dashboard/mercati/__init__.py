@@ -7,9 +7,10 @@ Per aggiungere una pagina:
   3. in config.yaml, nel blocco "pagine", metti `stato: attiva` (e i numeri chiave); aggiungila anche al "menu"
 """
 
-from . import commodities, credit, fx
+from . import commodities, credit, equities, fx
 
 PAGINE = {
+    "markets/equities": equities.costruisci,
     "markets/credit": credit.costruisci,
     "markets/fx": fx.costruisci,
     "markets/commodities": commodities.costruisci,

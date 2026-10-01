@@ -228,6 +228,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .performance td.var-neg { color: var(--ribasso); background: var(--ribasso-sfondo); }
 .performance td.stato-errore { white-space: normal; }
 .performance tbody tr:last-child td { border-bottom: none; }
+.performance .riga-gruppo th { padding-top: 12px; background: var(--pagina); color: var(--testo-2); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; }
 /* Telefono: meno colonne e nome della commodity sempre visibile scorrendo di lato */
 @media (max-width: 600px) {
   .performance .secondaria { display: none; }
