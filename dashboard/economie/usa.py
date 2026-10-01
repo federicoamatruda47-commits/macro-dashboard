@@ -18,7 +18,7 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
         id="usa-disoccupazione", titolo="Unemployment rate",
         figura=charts.linee_storiche([trova_serie(serie, DISOCCUPAZIONE)], recessioni=recessioni),
         serie_ids=[DISOCCUPAZIONE], periodo_iniziale="Max", largo=True, note=["bands-nber"],
-        come_leggerlo="The unemployment rate is the share of people who want a job and are looking for one but cannot find it. "
+        come_leggerlo="The unemployment rate is the share of the labour force (people who are working or actively looking for work) who are looking for a job but cannot find one. "
                       "It has historically tended to rise quickly in recessions and to fall more slowly during recoveries.")
     return [
         Sezione("lavoro", "Labour",
