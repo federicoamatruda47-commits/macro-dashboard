@@ -1,16 +1,21 @@
 """Costruzione del sito statico: prende serie e grafici e scrive la cartella site/."""
 
 import shutil
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import pandas as pd
+import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from plotly.offline import get_plotlyjs_version
 
-from .data import NOMI_FONTI, OPERAZIONI, PERIODI_PERFORMANCE, Serie, tipo_variazione, trova_serie, variazioni
-from .pagine import HOME, costruisci_menu, percorso, radice
+from . import metodo
+from .data import (FONTE_CALCOLATA, NOMI_FONTI, OPERAZIONI, PERIODI_PERFORMANCE, Serie, tipo_variazione, trova_serie,
+                   variazioni)
+from .fonti_url import url_serie
+from .pagine import HOME, PAGINA_METODO, PAGINA_SERIE, costruisci_menu, percorso, radice
 from .regions import REGIONI, Grafico
 
 FUSO_ORARIO = ZoneInfo("Europe/Rome")
@@ -33,6 +38,12 @@ def numero(valore: float, decimali: int = 2, segno: bool = False) -> str:
 def valore_con_unita(valore: float, unita: str, decimali: int = 2) -> str:
     return numero(valore, decimali) + ("%" if unita.startswith("%") else "")
 
+
+
+def carica_note(radice_progetto: Path) -> dict:
+    """Legge contenuti/note.yaml (le note tecniche, con i testi in inglese)."""
+    with open(radice_progetto / "contenuti" / "note.yaml", encoding="utf-8") as file:
+        return yaml.safe_load(file)
 
 
 def nome_fonte(s: Serie) -> str:
@@ -101,12 +112,47 @@ def _figura_json(grafico: Grafico) -> str | None:
     return grafico.figura.to_json().replace("</", "<\\/")
 
 
-def _dati_grafico(grafico: Grafico, serie: dict[str, Serie], oggi: pd.Timestamp) -> dict:
+def _fonte_effettiva(s: Serie) -> tuple[str, str, bool]:
+    """(fonte, id presso la fonte, True se è la riserva) dei dati che la serie mostra davvero."""
+    if s.nota_fonte and s.riserva:
+        return s.riserva["fonte"], s.riserva["id"], True
+    return s.fonte, s.id, False
+
+
+def _fonti_grafico(usate: list[Serie], serie: dict[str, Serie]) -> list[dict]:
+    """Le fonti di un grafico per il piè di pagina: una voce per fonte, con il link alla prima serie di quella fonte.
+
+    Le serie calcolate si scompongono nelle loro componenti; la riserva compare come "(fallback)".
+    """
+    gruppi: dict[str, dict] = {}
+
+    def aggiungi(s: Serie) -> None:
+        if not s.ok:
+            return
+        if s.fonte == FONTE_CALCOLATA:
+            for componente in s.componenti:
+                aggiungi(trova_serie(serie, componente))
+            return
+        fonte, id_serie, riserva = _fonte_effettiva(s)
+        nome = NOMI_FONTI.get(fonte, fonte.upper()) + (" (fallback)" if riserva else "")
+        gruppo = gruppi.setdefault(nome, {"nome": nome, "url": url_serie(fonte, id_serie), "n": 0})
+        gruppo["n"] += 1
+
+    for s in usate:
+        aggiungi(s)
+    return list(gruppi.values())
+
+
+def _dati_grafico(grafico: Grafico, serie: dict[str, Serie], oggi: pd.Timestamp, note: dict) -> dict:
     usate = [trova_serie(serie, i) for i in grafico.serie_ids]
+    ignote = [i for i in grafico.note if i not in note["note"]]
+    if ignote:
+        print(f"Warning: chart {grafico.id} uses notes missing from contenuti/note.yaml: {', '.join(ignote)}", file=sys.stderr)
     return {
         "id": grafico.id,
         "titolo": grafico.titolo,
-        "nota": grafico.nota,
+        "note": [{"id": i, "titolo": note["note"][i]["titolo"]} for i in grafico.note if i in note["note"]],
+        "fonti": _fonti_grafico(usate, serie),
         "come_leggerlo": grafico.come_leggerlo,
         "storico": grafico.storico,
         "periodo_iniziale": grafico.periodo_iniziale,
@@ -121,14 +167,15 @@ def _dati_grafico(grafico: Grafico, serie: dict[str, Serie], oggi: pd.Timestamp)
 
 
 def _riga_stato(s: Serie, oggi: pd.Timestamp) -> dict:
-    """Una riga della tabella 'Stato delle serie' in fondo alla pagina."""
+    """Una riga della tabella della pagina Series status."""
     fonte = nome_fonte(s)
+    url = None if s.fonte == FONTE_CALCOLATA else url_serie(*_fonte_effettiva(s)[:2])
     if s.componenti:
         fonte += ": " + f" {OPERAZIONI.get(s.operazione, '−')} ".join(s.componenti)
         if s.fattore != 1:
             fonte += f" (× {numero(s.fattore, 0)})"
     return {
-        "id": s.id, "nome": s.nome, "fonte": fonte, "unita": s.unita,
+        "id": s.id, "nome": s.nome, "fonte": fonte, "url": url, "unita": s.unita,
         "frequenza": FREQUENZE.get(s.frequenza, "—"), "dal": formatta_data(s.prima_data), "ultimo": formatta_data(s.ultima_data),
         "valore": (valore_con_unita(s.ultimo_valore, s.unita, s.decimali)
                    if s.ok and s.unita != "indicatore" else "—"),
@@ -185,13 +232,27 @@ def _serie_usate(sezioni, serie: dict[str, Serie]) -> list[Serie]:
     return list(trovate.values())
 
 
-def prepara_contesto(config: dict, serie: dict[str, Serie]) -> dict:
+def _con_componenti(ids, serie: dict[str, Serie]) -> set[str]:
+    """Gli id dati più, a cascata, le componenti delle serie calcolate."""
+    trovati: set[str] = set()
+    da_vedere = list(ids)
+    while da_vedere:
+        i = da_vedere.pop()
+        if i not in trovati:
+            trovati.add(i)
+            da_vedere += trova_serie(serie, i).componenti or []
+    return trovati
+
+
+def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict) -> dict:
     """Raccoglie tutto ciò che serve al modello HTML."""
     adesso = datetime.now(FUSO_ORARIO)
     oggi = pd.Timestamp(adesso.date())
     adesso_utc = adesso.astimezone(timezone.utc)
 
     nomi_regioni = {r["id"]: r["nome"] for r in config["regioni"]}
+    usi_serie: dict[str, list[dict]] = {}   # id serie -> grafici e tabelle che la usano (per Series status)
+    usi_note: dict[str, list[dict]] = {}    # id nota -> grafici che la richiamano (per Known limits)
     regioni = []
     for regione in config["regioni"]:
         serie_regione = [s for s in serie.values() if s.regione == regione["id"]]
@@ -204,9 +265,19 @@ def prepara_contesto(config: dict, serie: dict[str, Serie]) -> dict:
             oggetti = costruttore(serie, config)
             usate = _serie_usate(oggetti, serie)
             for sezione in oggetti:
+                for g in sezione.grafici:
+                    riferimento = {"pagina": regione["nome"], "href": f"{regione['id']}/#chart-{g.id}", "titolo": g.titolo}
+                    for i in _con_componenti(g.serie_ids, serie):
+                        usi_serie.setdefault(i, []).append(riferimento)
+                    for i in g.note:
+                        usi_note.setdefault(i, []).append(riferimento)
+                for i in _con_componenti(sezione.tabella_performance, serie):
+                    usi_serie.setdefault(i, []).append({
+                        "pagina": regione["nome"], "href": f"{regione['id']}/#{regione['id']}-{sezione.id}",
+                        "titolo": f"{sezione.titolo} (table)"})
                 sezioni.append({
                     "id": sezione.id, "titolo": sezione.titolo, "descrizione": sezione.descrizione,
-                    "grafici": [_dati_grafico(g, serie, oggi) for g in sezione.grafici],
+                    "grafici": [_dati_grafico(g, serie, oggi, note) for g in sezione.grafici],
                     "etichetta_performance": sezione.etichetta_performance,
                     "performance": [_riga_performance(trova_serie(serie, i), oggi)
                                     for i in sezione.tabella_performance],
@@ -216,7 +287,6 @@ def prepara_contesto(config: dict, serie: dict[str, Serie]) -> dict:
             "id": regione["id"], "nome": regione["nome"], "descrizione": regione.get("descrizione", ""),
             "attiva": attiva, "sezioni": sezioni,
             "riepilogo": [_scheda_riepilogo(s, oggi) for s in serie_regione if s.riepilogo],
-            "stato": [_riga_stato(s, oggi) for s in serie_regione],
             "n_grafici": sum(len(sez["grafici"]) for sez in sezioni),
             "ha_grafici": any(g["json"] for sez in sezioni for g in sez["grafici"]),
             # Solo gli avvisi che riguardano le serie di questa pagina
@@ -226,7 +296,21 @@ def prepara_contesto(config: dict, serie: dict[str, Serie]) -> dict:
             "riserve": [{"id": s.id, "nome": s.nome, "nota": s.nota_fonte} for s in usate if s.nota_fonte],
         })
 
+    stato = []
+    for s in serie.values():
+        riga = _riga_stato(s, oggi)
+        riga["regione"] = nomi_regioni.get(s.regione, s.regione)
+        riga["usi"] = usi_serie.get(s.id, [])
+        stato.append(riga)
+    standard, proprie = metodo.soglie_freschezza(config)
+
     return {
+        "stato": stato,
+        "metodo": {
+            "fonti": metodo.descrivi_fonti(config), "soglie": standard, "soglie_proprie": proprie,
+            "fallback": metodo.fallback_configurati(config, serie), "calcolate": metodo.serie_calcolate(config, serie),
+            "regola_calcolate": metodo.REGOLA_CALCOLATE, "gruppi_note": metodo.raggruppa_note(note, usi_note),
+        },
         "aggiornato": f"{adesso_utc.day} {adesso_utc:%b %Y}, {adesso_utc:%H:%M} UTC",
         "regioni": regioni,
         "errori": [{"id": s.id, "nome": s.nome, "errore": s.errore} for s in serie.values() if not s.ok],
@@ -254,7 +338,7 @@ def genera_sito(config: dict, serie: dict[str, Serie], radice_progetto: Path) ->
     ambiente = Environment(loader=FileSystemLoader(radice_progetto / "templates"),
                            autoescape=select_autoescape(["html", "j2"]),
                            trim_blocks=True, lstrip_blocks=True)
-    contesto = prepara_contesto(config, serie)
+    contesto = prepara_contesto(config, serie, carica_note(radice_progetto))
     # Regola del sito: ogni grafico ha una riga "How to read it" (si scrive pagina per pagina durante la ristrutturazione)
     senza = [g["id"] for r in contesto["regioni"] for s in r["sezioni"] for g in s["grafici"] if not g["come_leggerlo"]]
     if senza:
@@ -271,10 +355,12 @@ def genera_sito(config: dict, serie: dict[str, Serie], radice_progetto: Path) ->
         file.write_text(html, encoding="utf-8")
         return file
 
+    avvisi = {k: contesto[k] for k in ("errori", "in_ritardo", "riserve", "totale_serie")}
     for regione in contesto["regioni"]:
         scrivi(regione["id"], "pagina.html.j2", r=regione)
-    pagina = scrivi(HOME, "home.html.j2", **{k: contesto[k] for k in
-                                             ("regioni", "errori", "in_ritardo", "riserve", "totale_serie")})
+    scrivi(PAGINA_METODO, "metodo.html.j2", m=contesto["metodo"], **avvisi)
+    scrivi(PAGINA_SERIE, "serie.html.j2", stato=contesto["stato"], **avvisi)
+    pagina = scrivi(HOME, "home.html.j2", regioni=contesto["regioni"], **avvisi)
 
     # CSS e JavaScript
     for file in (radice_progetto / "static").iterdir():

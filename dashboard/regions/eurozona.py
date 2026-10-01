@@ -27,7 +27,6 @@ EURUSD = "EXR/D.USD.EUR.SP00.A"
 EURO_STOXX_50, DAX, CAC_40, FTSE_MIB, BANCHE = "^STOXX50E", "^GDAXIP", "^FCHI", "FTSEMIB.MI", "EXV1.DE"
 AZIONI = [EURO_STOXX_50, DAX, CAC_40, FTSE_MIB, BANCHE]
 
-NOTA_RECESSIONI = "Grey bands: euro-area recessions dated by the CEPR."
 
 
 def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
@@ -63,7 +62,7 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                 "they deposit: today it is the main tool the ECB uses to steer market rates.",
                 grafici=[
                     storico("eur-dfr", "ECB deposit facility rate (DFR)", [DFR], periodo_iniziale="Max",
-                            largo=True, nota=NOTA_RECESSIONI),
+                            largo=True, note=["bands-cepr"]),
                 ]),
         Sezione("curva", "AAA curve of the euro area (Bund proxy)",
                 "Yields estimated by the ECB on euro-area government bonds rated AAA "
@@ -76,7 +75,7 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                             [AAA_2A, AAA_10A], periodo_iniziale="10Y"),
                     storico("eur-pendenza", "Slope of the AAA curve: 10Y - 2Y", ["EA_AAA_10A_2A"],
                             evidenzia_inversioni=True, periodo_iniziale="Max", largo=True,
-                            nota="Red area: inverted curve (spread below zero). " + NOTA_RECESSIONI),
+                            note=["curve-inversion", "bands-cepr"]),
                 ]),
         Sezione("spread-sovrani", "Sovereign spreads",
                 "How much extra yield investors demand to lend to a country "
@@ -85,32 +84,23 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                 grafici=[
                     storico("eur-spread-paesi", "BTP-Bund and OAT-Bund 10-year spreads (MONTHLY data)",
                             ["SPREAD_BTP_BUND", "SPREAD_OAT_BUND"], periodo_iniziale="Max", largo=True,
-                            nota="Monthly data: the monthly average of the 10-year yields the ECB uses "
-                                 "for its convergence criteria, published with about a month's delay. "
-                                 "Daily yields of individual countries are not freely "
-                                 "available. " + NOTA_RECESSIONI),
+                            note=["monthly-sovereign-yields", "bands-cepr"]),
                     storico("eur-spread-tutti", "All euro-area government bonds minus AAA, 10 years (daily)",
                             ["EA_TUTTI_MENO_AAA_10A"], periodo_iniziale="Max", largo=True,
-                            nota="10-year yield of the ECB curve for all euro-area government bonds "
-                                 "minus that of the AAA curve: a daily indicator "
-                                 "of the average risk premium of non-AAA countries (Italy, France, "
-                                 "Spain...). Data from 2004. " + NOTA_RECESSIONI),
+                            note=["ea-all-minus-aaa", "bands-cepr"]),
                 ]),
         Sezione("inflazione", "Inflation", "Change in consumer prices (HICP) compared with a year earlier.",
                 grafici=[
                     storico("eur-inflazione", "HICP headline and core (% y/y)", [HICP, HICP_CORE],
                             riferimento=(2, ""), periodo_iniziale="10Y", largo=True,
-                            nota="Core = excluding energy, food, alcohol and tobacco. "
-                                 "Dashed line: the ECB's 2% target. " + NOTA_RECESSIONI),
+                            note=["hicp-core", "target-ecb", "bands-cepr"]),
                 ]),
         Sezione("credito", "Credit",
                 "Extra yield investors demand on euro corporate bonds compared with government bonds.",
                 grafici=[
                     storico("eur-hy", "High Yield OAS in euro (ICE BofA)", [HY_EURO], periodo_iniziale="Max",
                             largo=True,
-                            nota="On FRED the series starts in October 2023 (an ICE licensing limit). "
-                                 "The euro Investment Grade spread is not included: there is no "
-                                 "free source."),
+                            note=["ice-oas-history", "ea-ig-not-available"]),
                 ]),
         Sezione("azioni", "Equities",
                 "The main euro-area equity indices and European banks, in euro.",
@@ -118,18 +108,10 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                 grafici=[
                     base100("eur-indici-azionari", "European equity indices and banks (base 100)", AZIONI,
                             periodo_iniziale="5Y", largo=True,
-                            nota="Rebased to 100 at the start of the period chosen with the 1Y / 5Y / 10Y / Max buttons; "
-                                 "with \"Max\" the chart starts in 2013, when every line exists (the DAX price index on Yahoo starts in March 2013). "
-                                 "Closing prices without dividends (not \"adjusted\"), in euro. DAX: the DAX K is used "
-                                 "(Kursindex, a price index); the \"official\" DAX index reinvests dividends and would not "
-                                 "be comparable with the others. \"European banks\" is the iShares STOXX Europe 600 "
-                                 "Banks ETF (Xetra, ticker EXV1): it also includes banks outside the euro area (e.g. the UK, "
-                                 "Switzerland) and is NOT the Euro Stoxx Banks, which is not available on Yahoo. The ETF pays out "
-                                 "dividends: in the price they show up as small drops."),
+                            note=["rebase-base100", "price-no-dividends", "dax-price-index", "ea-banks-etf"]),
                 ]),
         Sezione("cambio", "Exchange rate", grafici=[
             storico("eur-eurusd", "EUR/USD (dollars per 1 euro)", [EURUSD], periodo_iniziale="10Y", largo=True,
-                    nota="ECB reference rate, taken every working day at 14:15 (Frankfurt time). "
-                         "Up = the euro strengthens. " + NOTA_RECESSIONI),
+                    note=["eurusd-ecb", "bands-cepr"]),
         ]),
     ]

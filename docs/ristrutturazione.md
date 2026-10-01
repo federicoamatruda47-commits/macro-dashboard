@@ -10,7 +10,7 @@ Piano approvato dall'utente il 01/10/2026, con le scelte della sezione 0 e due a
 | 0 | Rete di sicurezza: inventario dei 56 grafici e delle serie + controllo automatico "nulla è perso / nulla è doppio" | **fatto e in `main`** |
 | 1 | Motore multipagina (base template, menu a 2 righe, link relativi); le 7 tab diventano 7 pagine, stesso contenuto | **fatto e in `main`** |
 | 2 | Inglese (testi, numeri, unità, date), campo `paese`, palette fissa per Paese, campo "Come leggerlo" | **fatto e in `main`** |
-| 3 | Footer dei grafici (fonte + link + note), registro `contenuti/note.yaml`, pagine Method e Series status | da fare |
+| 3 | Footer dei grafici (fonte + link + note), registro `contenuti/note.yaml`, pagine Method e Series status | **fatto sul ramo** `ristrutturazione/step-3`, in attesa dell'ok per il merge |
 | 4a | Mercati: Commodities | da fare |
 | 4b | Mercati: FX | da fare |
 | 4c | Mercati: Credit | da fare |
@@ -23,7 +23,7 @@ Piano approvato dall'utente il 01/10/2026, con le scelte della sezione 0 e due a
 Flusso di lavoro: un ramo per step (`ristrutturazione/step-N`); a fine step riepilogo all'utente e **attesa dell'ok prima del merge** su `main`
 (il merge pubblica il sito tramite GitHub Actions). Il merge si fa a fine di ogni step (non tutto alla fine), con `git push origin main`. Nessun commit/push fuori da questo flusso senza richiesta.
 
-Strumenti di controllo: `python tools/inventario.py controlla` (deve passare a ogni step), `python tools/inventario.py sito` (dopo `python build.py`: controlla le pagine HTML vere e ne stampa il peso), `python tools/inventario.py salva`
+Strumenti di controllo: `python tools/inventario.py controlla` (deve passare a ogni step), `python tools/inventario.py sito` (dopo `python build.py`: controlla le pagine HTML vere e ne stampa il peso), `python tools/controlla_link.py` (link interni rotti, dopo `build.py`), `python tools/inventario.py salva`
 (solo allo step 0, rigenera la baseline), `python tools/valida_palette.py --pairs all` (colori dei Paesi; da rilanciare se se ne cambia uno). Mappa vecchio grafico → nuovo posto: [mappa-grafici.yaml](mappa-grafici.yaml).
 
 ## Aggiunte richieste dall'utente
@@ -285,3 +285,10 @@ Il workflow GitHub non cambia (pubblica già tutta `site/`).
   Le materie prime usano un colore per gruppo (energia, metalli preziosi, metalli industriali, agricoli: alias di colori dei Paesi che non compaiono mai con loro). Stessa serie colorata uguale in ogni grafico;
   più serie dello stesso colore nello stesso grafico = stile di linea diverso (fino a 6). Campo `come_leggerlo` aggiunto al modello e mostrato sotto i grafici; la build avvisa per i 56 grafici che ancora non ce l'hanno
   (le righe si scrivono pagina per pagina nello step 4). `slot`/`--s1…--s8`/`PALETTE` eliminati.
+- 01/10/2026: step 2 unito in `main` (con i colori a contrasto ≥ 3:1).
+- 01/10/2026: step 3 completato sul ramo `ristrutturazione/step-3`. Nuove pagine `/method/` ("Sources & method": come funziona, fonti con numero di serie, controllo di freschezza con soglie e serie in ritardo adesso, fonti di riserva
+  configurate e in uso, serie calcolate e loro stato, Known limits) e `/method/series/` (tutte le 94 serie con link alla fonte, frequenza, storico, ultimo dato, stato, grafici che le usano). Menu: voce "Method & sources" con seconda riga.
+  Registro `contenuti/note.yaml` (48 note raggruppate, ognuna con ancora `method/#note-<id>` e l'elenco dei grafici che la richiamano); i grafici usano `note=["id", ...]` al posto di `nota="..."`.
+  Sotto ogni grafico: "How to read it" (quando c'è), `Source: <fonte> ↗ (N series) · Notes: <titoli>`, `Latest data`. Link alla serie costruiti in `dashboard/fonti_url.py` (FRED, BCE, BIS, DBnomics, Yahoo, MoF verificati a mano/con richieste).
+  Le tabelle "Stato delle serie" per pagina sono sparite (ora c'è Series status); le sezioni "Data not included" di Cina e Corea sono note nel registro. Verifiche: `controlla`, `sito` (56/56), `controlla_link.py` (435 link interni ok), verifica a frasi che nessuna vecchia nota sia sparita
+  (le righe "Source: BIS, daily data" sono sostituite dal piè con la fonte; è stata aggiunta la nota `index-daily-closes`).

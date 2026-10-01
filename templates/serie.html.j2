@@ -1,0 +1,41 @@
+{% extends "base.html.j2" %}
+{% from "_componenti.html.j2" import avvisi %}
+{# Pagina "Series status": una riga per ogni serie del sito, con fonte, frequenza, storico, ultimo dato, stato e grafici che la usano. #}
+
+{% block titolo %}Series status · Macro dashboard{% endblock %}
+{% block descrizione %}Every series on the dashboard with its source, frequency, latest data point and status.{% endblock %}
+
+{% block contenuto %}
+<section class="intestazione-pagina">
+  <h1>Series status</h1>
+  <p class="descrizione">Every series on the site, in one table: where it comes from (the code links to the series on the source's website),
+    how often it is published, how far back it goes, its latest value and whether the freshness check is happy.
+    How the checks work is explained in <a href="{{ radice }}method/#freshness">Sources &amp; method</a>.</p>
+  <p class="aggiornamento">Updated <strong>{{ aggiornato }}</strong> · {{ stato|length }} series</p>
+</section>
+
+{{ avvisi(errori, in_ritardo, riserve, totale_serie, "", radice) }}
+
+<section class="blocco">
+  <div class="tabella-scorrevole">
+    <table class="tabella-serie">
+      <thead><tr><th>Series</th><th>Code</th><th>Source</th><th>Frequency</th><th>From</th><th>Latest data</th><th class="num">Value</th><th>Status</th><th>Used in</th></tr></thead>
+      <tbody>
+        {% for s in stato %}
+        <tr>
+          <td>{{ s.nome }}<br><span class="kpi-data">{{ s.regione }}</span></td>
+          <td>{% if s.url %}<a href="{{ s.url }}" target="_blank" rel="noopener"><code>{{ s.id }}</code> ↗</a>{% else %}<code>{{ s.id }}</code>{% endif %}</td>
+          <td>{{ s.fonte }}{% if s.nota_fonte %} <span class="stato-ritardo" title="{{ s.nota_fonte }}">ⓘ</span>{% endif %}</td>
+          <td>{{ s.frequenza }}</td>
+          <td>{{ s.dal }}</td>
+          <td>{{ s.ultimo }}</td>
+          <td class="num">{{ s.valore }}</td>
+          <td>{% if not s.ok %}<span class="stato-errore">⚠ {{ s.errore }}</span>{% elif s.ritardo %}<span class="stato-ritardo">ⓘ stale</span>{% else %}<span class="stato-ok">✓ ok</span>{% endif %}</td>
+          <td class="usi-serie">{% for u in s.usi[:3] %}<a href="{{ radice }}{{ u.href }}">{{ u.titolo }}</a>{{ ", " if not loop.last }}{% endfor %}{% if s.usi|length > 3 %} +{{ s.usi|length - 3 }} more{% elif not s.usi %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

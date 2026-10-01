@@ -8,6 +8,8 @@ la propria "radice" ("" per la home, "../" per le pagine di primo livello, "../.
 from dataclasses import dataclass, field
 
 HOME = "home"
+PAGINA_METODO = "method"
+PAGINA_SERIE = "method/series"
 
 
 def percorso(id_pagina: str) -> str:
@@ -31,6 +33,8 @@ class VoceMenu:
 def titoli_pagine(config: dict) -> dict[str, str]:
     titoli = {r["id"]: r["nome"] for r in config["regioni"]}
     titoli[HOME] = "Home"
+    titoli[PAGINA_METODO] = "Sources & method"
+    titoli[PAGINA_SERIE] = "Series status"
     return titoli
 
 

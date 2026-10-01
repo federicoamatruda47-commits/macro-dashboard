@@ -1,7 +1,7 @@
 {# Pezzi riutilizzabili delle pagine (macro Jinja2). #}
 
 {# ---- Avvisi: serie non scaricate, in ritardo o su fonte di riserva ---- #}
-{% macro avvisi(errori, in_ritardo, riserve, totale_serie, ambito) %}
+{% macro avvisi(errori, in_ritardo, riserve, totale_serie, ambito, radice) %}
 {% if errori %}
 <div class="avviso avviso-errore" role="alert">
   <strong>⚠ Warning: {{ errori|length }} series could not be downloaded</strong>
@@ -18,6 +18,7 @@
   <strong>⚠ Warning: {{ in_ritardo|length }} {{ 'series has' if in_ritardo|length == 1 else 'series have' }} not received new data for too long</strong>
   (thresholds: 10 days for daily series, 21 for weekly, 75 for monthly, 120 for quarterly,
   counted from the end of the period of the latest data point). Check that the source has not changed.
+  <a href="{{ radice }}method/#freshness">How the freshness check works</a>.
   <ul>
     {% for s in in_ritardo %}<li>{{ s.regione }} · <code>{{ s.id }}</code> {{ s.nome }}: latest data {{ s.data }}, {{ s.frequenza }} series, {{ s.giorni }} days (threshold {{ s.soglia }})</li>{% endfor %}
   </ul>
@@ -26,6 +27,7 @@
 {% if riserve %}
 <div class="avviso avviso-riserva">
   <strong>ⓘ Fallback source in use</strong> for {{ riserve|length }} {{ 'series' }}: the data is still up to date.
+  <a href="{{ radice }}method/#fallback">How fallbacks work</a>.
   <ul>
     {% for s in riserve %}<li><code>{{ s.id }}</code> {{ s.nome }}: {{ s.nota }}</li>{% endfor %}
   </ul>
@@ -90,7 +92,7 @@
 {% endmacro %}
 
 {# ---- Un grafico con i suoi pulsanti e le note. id="chart-<id>" = indirizzo condivisibile del singolo grafico ---- #}
-{% macro scheda_grafico(g) %}
+{% macro scheda_grafico(g, radice) %}
 <article class="scheda-grafico{% if g.largo %} largo{% endif %}{% if g.alto %} alto{% endif %}" id="chart-{{ g.id }}">
   <header class="scheda-testa">
     <h3>{{ g.titolo }}</h3>
@@ -125,39 +127,18 @@
   {% endif %}
   <footer class="scheda-piede">
     {% if g.come_leggerlo %}<p class="come-leggerlo"><strong>How to read it:</strong> {{ g.come_leggerlo }}</p>{% endif %}
-    {% if g.nota %}<p class="nota">{{ g.nota }}</p>{% endif %}
+    {% if g.fonti or g.note %}
+    <p class="fonti">
+      {% if g.fonti %}Source:
+      {% for f in g.fonti %}{% if f.url %}<a href="{{ f.url }}" target="_blank" rel="noopener">{{ f.nome }} ↗</a>{% else %}{{ f.nome }}{% endif %}{% if f.n > 1 %} ({{ f.n }} series){% endif %}{{ ", " if not loop.last }}{% endfor %}{% endif %}
+      {% if g.note %}{{ " · " if g.fonti }}Notes:
+      {% for n in g.note %}<a href="{{ radice }}method/#note-{{ n.id }}">{{ n.titolo }}</a>{{ ", " if not loop.last }}{% endfor %}{% endif %}
+    </p>
+    {% endif %}
     {% if g.ultimi_dati %}
     <p class="ultimi">Latest data:
       {% for u in g.ultimi_dati %}<span{% if u.ritardo %} class="in-ritardo"{% endif %}>{{ u.nome }} {{ u.data }}</span>{{ " · " if not loop.last }}{% endfor %}</p>
     {% endif %}
   </footer>
 </article>
-{% endmacro %}
-
-{# ---- Tabella di controllo: tutte le serie della regione ---- #}
-{% macro stato_serie(r) %}
-<section class="blocco" aria-labelledby="stato-{{ r.id }}">
-  <details class="stato">
-    <summary><h2 id="stato-{{ r.id }}">Series status ({{ r.stato|length }})</h2></summary>
-    <div class="tabella-scorrevole">
-      <table>
-        <thead><tr><th>Series</th><th>Code</th><th>Source</th><th>Frequency</th><th>From</th><th>Latest data</th><th class="num">Value</th><th>Status</th></tr></thead>
-        <tbody>
-          {% for s in r.stato %}
-          <tr>
-            <td>{{ s.nome }}</td>
-            <td><code>{{ s.id }}</code></td>
-            <td>{{ s.fonte }}{% if s.nota_fonte %} <span class="stato-ritardo" title="{{ s.nota_fonte }}">ⓘ</span>{% endif %}</td>
-            <td>{{ s.frequenza }}</td>
-            <td>{{ s.dal }}</td>
-            <td>{{ s.ultimo }}</td>
-            <td class="num">{{ s.valore }}</td>
-            <td>{% if not s.ok %}<span class="stato-errore">⚠ {{ s.errore }}</span>{% elif s.ritardo %}<span class="stato-ritardo">ⓘ stale</span>{% else %}<span class="stato-ok">✓ ok</span>{% endif %}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </details>
-</section>
 {% endmacro %}

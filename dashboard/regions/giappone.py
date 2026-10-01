@@ -19,8 +19,7 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                 "The Bank of Japan's target for the overnight market (uncollateralised call rate). "
                 "For decades it stayed close to zero, and for some years it was negative.",
                 grafici=[
-                    storico("jp-policy", "BoJ policy rate", [POLICY], periodo_iniziale="Max", largo=True,
-                            nota="Source: BIS, daily data."),
+                    storico("jp-policy", "BoJ policy rate", [POLICY], periodo_iniziale="Max", largo=True),
                 ]),
         Sezione("titoli-di-stato", "Government bonds (JGB)",
                 "Daily yields on Japanese government bonds at 2, 10 and 30 years, "
@@ -28,8 +27,7 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                 grafici=[
                     storico("jp-jgb", "JGB yields at 2, 10 and 30 years", [JGB_2A, JGB_10A, JGB_30A],
                             periodo_iniziale="10Y", largo=True,
-                            nota="The 30-year starts in 1999, the 10-year in 1986. If the Ministry does not respond "
-                                 "the 10-year alone falls back on the OECD monthly average (FRED)."),
+                            note=["jgb-history"]),
                 ]),
         Sezione("inflazione", "Inflation",
                 "Change in consumer prices compared with a year earlier. \"Core\" excludes fresh food; "
@@ -38,19 +36,15 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                     storico("jp-inflazione", "Headline, core and core-core CPI (% y/y)",
                             [CPI, CPI_CORE, CPI_CORE_CORE], riferimento=(2, ""), periodo_iniziale="10Y",
                             largo=True,
-                            nota="Dashed line: the BoJ's 2% target. All three series come from the "
-                                 "Statistics Bureau of Japan (via DBnomics): the annual change is calculated "
-                                 "from the index. In the Global comparison Japan uses BIS data instead, "
-                                 "so that every country has the same source."),
+                            note=["japan-cpi-sources", "target-boj"]),
                 ]),
         Sezione("cambio", "Exchange rate", grafici=[
             storico("jp-cambio", "USD/JPY (yen per 1 dollar)", [CAMBIO], periodo_iniziale="10Y", largo=True,
                     mostra_unita=True,
-                    nota="Up = the yen weakens. If Yahoo does not respond FRED is used (the Fed's daily "
-                         "rate, with a delay of a few days)."),
+                    note=["usdjpy"]),
         ]),
         Sezione("borsa", "Equities", grafici=[
             storico("jp-nikkei", "Nikkei 225", [NIKKEI], periodo_iniziale="10Y", largo=True,
-                    nota="Index in yen, daily closes. Source: Yahoo Finance (unofficial)."),
+                            note=["index-daily-closes"]),
         ]),
     ]

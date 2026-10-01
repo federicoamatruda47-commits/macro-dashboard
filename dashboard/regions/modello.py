@@ -13,7 +13,7 @@ class Grafico:
     titolo: str
     figura: go.Figure | None      # None = nessuna serie disponibile -> riquadro di avviso
     serie_ids: list[str]          # serie usate: servono per date e avvisi sotto il grafico
-    nota: str | None = None       # nota tecnica sotto il grafico (dallo step 3 si sposta nella pagina Method)
+    note: list[str] = field(default_factory=list)  # id delle note tecniche (contenuti/note.yaml): sotto il grafico solo i titoli, i testi stanno in Method
     come_leggerlo: str | None = None  # una riga in parole semplici su come si legge il grafico (obbligatoria: la build avvisa se manca)
     storico: bool = True          # True = asse temporale con pulsanti 1A / 5A / 10A / Max
     periodo_iniziale: str = "10Y" # periodo mostrato all'apertura: "1Y", "5Y", "10Y" o "Max"
