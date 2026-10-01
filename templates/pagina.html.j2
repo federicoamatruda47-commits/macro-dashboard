@@ -1,5 +1,5 @@
 {% extends "base.html.j2" %}
-{% from "_componenti.html.j2" import avvisi, riepilogo, tabella_performance, scheda_grafico, stato_serie %}
+{% from "_componenti.html.j2" import avvisi, riepilogo, tabella_performance, scheda_grafico %}
 {# Pagina di una regione (USA, Eurozona, Commodities, ...): titolo, avvisi, "Key numbers", sezioni con grafici #}
 
 {% block titolo %}{{ r.nome }} · Macro dashboard{% endblock %}
@@ -12,7 +12,7 @@
   <p class="aggiornamento">Updated <strong>{{ aggiornato }}</strong></p>
 </section>
 
-{{ avvisi(r.errori, r.in_ritardo, r.riserve, r.totale_serie, " series used on this page") }}
+{{ avvisi(r.errori, r.in_ritardo, r.riserve, r.totale_serie, " series used on this page", radice) }}
 
 {% if not r.attiva %}
 <div class="in-arrivo">
@@ -31,13 +31,14 @@
   {% if sez.performance %}{{ tabella_performance(sez) }}{% endif %}
   {% if sez.grafici %}
   <div class="griglia-grafici">
-    {% for g in sez.grafici %}{{ scheda_grafico(g) }}{% endfor %}
+    {% for g in sez.grafici %}{{ scheda_grafico(g, radice) }}{% endfor %}
   </div>
   {% endif %}
 </section>
 {% endfor %}
 
-{{ stato_serie(r) }}
+<p class="descrizione">Every series on this site, with its source and status: <a href="{{ radice }}method/series/">Series status</a>.
+  Sources, rules and known limits: <a href="{{ radice }}method/">Sources &amp; method</a>.</p>
 {% endif %}
 {% endblock %}
 

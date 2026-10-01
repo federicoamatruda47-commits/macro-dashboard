@@ -86,6 +86,7 @@ menu:
   - {titolo: Countries, figli: [usa, eurozona, giappone, cina, corea]}
   - {pagina: globale}
   - {pagina: commodities}
+  - {titolo: Method & sources, figli: [method, method/series]}
 
 # Recessioni disegnate come bande grigie, per le regioni senza una serie scaricabile.
 # (Per gli USA si usa la serie FRED USREC, più in basso.)

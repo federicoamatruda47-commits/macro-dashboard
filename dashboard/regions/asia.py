@@ -6,7 +6,7 @@ e automatica (nessun equivalente di NBER o CEPR), quindi non se ne disegnano.
 
 from .. import charts
 from ..data import Serie, trova_serie
-from .modello import Grafico, Sezione
+from .modello import Grafico
 
 
 def attrezzi(serie: dict[str, Serie]):
@@ -24,7 +24,3 @@ def attrezzi(serie: dict[str, Serie]):
 
     return lista, storico
 
-
-def sezione_non_inclusi(testo: str) -> Sezione:
-    """Nota in fondo alla pagina sui dati che mancano (nessuna fonte gratuita aggiornata)."""
-    return Sezione("non-inclusi", "Data not included", testo)

@@ -1,0 +1,324 @@
+# Registro delle note tecniche del sito (testi in inglese).
+#
+# Sotto ogni grafico resta solo la fonte con il link e l'elenco dei titoli delle note che lo riguardano; i testi
+# lunghi stanno qui e compaiono nella pagina "Method & sources" (sezione "Known limits"), ognuno con un indirizzo
+# proprio (method/#note-<id>). Un grafico richiama una nota con `note=["<id>", ...]` nel file della sua pagina
+# (dashboard/regions/...). Le note scritte qui per la prima volta (sezioni "Not included") non vengono da un grafico.
+#
+# gruppo:  come raggruppare le note nella pagina (conventions, rates, credit, equities, fx, commodities, countries)
+# titolo:  breve, è il testo del link sotto il grafico
+# testo:   la nota completa
+
+gruppi:
+  conventions: Chart conventions
+  rates: Rates, curves and inflation
+  credit: Credit and sovereign spreads
+  equities: Equities
+  fx: Currencies
+  commodities: Commodities
+  countries: Country coverage and data not included
+
+note:
+  # ---------------------------------------------------------------- conventions
+  bands-nber:
+    gruppo: conventions
+    titolo: US recession bands (NBER)
+    testo: >-
+      Grey bands: US recessions, dated by the NBER (series USREC on FRED). They are drawn only on charts of a single
+      economy, where they mean something; charts that compare several countries have no bands.
+  bands-cepr:
+    gruppo: conventions
+    titolo: Euro-area recession bands (CEPR)
+    testo: >-
+      Grey bands: euro-area recessions dated by the CEPR. There is no API for them: the dates are written by hand in
+      config.yaml and must be checked manually when the CEPR announces a new peak or trough. The OECD indicator on FRED
+      stopped in August 2022 and the CEPR website blocks automatic requests.
+  curve-inversion:
+    gruppo: conventions
+    titolo: Curve inversion (red area)
+    testo: >-
+      Red area: inverted curve, that is the spread between a long and a short maturity is below zero. An inverted
+      curve has often preceded recessions.
+  target-fed:
+    gruppo: conventions
+    titolo: Fed 2% target
+    testo: "Dashed line: the Fed's 2% inflation target (measured on the PCE price index)."
+  target-ecb:
+    gruppo: conventions
+    titolo: ECB 2% target
+    testo: "Dashed line: the ECB's 2% inflation target."
+  target-boj:
+    gruppo: conventions
+    titolo: BoJ 2% target
+    testo: "Dashed line: the BoJ's 2% inflation target."
+  target-bok:
+    gruppo: conventions
+    titolo: BoK 2% target
+    testo: "Dashed line: the BoK's 2% inflation target."
+  target-generic:
+    gruppo: conventions
+    titolo: 2% reference line
+    testo: "Dashed line: 2%, the inflation target of many central banks. Monthly data."
+  zero-line-china:
+    gruppo: conventions
+    titolo: Zero line (deflation)
+    testo: "Dashed line: zero. Below it, consumer prices are falling (deflation)."
+  rebase-base100:
+    gruppo: conventions
+    titolo: Base 100 charts
+    testo: >-
+      In "base 100" charts every line is rebased to 100 at the start of the period chosen with the 1Y / 5Y / 10Y / Max
+      buttons, but never earlier than the first date on which all the visible lines exist. The rebasing is done by the
+      page, so changing the period changes every value.
+  # ---------------------------------------------------------------- rates
+  usa-tips-breakeven:
+    gruppo: rates
+    titolo: TIPS and breakeven history
+    testo: >-
+      Real yields on TIPS and the breakeven inflation rate (nominal minus real yield) are available from 2003 only.
+  hicp-core:
+    gruppo: rates
+    titolo: HICP core definition
+    testo: >-
+      Core = excluding energy, food, alcohol and tobacco. The headline and core series come from the new ECB dataset
+      "HICP" (code 4D0): the old dataset "ICP" stopped in December 2025 and still answers without errors, which is why
+      the freshness check exists.
+  policy-rates-compared:
+    gruppo: rates
+    titolo: Policy rates compared
+    testo: >-
+      All series come from the BIS. Fed: midpoint of the target range; ECB: deposit facility rate; BoJ: target
+      overnight rate; BoK: base rate. WARNING: for China it is the 1-year Loan Prime Rate (LPR), a bank lending rate,
+      not an overnight rate like the others: it tends to sit higher and is not directly comparable. Korea is about a
+      month behind.
+  china-lpr:
+    gruppo: rates
+    titolo: China Loan Prime Rate
+    testo: >-
+      Source: BIS, daily data. From 20 Aug 2019 it is the 1-year LPR; before that the BIS uses the official 1-year
+      lending rate.
+  korea-bis-delay:
+    gruppo: rates
+    titolo: Korea policy rate delay
+    testo: >-
+      Source: BIS, daily data. The BIS publishes Korea with about a month of delay: for this series the stale-data
+      warning triggers after 45 days instead of 10.
+  yields-compared:
+    gruppo: rates
+    titolo: 10-year yields compared
+    testo: >-
+      US: Treasuries (FRED, daily); euro area: the ECB AAA curve as a Bund proxy (daily); Japan: JGBs from the Ministry
+      of Finance (daily); South Korea: OECD MONTHLY average. China is not included: there is no free, up-to-date
+      source. Daily yields on German Bunds alone are not freely available either.
+  korea-ktb-monthly:
+    gruppo: rates
+    titolo: Korea 10-year bond is monthly
+    testo: >-
+      Monthly data (monthly average, source OECD via FRED), with about a month of delay: the daily data is not freely
+      available.
+  jgb-history:
+    gruppo: rates
+    titolo: JGB history and fallback
+    testo: >-
+      The 30-year starts in 1999, the 10-year in 1986. If the Ministry of Finance does not respond the 10-year alone
+      falls back on the OECD monthly average (FRED).
+  japan-cpi-sources:
+    gruppo: rates
+    titolo: Japan CPI sources
+    testo: >-
+      All three series come from the Statistics Bureau of Japan (via DBnomics): the annual change is calculated from
+      the index. In the Global comparison Japan uses BIS data instead, so that every country has the same source.
+      "Core" excludes fresh food; "core-core" also excludes energy.
+  # ---------------------------------------------------------------- credit
+  baa-history:
+    gruppo: credit
+    titolo: Baa spread has a long history
+    testo: "A long-history series (from 1986): useful to compare past crises."
+  ice-oas-history:
+    gruppo: credit
+    titolo: ICE BofA OAS start in 2023
+    testo: >-
+      ICE BofA OAS series on FRED only start in October 2023: for licensing reasons FRED publishes only the last few
+      years. For the long history of US credit see the Baa vs 10Y Treasury spread.
+  ea-ig-not-available:
+    gruppo: credit
+    titolo: No euro Investment Grade spread
+    testo: >-
+      The euro Investment Grade spread is not included: there is no free source. For euro High Yield, FRED publishes
+      the ICE BofA series only from October 2023.
+  monthly-sovereign-yields:
+    gruppo: credit
+    titolo: BTP-Bund and OAT-Bund are monthly
+    testo: >-
+      Monthly data: the monthly average of the 10-year yields the ECB uses for its convergence criteria (Germany from
+      1990, Italy from 1991, France from 1986), published with about a month's delay. Daily yields of individual
+      countries are not freely available.
+  ea-all-minus-aaa:
+    gruppo: credit
+    titolo: All euro-area bonds minus AAA
+    testo: >-
+      10-year yield of the ECB curve for all euro-area government bonds minus that of the AAA curve: a daily indicator
+      of the average risk premium of non-AAA countries (Italy, France, Spain...). Data from 2004.
+  # ---------------------------------------------------------------- equities
+  price-no-dividends:
+    gruppo: equities
+    titolo: Prices without dividends
+    testo: >-
+      All equity prices are closing prices without dividends (not "adjusted"), for consistency between indices and
+      ETFs. ETFs that pay dividends (ACWI, the European banks ETF) show them in the price as small drops.
+  index-daily-closes:
+    gruppo: equities
+    titolo: Index levels are daily closes
+    testo: >-
+      Index levels (in points, or the price in local currency for ETFs) are daily closing prices from Yahoo Finance, an
+      unofficial source. The last candle is dropped if the trading session has not finished yet.
+  us-index-definitions:
+    gruppo: equities
+    titolo: US index definitions
+    testo: >-
+      S&P 500: 500 large companies; Nasdaq 100: the 100 largest non-financial companies on the Nasdaq (a lot of
+      technology); Russell 2000: small companies.
+  equal-weight-ratio:
+    gruppo: equities
+    titolo: S&P 500 concentration ratio
+    testo: >-
+      Ratio (x100) between the S&P 500 with every stock at the same weight and the S&P 500 weighted by market
+      capitalisation. When it falls, the market is concentrating on a few giants: the "average" stock does worse than
+      the index. When it rises, the rally broadens. What matters is the direction, not the level (it depends on the
+      indices' start date, Dec 2006). Price indices, without dividends. The ETFs RSP/SPY (from 2003) are not needed: the
+      ratio of the indices is almost identical.
+  dax-price-index:
+    gruppo: equities
+    titolo: DAX is the price index
+    testo: >-
+      The DAX K (Kursindex, a price index) is used. The "official" DAX index (^GDAXI) reinvests dividends and would
+      not be comparable with the other indices. Yahoo's price index starts in March 2013, so with "Max" the euro-area
+      equity chart starts in 2013, when every line exists.
+  ea-banks-etf:
+    gruppo: equities
+    titolo: European banks are an ETF
+    testo: >-
+      "European banks" is the iShares STOXX Europe 600 Banks ETF (Xetra, ticker EXV1), in euro: it also includes banks
+      outside the euro area (e.g. the UK, Switzerland) and is NOT the Euro Stoxx Banks, which is not available on
+      Yahoo. Xetra's latest price is often from the previous day.
+  usd-conversion:
+    gruppo: equities
+    titolo: Local currency vs USD
+    testo: >-
+      With "Local currency" performance ignores exchange rates (the S&P 500 and MSCI ACWI are already in dollars); with
+      "In USD" each index is divided by the Yahoo Finance exchange rate of the same day, so it includes the currency
+      effect. If an exchange rate is unavailable the USD line becomes "unavailable" instead of mixing sources.
+      Markets and exchange rates do not close at the same time: small one-day differences.
+  acwi-etf:
+    gruppo: equities
+    titolo: MSCI ACWI is an ETF
+    testo: >-
+      Dashed line: MSCI ACWI, the world benchmark index, represented by the iShares ACWI ETF (in dollars, from March
+      2008) because the index itself is not on Yahoo. The ETF pays out dividends, which show up in the price as small
+      drops.
+  csi300-etf:
+    gruppo: equities
+    titolo: CSI 300 is an ETF
+    testo: >-
+      The CSI 300 is represented by an ETF (ticker 510300 on the Shanghai exchange, price in yuan), not by the index,
+      because Yahoo does not provide the history of the index (it returns a single candle). The price follows the index
+      but is not equal to its level; data start in 2012, so with "Max" every comparison chart starts on the same date.
+  hang-seng-hkd:
+    gruppo: equities
+    titolo: Hang Seng and the HK dollar
+    testo: >-
+      Hang Seng: the Hong Kong dollar is pegged to the US dollar, so the conversion to USD matters little.
+  # ---------------------------------------------------------------- fx
+  eurusd-ecb:
+    gruppo: fx
+    titolo: EUR/USD ECB reference rate
+    testo: >-
+      ECB reference rate, taken every working day at 14:15 (Frankfurt time). Up = the euro strengthens. There is no
+      FRED fallback with the same quotation direction for the euro.
+  usdjpy:
+    gruppo: fx
+    titolo: USD/JPY quotation
+    testo: >-
+      Up = the yen weakens. If Yahoo does not respond FRED is used (the Fed's daily rate, with a delay of a few days).
+  usdcny:
+    gruppo: fx
+    titolo: USD/CNY quotation
+    testo: "Onshore rate. Up = the yuan weakens. If Yahoo does not respond FRED is used."
+  usdkrw:
+    gruppo: fx
+    titolo: USD/KRW quotation
+    testo: "Up = the won weakens. If Yahoo does not respond FRED is used."
+  currencies-base100:
+    gruppo: fx
+    titolo: Currencies base 100
+    testo: >-
+      Above 100 = the currency has strengthened against the dollar since the start of the period; below 100 = it has
+      weakened. The yen, yuan and won are quoted as "currency per dollar" and are flipped here, so every line reads the
+      same way. Euro: ECB rate at 14:15; the other currencies: Yahoo Finance close. With "Max" the chart starts on the
+      first date when all the currencies exist.
+  # ---------------------------------------------------------------- commodities
+  continuous-futures:
+    gruppo: commodities
+    titolo: Continuous futures
+    testo: >-
+      Yahoo Finance continuous futures: the contract with the nearest expiry is always followed and, when it expires,
+      the next one takes over. On those days small price jumps can appear that are not real market moves (for example
+      the November Brent contract expires on the last working day of September). Shown only when the data really comes
+      from Yahoo, not from the FRED fallback.
+  wti-negative-2020:
+    gruppo: commodities
+    titolo: WTI below zero in 2020
+    testo: >-
+      On 20 Apr 2020 the WTI future closed below zero (-$37): at expiry nobody had room left to store the oil.
+      Negative values are not discarded.
+  ttf-history:
+    gruppo: commodities
+    titolo: TTF history
+    testo: Data on Yahoo from 2017.
+  aluminium-comex:
+    gruppo: commodities
+    titolo: Aluminium is a thin future
+    testo: >-
+      A thinly traded COMEX future (the world benchmark is the London Metal Exchange, which is not free): the price is
+      consistent with the LME one but can move in jumps. Data on Yahoo from 2014.
+  gold-real-yield:
+    gruppo: commodities
+    titolo: Gold vs real yield
+    testo: >-
+      Gold pays no interest: when the real yield rises, holding it "costs" more and the price tends to fall. That is
+      why the real-yield axis is INVERTED (high values at the bottom): if the link holds, the two lines rise and fall
+      together. Since 2022 the link has weakened because of gold purchases by central banks. Gold and silver have no
+      free fallback source: if Yahoo does not respond the charts stay empty.
+  copper-gold-ratio:
+    gruppo: commodities
+    titolo: Copper/gold ratio
+    testo: >-
+      Copper (a cyclical metal) divided by gold (a safe haven), multiplied by 1000: it rises when the market expects
+      more growth and tends to move together with 10-year yields. Calculated only if both prices come from Yahoo.
+  oil-breakeven:
+    gruppo: commodities
+    titolo: Oil vs breakeven inflation
+    testo: >-
+      The price of energy weighs heavily on the inflation the market expects (breakeven = nominal yield minus real
+      yield): the two series tend to move together.
+  brent-wti-spread:
+    gruppo: commodities
+    titolo: Brent-WTI spread
+    testo: >-
+      Difference between the two oil futures. Calculated only if both prices come from Yahoo: the FRED fallbacks are
+      spot prices and are never mixed with futures (at the end of September 2026 Brent spot was about $11 above the
+      future). Brent is an ICE contract that expires before WTI: on expiry days the spread can jump.
+  # ---------------------------------------------------------------- countries / data not included
+  not-included-china:
+    gruppo: countries
+    titolo: China data not included
+    testo: >-
+      Not included for lack of free, up-to-date sources: 10-year yield, 5-year LPR, PPI (the National Bureau of
+      Statistics series on DBnomics stopped in Feb 2026; FRED/OECD stop in 2022-2023). FRED/OECD CPI for Japan and
+      China are frozen (2021 and 2025): never use them.
+  not-included-korea:
+    gruppo: countries
+    titolo: Korea data not included
+    testo: >-
+      Not included: 3-year yield (the daily data is only available through the Bank of Korea ECOS API, which requires
+      a registration with a Korean phone number). The 10-year yield is monthly only.

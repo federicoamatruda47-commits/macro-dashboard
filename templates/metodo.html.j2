@@ -1,0 +1,133 @@
+{% extends "base.html.j2" %}
+{# Pagina "Sources & method": fonti, controllo di freschezza, riserve, serie calcolate, limiti noti dei dati. #}
+
+{% block titolo %}Sources &amp; method · Macro dashboard{% endblock %}
+{% block descrizione %}Where the data comes from, how freshness is checked, what happens when a source fails, and the known limits of the data.{% endblock %}
+
+{% block contenuto %}
+<section class="intestazione-pagina">
+  <h1>Sources &amp; method</h1>
+  <p class="descrizione">Where every number comes from, how the site protects itself from stale or missing data, and what the
+    data cannot tell you.</p>
+  <p class="aggiornamento">Updated <strong>{{ aggiornato }}</strong></p>
+  <ul class="chips" aria-label="On this page">
+    <li><a href="#how-it-works">How it works</a></li>
+    <li><a href="#sources">Sources</a></li>
+    <li><a href="#freshness">Freshness check</a></li>
+    <li><a href="#fallback">Fallback sources</a></li>
+    <li><a href="#calculated">Calculated series</a></li>
+    <li><a href="#limits">Known limits</a></li>
+  </ul>
+</section>
+
+<section class="blocco" id="how-it-works">
+  <h2>How it works</h2>
+  <p class="descrizione">This is a static site. A script downloads every series, calculates what needs calculating and writes the pages;
+    GitHub rebuilds and publishes it automatically on Monday to Saturday at 23:30 UTC, after the US futures markets and the Asian
+    exchanges have closed. A single series that fails never blocks the site: it becomes "unavailable" and a warning appears
+    at the top of the pages that use it. Prices are closing prices without dividends; rates are in % and changes in rates
+    are shown in basis points (bp, 0.01%), changes in year-on-year inflation in percentage points (pp). This dashboard is
+    for study purposes and is not financial advice.</p>
+</section>
+
+<section class="blocco" id="sources">
+  <h2>Sources</h2>
+  <p class="descrizione">The number of series is counted by main source. Every chart names its sources under the chart, with a link to the
+    series on the source's website; the full list is in <a href="{{ radice }}method/series/">Series status</a>.</p>
+  <div class="tabella-scorrevole">
+    <table class="tabella-testo">
+      <thead><tr><th>Source</th><th>What we use it for</th><th>Access</th><th class="num">Series</th></tr></thead>
+      <tbody>
+        {% for f in m.fonti %}
+        <tr>
+          <td>{% if f.url %}<a href="{{ f.url }}" target="_blank" rel="noopener">{{ f.nome }} ↗</a>{% else %}{{ f.nome }}{% endif %}</td>
+          <td>{{ f.uso }}</td><td>{{ f.accesso }}</td><td class="num">{{ f.n_serie }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="descrizione">Recession dates: NBER (series USREC on FRED) for the US; the CEPR for the euro area, copied by hand into the configuration
+    because it has no API.</p>
+</section>
+
+<section class="blocco" id="freshness">
+  <h2>Freshness check</h2>
+  <p class="descrizione">Every series is checked after each download. If its latest data point is older than the threshold for its frequency,
+    a warning appears at the top of the pages that use it. It catches "frozen" series: the source answers without any error but has
+    stopped adding data (for example when a dataset is retired and replaced by another). Days are counted from the <em>end</em> of the period of
+    the latest data point, so the August value of a monthly series counts as fresh until 31 August.</p>
+  <div class="tabella-scorrevole">
+    <table class="tabella-testo tabella-stretta">
+      <thead><tr><th>Frequency</th><th class="num">Threshold (days)</th></tr></thead>
+      <tbody>{% for s in m.soglie %}<tr><td>{{ s.frequenza }}</td><td class="num">{{ s.giorni }}</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+  {% if m.soglie_proprie %}
+  <p class="descrizione">A few series have their own threshold, always for a documented reason:
+    {% for s in m.soglie_proprie %}<strong>{{ s.nome }}</strong> ({{ s.giorni }} days){{ ", " if not loop.last }}{% endfor %}
+    — the BIS publishes South Korea with about a month of delay (see <a href="#note-korea-bis-delay">Korea policy rate delay</a>).</p>
+  {% endif %}
+  {% if in_ritardo %}
+  <p class="descrizione"><strong>Right now {{ in_ritardo|length }} {{ 'series is' if in_ritardo|length == 1 else 'series are' }} stale:</strong>
+    {% for s in in_ritardo %}{{ s.nome }} (latest data {{ s.data }}){{ ", " if not loop.last }}{% endfor %}.</p>
+  {% else %}
+  <p class="descrizione"><strong>Right now no series is stale.</strong></p>
+  {% endif %}
+</section>
+
+<section class="blocco" id="fallback">
+  <h2>Fallback sources</h2>
+  <p class="descrizione">Some series have a second source, used only if the main one fails. When it happens the chart footer says
+    "(fallback)" and a notice appears on the page. A fallback can be a slightly different quantity (for example a spot price instead of a
+    future, or a monthly average instead of a daily value), a different unit, or a series with a shorter history: the difference is
+    written in the notice and in the table below.
+    {% if riserve %}<strong>Right now {{ riserve|length }} {{ 'series is' if riserve|length == 1 else 'series are' }} on a fallback.</strong>{% else %}<strong>Right now every series uses its main source.</strong>{% endif %}</p>
+  <div class="tabella-scorrevole">
+    <table class="tabella-testo">
+      <thead><tr><th>Series</th><th>Main source</th><th>Fallback</th><th>Difference</th><th>Now</th></tr></thead>
+      <tbody>
+        {% for f in m.fallback %}
+        <tr><td>{{ f.nome }}</td><td><code>{{ f.principale }}</code></td><td><code>{{ f.riserva }}</code></td><td>{{ f.differenze }}</td>
+          <td>{% if f.in_uso %}<span class="stato-ritardo">ⓘ fallback in use</span>{% else %}<span class="stato-ok">✓ main</span>{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="blocco" id="calculated">
+  <h2>Calculated series</h2>
+  <p class="descrizione">{{ m.regola_calcolate }}</p>
+  <div class="tabella-scorrevole">
+    <table class="tabella-testo">
+      <thead><tr><th>Series</th><th>Calculation</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for c in m.calcolate %}
+        <tr><td>{{ c.nome }}</td><td>{{ c.formula }}</td>
+          <td>{% if c.ok %}<span class="stato-ok">✓ calculated</span>{% else %}<span class="stato-errore">⚠ unavailable: {{ c.errore }}</span>{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="blocco" id="limits">
+  <h2>Known limits</h2>
+  <p class="descrizione">The technical notes that used to sit under the charts. Under each chart you will find links to the notes that apply to it.</p>
+  {% for gruppo in m.gruppi_note %}
+  <h3 class="titolo-gruppo">{{ gruppo.titolo }}</h3>
+  <dl class="note-lista">
+    {% for n in gruppo.note %}
+    <div class="nota-voce" id="note-{{ n.id }}">
+      <dt>{{ n.titolo }}</dt>
+      <dd>{{ n.testo }}
+        {% if n.usi %}<span class="usi">Used on:
+          {% for u in n.usi %}<a href="{{ radice }}{{ u.href }}">{{ u.titolo }}</a>{{ ", " if not loop.last }}{% endfor %}</span>{% endif %}
+      </dd>
+    </div>
+    {% endfor %}
+  </dl>
+  {% endfor %}
+</section>
+{% endblock %}

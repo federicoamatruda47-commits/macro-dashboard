@@ -56,34 +56,30 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                             [i for _, i in SCADENZE], periodo_iniziale="10Y"),
                     storico("usa-spread", "10Y-2Y and 10Y-3M spreads", ["T10Y2Y", "T10Y3M"],
                             evidenzia_inversioni=True, periodo_iniziale="Max", largo=True,
-                            nota="Red area: inverted curve (spread below zero). "
-                                 "Grey bands: NBER recessions."),
+                            note=["curve-inversion", "bands-nber"]),
                 ]),
         Sezione("tassi-reali", "Real rates and expected inflation",
                 "Yield on the inflation-indexed Treasury (TIPS) and the inflation expected by the market "
                 "(breakeven = nominal minus real). Data from 2003.",
                 grafici=[
                     storico("usa-reali", "10Y real yield and 10Y breakeven", ["DFII10", "T10YIE"],
-                            periodo_iniziale="Max", largo=True),
+                            periodo_iniziale="Max", largo=True, note=["usa-tips-breakeven"]),
                 ]),
         Sezione("inflazione", "Inflation", "Change in prices compared with a year earlier.", grafici=[
             storico("usa-inflazione", "Headline CPI, core CPI and core PCE (% y/y)",
                     ["CPIAUCSL", "CPILFESL", "PCEPILFE"], riferimento=(2, ""),
                     periodo_iniziale="10Y", largo=True,
-                    nota="Dashed line: the Fed's 2% target (measured on PCE). "
-                         "Grey bands: NBER recessions."),
+                    note=["target-fed", "bands-nber"]),
         ]),
         Sezione("credito", "Credit",
                 "Extra yield investors demand on corporate bonds compared with Treasuries.",
                 grafici=[
                     storico("usa-baa", "Baa (Moody's) spread vs 10Y Treasury", ["BAA10Y"],
                             periodo_iniziale="Max",
-                            nota="A long-history series (from 1986): useful to compare past crises."),
+                            note=["baa-history"]),
                     storico("usa-oas", "Investment Grade and High Yield OAS (ICE BofA)",
                             ["BAMLC0A0CM", "BAMLH0A0HYM2"], periodo_iniziale="Max",
-                            nota="ICE BofA OAS series on FRED only start in October 2023: for licensing reasons "
-                                 "FRED publishes only the last few years. For the long history "
-                                 "see the Baa vs 10Y Treasury spread."),
+                            note=["ice-oas-history"]),
                 ]),
         Sezione("azioni", "Equities",
                 "The main US equity indices: price changes and, below, how much of the S&P 500's rise "
@@ -92,17 +88,10 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                 grafici=[
                     base100("usa-indici-azionari", "US equity indices (base 100)", [SP500, NASDAQ100, RUSSELL2000],
                             periodo_iniziale="5Y", largo=True,
-                            nota="Rebased to 100 at the start of the period chosen with the 1Y / 5Y / 10Y / Max buttons. "
-                                 "Closing prices of the indices without dividends (not \"adjusted\"). "
-                                 "S&P 500: 500 large companies; Nasdaq 100: the 100 largest non-financial companies "
-                                 "on the Nasdaq (a lot of technology); Russell 2000: small companies."),
+                            note=["rebase-base100", "price-no-dividends", "us-index-definitions"]),
                     storico("usa-concentrazione", "Concentration: S&P 500 Equal Weight / S&P 500", [RAPPORTO_EW],
                             periodo_iniziale="Max", largo=True,
-                            nota="Ratio (×100) between the S&P 500 with every stock at the same weight and "
-                                 "the S&P 500 weighted by market capitalisation. When it falls, the market is concentrating on a few "
-                                 "giants: the \"average\" stock does worse than the index. When it rises, the rally broadens. "
-                                 "What matters is the direction, not the level (it depends on the indices' start date, "
-                                 "Dec 2006). Price indices, without dividends. Grey bands: NBER recessions."),
+                            note=["equal-weight-ratio", "bands-nber"]),
                 ]),
         Sezione("condizioni", "Financial conditions and labour", grafici=[
             storico("usa-vix", "VIX (expected volatility of the S&P 500)", ["VIXCLS"], periodo_iniziale="5Y"),
