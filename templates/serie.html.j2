@@ -14,9 +14,9 @@
   <p class="aggiornamento">Updated <strong>{{ aggiornato }}</strong> · {{ stato|length }} series</p>
 </section>
 
-{{ avvisi(errori, in_ritardo, riserve, totale_serie, "", radice) }}
+{{ avvisi(errori, in_ritardo, riserve, totale_serie, "", radice, attivita) }}
 
-<section class="blocco">
+<section class="blocco" id="series">
   <div class="tabella-scorrevole">
     <table class="tabella-serie">
       <thead><tr><th>Series</th><th>Code</th><th>Source</th><th>Frequency</th><th>From</th><th>Latest data</th><th class="num">Value</th><th>Status</th><th>Used in</th></tr></thead>
@@ -38,4 +38,35 @@
     </table>
   </div>
 </section>
+
+{% if indicatori %}
+<section class="blocco" id="annual-indicators">
+  <h2>Annual indicators by country</h2>
+  <p class="descrizione">Yearly data for about 200 countries from the IMF World Economic Outlook and the World Bank. They are not downloaded
+    at every build: they sit in a snapshot in the repository (updated by hand after each new WEO, in April and October, and after each World Bank release),
+    so the freshness check counts from the publication date, with a threshold of 210 days (IMF) or 456 days (World Bank).
+    The "latest actual year" is the last year with a reported figure: later years are IMF estimates or projections.
+    No page uses these indicators yet. <a href="{{ radice }}method/#annual-data">How it works</a>.</p>
+  <div class="tabella-scorrevole">
+    <table class="tabella-serie">
+      <thead><tr><th>Indicator</th><th>Code</th><th>Source</th><th>Frequency</th><th class="num">Countries</th><th>Years</th><th>Latest actual year</th><th>Edition</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for i in indicatori %}
+        <tr>
+          <td>{{ i.nome }}<br><span class="kpi-data">{{ i.unita }}</span>{% if i.nota %}<br><span class="kpi-data">{{ i.nota }}</span>{% endif %}</td>
+          <td><a href="{{ i.url }}" target="_blank" rel="noopener"><code>{{ i.codice }}</code> ↗</a></td>
+          <td>{{ i.fonte }}</td>
+          <td>{{ i.frequenza }}</td>
+          <td class="num">{{ i.n_paesi }}</td>
+          <td>{{ i.anni }}</td>
+          <td>{{ i.effettivo }}</td>
+          <td>{{ i.edizione }}</td>
+          <td>{% if not i.presente %}<span class="stato-errore">⚠ no snapshot</span>{% elif i.in_ritardo %}<span class="stato-ritardo">ⓘ stale</span>{% else %}<span class="stato-ok">✓ ok</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
 {% endblock %}

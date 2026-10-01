@@ -17,7 +17,7 @@
   {% endif %}
 </section>
 
-{{ avvisi(r.errori, r.in_ritardo, r.riserve, r.totale_serie, " series used on this page", radice) }}
+{{ avvisi(r.errori, r.in_ritardo, r.riserve, r.totale_serie, " series used on this page", radice, attivita) }}
 
 {% if not r.attiva %}
 <div class="in-arrivo">

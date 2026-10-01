@@ -12,10 +12,10 @@ import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from plotly.offline import get_plotlyjs_version
 
-from . import metodo, movimenti
+from . import annuali, attivita, metodo, movimenti
 from .data import (FONTE_CALCOLATA, NOMI_FONTI, OPERAZIONI, PERIODI_PERFORMANCE, Serie, tipo_variazione, trova_serie,
                    variazioni)
-from .fonti_url import url_serie
+from .fonti_url import url_indicatore, url_serie
 from .pagine import HOME, PAGINA_METODO, PAGINA_SERIE, REINDIRIZZAMENTI, costruisci_menu, percorso, radice
 from .economie import PAGINE as PAGINE_ECONOMIE
 from .mercati import PAGINE as PAGINE_MERCATI
@@ -28,7 +28,8 @@ COSTRUTTORI = {**PAGINE_MERCATI, **PAGINE_ECONOMIE}
 
 
 # Frequenze delle serie come si leggono sul sito (dentro il codice restano in italiano)
-FREQUENZE = {"giornaliera": "daily", "settimanale": "weekly", "mensile": "monthly", "trimestrale": "quarterly"}
+FREQUENZE = {"giornaliera": "daily", "settimanale": "weekly", "mensile": "monthly", "trimestrale": "quarterly",
+             "semestrale": "semiannual", "annuale": "annual"}
 
 
 # ---------------------------------------------------------------------
@@ -209,6 +210,38 @@ def _voce_ritardo(s: Serie, oggi: pd.Timestamp, nomi_aree: dict[str, str]) -> di
             "giorni": s.giorni_senza_dati(oggi), "soglia": s.soglia_ritardo}
 
 
+def _voce_ritardo_annuale(s: annuali.StatoSnapshot) -> dict:
+    """Una riga dell'avviso 'dati non aggiornati' per uno snapshot annuale (WEO, WDI, WGI)."""
+    return {"id": s.id.upper(), "nome": f"{s.nome} snapshot", "area": "Annual data", "data": f"{s.data.day} {s.data:%b %Y}",
+            "frequenza": FREQUENZE[s.frequenza], "giorni": s.giorni, "soglia": s.soglia}
+
+
+def _righe_indicatori(config: dict, snapshot: dict[str, annuali.Snapshot | None], stati: list[annuali.StatoSnapshot]) -> list[dict]:
+    """Una riga per indicatore annuale del catalogo, per la pagina Series status (copertura, anni, ultimo anno effettivo, stato)."""
+    stato_per_id = {s.id: s for s in stati}
+    righe = []
+    for fonte, istantanea in snapshot.items():
+        catalogo = annuali.indicatori_di(annuali.carica_catalogo(config), fonte)
+        copertura = {c["indicatore"].codice: c for c in annuali.copertura(istantanea, catalogo)} if istantanea else {}
+        for ind in catalogo:
+            c = copertura.get(ind.codice)
+            id_stato = fonte if fonte == annuali.FONTE_IMF else ("wgi" if ind.sorgente_wb == 3 else "wdi")
+            stato = stato_per_id[id_stato]
+            presente = bool(c and c["n_paesi"])
+            if presente and c["effettivo_a"] is not None:
+                effettivo = str(c["effettivo_a"]) if c["effettivo_da"] == c["effettivo_a"] else f"{c['effettivo_da']}–{c['effettivo_a']}"
+            else:
+                effettivo = "—"
+            righe.append({
+                "nome": ind.nome, "codice": ind.codice, "url": url_indicatore(fonte, ind.codice),
+                "fonte": annuali.FONTI_ANNUALI[fonte], "unita": ind.unita, "frequenza": FREQUENZE[annuali.FREQUENZA_FONTE[fonte]],
+                "n_paesi": c["n_paesi"] if c else 0, "anni": f"{c['dal']}–{c['al']}" if presente else "—", "effettivo": effettivo,
+                "edizione": stato.edizione or (f"{stato.data.day} {stato.data:%b %Y}" if stato.data else "—"),
+                "presente": presente, "in_ritardo": stato.in_ritardo, "nota": ind.nota,
+            })
+    return righe
+
+
 def css_colori(config: dict) -> str:
     """Le variabili CSS --c-<chiave> dei colori fissi (tema chiaro e scuro), lette da config.yaml.
 
@@ -296,11 +329,20 @@ def _con_componenti(ids, serie: dict[str, Serie]) -> set[str]:
     return trovati
 
 
-def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict) -> dict:
+def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict, radice_progetto: Path | None = None) -> dict:
     """Raccoglie tutto ciò che serve al modello HTML."""
     adesso = datetime.now(FUSO_ORARIO)
     oggi = pd.Timestamp(adesso.date())
     adesso_utc = adesso.astimezone(timezone.utc)
+
+    # Dati annuali per Paese (snapshot nel repository) e attività del repository: solo controlli di stato, nessuna pagina li usa ancora
+    snapshot = {f: annuali.leggi_snapshot(radice_progetto, f) if radice_progetto else None for f in (annuali.FONTE_IMF, annuali.FONTE_BM)}
+    stati_annuali = annuali.stati_snapshot(snapshot[annuali.FONTE_IMF], snapshot[annuali.FONTE_BM], oggi.date())
+    ritardo_annuali = [_voce_ritardo_annuale(s) for s in stati_annuali if s.in_ritardo]
+    stato_attivita = attivita.valuta(attivita.data_ultimo_commit(radice_progetto), oggi.date()) if radice_progetto else None
+    voce_attivita = ({"giorni": stato_attivita.giorni, "ultimo": f"{stato_attivita.ultimo_commit.day} {stato_attivita.ultimo_commit:%b %Y}",
+                      "soglia": stato_attivita.soglia, "limite": attivita.LIMITE_GITHUB_GIORNI, "in_ritardo": stato_attivita.in_ritardo}
+                     if stato_attivita else None)
 
     nomi_aree = {chiave: voce["nome"] for chiave, voce in config["colori"].items()}  # es. "us" -> United States
     usi_serie: dict[str, list[dict]] = {}   # id serie -> grafici e tabelle che la usano (per Series status)
@@ -396,11 +438,14 @@ def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict) -> dict:
             "fallback": metodo.fallback_configurati(config, serie), "calcolate": metodo.serie_calcolate(config, serie),
             "regola_calcolate": metodo.REGOLA_CALCOLATE, "gruppi_note": metodo.raggruppa_note(note, usi_note),
             "movimenti": metodo.descrivi_movimenti(config, serie, classifica_movimenti),
+            "annuali": metodo.snapshot_annuali(stati_annuali), "attivita": voce_attivita,
         },
+        "indicatori_annuali": _righe_indicatori(config, snapshot, stati_annuali),
+        "attivita": voce_attivita if voce_attivita and voce_attivita["in_ritardo"] else None,   # solo se serve avvisare
         "aggiornato": f"{adesso_utc.day} {adesso_utc:%b %Y}, {adesso_utc:%H:%M} UTC",
         "pagine": pagine,
         "errori": [{"id": s.id, "nome": s.nome, "errore": s.errore} for s in serie.values() if not s.ok],
-        "in_ritardo": [_voce_ritardo(s, oggi, nomi_aree) for s in serie.values() if s.in_ritardo(oggi)],
+        "in_ritardo": [_voce_ritardo(s, oggi, nomi_aree) for s in serie.values() if s.in_ritardo(oggi)] + ritardo_annuali,
         "riserve": [{"id": s.id, "nome": s.nome, "nota": s.nota_fonte} for s in serie.values() if s.nota_fonte],
         "totale_serie": len(serie),
         "css_colori": css_colori(config),
@@ -433,13 +478,13 @@ def genera_sito(config: dict, serie: dict[str, Serie], radice_progetto: Path) ->
     ambiente = Environment(loader=FileSystemLoader(radice_progetto / "templates"),
                            autoescape=select_autoescape(["html", "j2"]),
                            trim_blocks=True, lstrip_blocks=True)
-    contesto = prepara_contesto(config, serie, carica_note(radice_progetto))
+    contesto = prepara_contesto(config, serie, carica_note(radice_progetto), radice_progetto)
     # Regola del sito: ogni grafico ha una riga "How to read it" (si scrive pagina per pagina durante la ristrutturazione)
     senza = [g["id"] for r in contesto["pagine"] for s in r["sezioni"] for g in s["grafici"] if not g["come_leggerlo"]]
     if senza:
         print(f"Warning: {len(senza)} charts have no 'come_leggerlo' line (How to read it), e.g. {', '.join(senza[:4])}...")
     comune = {chiave: contesto[chiave]
-              for chiave in ("aggiornato", "plotly_versione", "versione", "css_colori")}
+              for chiave in ("aggiornato", "plotly_versione", "versione", "css_colori", "attivita")}
 
     def scrivi(id_pagina: str, modello: str, **dati) -> Path:
         menu, sottomenu = costruisci_menu(config, id_pagina)
@@ -462,7 +507,7 @@ def genera_sito(config: dict, serie: dict[str, Serie], radice_progetto: Path) ->
     for vecchio, nuovo in REINDIRIZZAMENTI.items():
         scrivi_reindirizzamento(cartella_site, vecchio, nuovo, ambiente)
     scrivi(PAGINA_METODO, "metodo.html.j2", m=contesto["metodo"], **avvisi)
-    scrivi(PAGINA_SERIE, "serie.html.j2", stato=contesto["stato"], **avvisi)
+    scrivi(PAGINA_SERIE, "serie.html.j2", stato=contesto["stato"], indicatori=contesto["indicatori_annuali"], **avvisi)
     pagina = scrivi(HOME, "panoramica.html.j2", **{k: contesto[k] for k in ("panoramica", "movimenti", "esplora")}, **avvisi)
 
     # CSS e JavaScript

@@ -5,12 +5,13 @@ soglie di freschezza, fonti di riserva in uso, serie calcolate e note raggruppat
 Le note tecniche stanno in contenuti/note.yaml; render.py le passa già lette.
 """
 
-from . import movimenti
+from . import annuali, movimenti
 from .data import FONTE_CALCOLATA, NOMI_FONTI, OPERAZIONI, SOGLIA_RITARDO_GIORNI, Serie
 from .fonti_url import SITI_FONTI
 
 # Come mostrare le frequenze (dentro il codice restano in italiano)
-FREQUENZE = {"giornaliera": "daily", "settimanale": "weekly", "mensile": "monthly", "trimestrale": "quarterly"}
+FREQUENZE = {"giornaliera": "daily", "settimanale": "weekly", "mensile": "monthly", "trimestrale": "quarterly",
+             "semestrale": "semiannual", "annuale": "annual"}
 
 # Cosa si usa di ogni fonte e che tipo di accesso offre
 DESCRIZIONI_FONTI = {
@@ -27,6 +28,12 @@ DESCRIZIONI_FONTI = {
     "mof": ("Daily Japanese government bond (JGB) yields.", "Official CSV files (no key)."),
     "statjp": ("Japan CPI by component (headline, core, core-core).",
                "DBnomics, a free aggregator of statistical agencies (no key)."),
+    annuali.FONTE_IMF: ("World Economic Outlook: GDP, growth, inflation, government balance and debt, current account, population "
+                        "and the IMF projections, for about 200 countries (annual, 1980 onwards).",
+                        "Official API (no key), downloaded by hand twice a year into a snapshot in the repository."),
+    annuali.FONTE_BM: ("Unemployment and employment (ILO modelled estimates), long GDP and population histories, and the Worldwide "
+                       "Governance Indicators (control of corruption), for about 200 countries (annual).",
+                       "Official API (no key), refreshed into a snapshot in the repository."),
     FONTE_CALCOLATA: ("Differences and ratios of other series (spreads, copper/gold, equity indices in USD).",
                       "Calculated here, only from inputs of the same source."),
 }
@@ -40,12 +47,18 @@ REGOLA_CALCOLATE = (
 
 
 def descrivi_fonti(config: dict) -> list[dict]:
-    """Tabella delle fonti con il numero di serie che ne usano ogni una come fonte principale."""
+    """Tabella delle fonti con il numero di serie che ne usano ogni una come fonte principale.
+
+    Per l'FMI e la Banca Mondiale (dati annuali per Paese) il numero è quello degli indicatori del catalogo.
+    """
     conteggio: dict[str, int] = {}
     for voce in config["serie"]:
         conteggio[voce["fonte"]] = conteggio.get(voce["fonte"], 0) + 1
+    for voce in config.get("indicatori", []):
+        conteggio[voce["fonte"]] = conteggio.get(voce["fonte"], 0) + 1
+    nomi = {**NOMI_FONTI, **annuali.FONTI_ANNUALI}
     righe = []
-    for chiave, nome in NOMI_FONTI.items():
+    for chiave, nome in nomi.items():
         uso, accesso = DESCRIZIONI_FONTI[chiave]
         righe.append({"nome": nome, "uso": uso, "accesso": accesso, "url": SITI_FONTI.get(chiave),
                       "n_serie": conteggio.get(chiave, 0)})
@@ -58,6 +71,18 @@ def soglie_freschezza(config: dict) -> tuple[list[dict], list[dict]]:
     proprie = [{"nome": v["nome"], "id": v["id"], "giorni": v["soglia_giorni"]}
                for v in config["serie"] if v.get("soglia_giorni")]
     return standard, proprie
+
+
+def snapshot_annuali(stati: list[annuali.StatoSnapshot]) -> list[dict]:
+    """Righe della tabella "Annual data" di Method: edizione, data, giorni trascorsi, soglia e stato di ogni snapshot."""
+    righe = []
+    for s in stati:
+        righe.append({
+            "nome": s.nome, "frequenza": FREQUENZE[s.frequenza], "edizione": s.edizione,
+            "data": f"{s.data.day} {s.data:%b %Y}" if s.data else None, "giorni": s.giorni, "soglia": s.soglia,
+            "presente": s.presente, "in_ritardo": s.in_ritardo, "n_paesi": s.n_paesi, "n_indicatori": s.n_indicatori,
+        })
+    return righe
 
 
 def fallback_configurati(config: dict, serie: dict[str, Serie]) -> list[dict]:

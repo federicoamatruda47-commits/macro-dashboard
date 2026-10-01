@@ -1,0 +1,296 @@
+paese,nome,regione,tipo
+ABW,Aruba,Latin America & Caribbean ,country
+AFE,Africa Eastern and Southern,,aggregate
+AFG,Afghanistan,"Middle East, North Africa, Afghanistan & Pakistan",country
+AFR,Africa,,aggregate
+AFW,Africa Western and Central,,aggregate
+AGO,Angola,Sub-Saharan Africa ,country
+ALB,Albania,Europe & Central Asia,country
+AND,Andorra,Europe & Central Asia,country
+ARB,Arab World,,aggregate
+ARE,United Arab Emirates,"Middle East, North Africa, Afghanistan & Pakistan",country
+ARG,Argentina,Latin America & Caribbean ,country
+ARM,Armenia,Europe & Central Asia,country
+ASM,American Samoa,East Asia & Pacific,country
+ATG,Antigua and Barbuda,Latin America & Caribbean ,country
+AUS,Australia,East Asia & Pacific,country
+AUT,Austria,Europe & Central Asia,country
+AZE,Azerbaijan,Europe & Central Asia,country
+BDI,Burundi,Sub-Saharan Africa ,country
+BEA,East Asia & Pacific (IBRD-only countries),,aggregate
+BEC,Europe & Central Asia (IBRD-only countries),,aggregate
+BEL,Belgium,Europe & Central Asia,country
+BEN,Benin,Sub-Saharan Africa ,country
+BFA,Burkina Faso,Sub-Saharan Africa ,country
+BGD,Bangladesh,South Asia,country
+BGR,Bulgaria,Europe & Central Asia,country
+BHI,IBRD countries classified as high income,,aggregate
+BHR,Bahrain,"Middle East, North Africa, Afghanistan & Pakistan",country
+BHS,"Bahamas, The",Latin America & Caribbean ,country
+BIH,Bosnia and Herzegovina,Europe & Central Asia,country
+BLA,Latin America & the Caribbean (IBRD-only countries),,aggregate
+BLR,Belarus,Europe & Central Asia,country
+BLZ,Belize,Latin America & Caribbean ,country
+BMN,"Middle East, North Africa, Afghanistan & Pakistan (IBRD only)",,aggregate
+BMU,Bermuda,North America,country
+BOL,Bolivia,Latin America & Caribbean ,country
+BRA,Brazil,Latin America & Caribbean ,country
+BRB,Barbados,Latin America & Caribbean ,country
+BRN,Brunei Darussalam,East Asia & Pacific,country
+BSS,Sub-Saharan Africa (IBRD-only countries),,aggregate
+BTN,Bhutan,South Asia,country
+BWA,Botswana,Sub-Saharan Africa ,country
+CAA,Sub-Saharan Africa (IFC classification),,aggregate
+CAF,Central African Republic,Sub-Saharan Africa ,country
+CAN,Canada,North America,country
+CEA,East Asia and the Pacific (IFC classification),,aggregate
+CEB,Central Europe and the Baltics,,aggregate
+CEU,Europe and Central Asia (IFC classification),,aggregate
+CHE,Switzerland,Europe & Central Asia,country
+CHI,Channel Islands,Europe & Central Asia,country
+CHL,Chile,Latin America & Caribbean ,country
+CHN,China,East Asia & Pacific,country
+CIV,Cote d'Ivoire,Sub-Saharan Africa ,country
+CLA,Latin America and the Caribbean (IFC classification),,aggregate
+CME,Middle East and North Africa (IFC classification),,aggregate
+CMR,Cameroon,Sub-Saharan Africa ,country
+COD,"Congo, Dem. Rep.",Sub-Saharan Africa ,country
+COG,"Congo, Rep.",Sub-Saharan Africa ,country
+COL,Colombia,Latin America & Caribbean ,country
+COM,Comoros,Sub-Saharan Africa ,country
+CPV,Cabo Verde,Sub-Saharan Africa ,country
+CRI,Costa Rica,Latin America & Caribbean ,country
+CSA,South Asia (IFC classification),,aggregate
+CSS,Caribbean small states,,aggregate
+CUB,Cuba,Latin America & Caribbean ,country
+CUW,Curacao,Latin America & Caribbean ,country
+CYM,Cayman Islands,Latin America & Caribbean ,country
+CYP,Cyprus,Europe & Central Asia,country
+CZE,Czechia,Europe & Central Asia,country
+DEA,East Asia & Pacific (IDA-eligible countries),,aggregate
+DEC,Europe & Central Asia (IDA-eligible countries),,aggregate
+DEU,Germany,Europe & Central Asia,country
+DJI,Djibouti,"Middle East, North Africa, Afghanistan & Pakistan",country
+DLA,Latin America & the Caribbean (IDA-eligible countries),,aggregate
+DMA,Dominica,Latin America & Caribbean ,country
+DMN,"Middle East, North Africa, Afghanistan & Pakistan (IDA total)",,aggregate
+DNK,Denmark,Europe & Central Asia,country
+DNS,IDA countries in Sub-Saharan Africa not classified as fragile situations ,,aggregate
+DOM,Dominican Republic,Latin America & Caribbean ,country
+DSA,South Asia (IDA-eligible countries),,aggregate
+DSF,IDA countries in Sub-Saharan Africa classified as fragile situations ,,aggregate
+DSS,Sub-Saharan Africa (IDA-eligible countries),,aggregate
+DZA,Algeria,"Middle East, North Africa, Afghanistan & Pakistan",country
+EAP,East Asia & Pacific (excluding high income),,aggregate
+EAR,Early-demographic dividend,,aggregate
+EAS,East Asia & Pacific,,aggregate
+ECA,Europe & Central Asia (excluding high income),,aggregate
+ECS,Europe & Central Asia,,aggregate
+ECU,Ecuador,Latin America & Caribbean ,country
+EGY,"Egypt, Arab Rep.","Middle East, North Africa, Afghanistan & Pakistan",country
+EMU,Euro area,,aggregate
+ERI,Eritrea,Sub-Saharan Africa ,country
+ESP,Spain,Europe & Central Asia,country
+EST,Estonia,Europe & Central Asia,country
+ETH,Ethiopia,Sub-Saharan Africa ,country
+EUU,European Union,,aggregate
+FIN,Finland,Europe & Central Asia,country
+FJI,Fiji,East Asia & Pacific,country
+FRA,France,Europe & Central Asia,country
+FRO,Faroe Islands,Europe & Central Asia,country
+FSM,"Micronesia, Fed. Sts.",East Asia & Pacific,country
+FXS,"IDA countries classified as fragile situations, excluding Sub-Saharan Africa",,aggregate
+GAB,Gabon,Sub-Saharan Africa ,country
+GBR,United Kingdom,Europe & Central Asia,country
+GEO,Georgia,Europe & Central Asia,country
+GHA,Ghana,Sub-Saharan Africa ,country
+GIB,Gibraltar,Europe & Central Asia,country
+GIN,Guinea,Sub-Saharan Africa ,country
+GMB,"Gambia, The",Sub-Saharan Africa ,country
+GNB,Guinea-Bissau,Sub-Saharan Africa ,country
+GNQ,Equatorial Guinea,Sub-Saharan Africa ,country
+GRC,Greece,Europe & Central Asia,country
+GRD,Grenada,Latin America & Caribbean ,country
+GRL,Greenland,Europe & Central Asia,country
+GTM,Guatemala,Latin America & Caribbean ,country
+GUM,Guam,East Asia & Pacific,country
+GUY,Guyana,Latin America & Caribbean ,country
+HIC,High income,,aggregate
+HKG,"Hong Kong SAR, China",East Asia & Pacific,country
+HND,Honduras,Latin America & Caribbean ,country
+HPC,Heavily indebted poor countries (HIPC),,aggregate
+HRV,Croatia,Europe & Central Asia,country
+HTI,Haiti,Latin America & Caribbean ,country
+HUN,Hungary,Europe & Central Asia,country
+IBB,"IBRD, including blend",,aggregate
+IBD,IBRD only,,aggregate
+IBT,IDA & IBRD total,,aggregate
+IDA,IDA total,,aggregate
+IDB,IDA blend,,aggregate
+IDN,Indonesia,East Asia & Pacific,country
+IDX,IDA only,,aggregate
+IMN,Isle of Man,Europe & Central Asia,country
+IND,India,South Asia,country
+INX,Not classified,,aggregate
+IRL,Ireland,Europe & Central Asia,country
+IRN,"Iran, Islamic Rep.","Middle East, North Africa, Afghanistan & Pakistan",country
+IRQ,Iraq,"Middle East, North Africa, Afghanistan & Pakistan",country
+ISL,Iceland,Europe & Central Asia,country
+ISR,Israel,"Middle East, North Africa, Afghanistan & Pakistan",country
+ITA,Italy,Europe & Central Asia,country
+JAM,Jamaica,Latin America & Caribbean ,country
+JOR,Jordan,"Middle East, North Africa, Afghanistan & Pakistan",country
+JPN,Japan,East Asia & Pacific,country
+KAZ,Kazakhstan,Europe & Central Asia,country
+KEN,Kenya,Sub-Saharan Africa ,country
+KGZ,Kyrgyz Republic,Europe & Central Asia,country
+KHM,Cambodia,East Asia & Pacific,country
+KIR,Kiribati,East Asia & Pacific,country
+KNA,St. Kitts and Nevis,Latin America & Caribbean ,country
+KOR,"Korea, Rep.",East Asia & Pacific,country
+KWT,Kuwait,"Middle East, North Africa, Afghanistan & Pakistan",country
+LAC,Latin America & Caribbean (excluding high income),,aggregate
+LAO,Lao PDR,East Asia & Pacific,country
+LBN,Lebanon,"Middle East, North Africa, Afghanistan & Pakistan",country
+LBR,Liberia,Sub-Saharan Africa ,country
+LBY,Libya,"Middle East, North Africa, Afghanistan & Pakistan",country
+LCA,St. Lucia,Latin America & Caribbean ,country
+LCN,Latin America & Caribbean ,,aggregate
+LDC,Least developed countries: UN classification,,aggregate
+LIC,Low income,,aggregate
+LIE,Liechtenstein,Europe & Central Asia,country
+LKA,Sri Lanka,South Asia,country
+LMC,Lower middle income,,aggregate
+LMY,Low & middle income,,aggregate
+LSO,Lesotho,Sub-Saharan Africa ,country
+LTE,Late-demographic dividend,,aggregate
+LTU,Lithuania,Europe & Central Asia,country
+LUX,Luxembourg,Europe & Central Asia,country
+LVA,Latvia,Europe & Central Asia,country
+MAC,"Macao SAR, China",East Asia & Pacific,country
+MAF,St. Martin (French part),Latin America & Caribbean ,country
+MAR,Morocco,"Middle East, North Africa, Afghanistan & Pakistan",country
+MCO,Monaco,Europe & Central Asia,country
+MDA,Moldova,Europe & Central Asia,country
+MDE,Middle East (developing only),,aggregate
+MDG,Madagascar,Sub-Saharan Africa ,country
+MDV,Maldives,South Asia,country
+MEA,"Middle East, North Africa, Afghanistan & Pakistan",,aggregate
+MEX,Mexico,Latin America & Caribbean ,country
+MHL,Marshall Islands,East Asia & Pacific,country
+MIC,Middle income,,aggregate
+MKD,North Macedonia,Europe & Central Asia,country
+MLI,Mali,Sub-Saharan Africa ,country
+MLT,Malta,"Middle East, North Africa, Afghanistan & Pakistan",country
+MMR,Myanmar,East Asia & Pacific,country
+MNA,"Middle East, North Africa, Afghanistan & Pakistan (excluding high income)",,aggregate
+MNE,Montenegro,Europe & Central Asia,country
+MNG,Mongolia,East Asia & Pacific,country
+MNP,Northern Mariana Islands,East Asia & Pacific,country
+MOZ,Mozambique,Sub-Saharan Africa ,country
+MRT,Mauritania,Sub-Saharan Africa ,country
+MUS,Mauritius,Sub-Saharan Africa ,country
+MWI,Malawi,Sub-Saharan Africa ,country
+MYS,Malaysia,East Asia & Pacific,country
+NAC,North America,,aggregate
+NAF,North Africa,,aggregate
+NAM,Namibia,Sub-Saharan Africa ,country
+NCL,New Caledonia,East Asia & Pacific,country
+NER,Niger,Sub-Saharan Africa ,country
+NGA,Nigeria,Sub-Saharan Africa ,country
+NIC,Nicaragua,Latin America & Caribbean ,country
+NLD,Netherlands,Europe & Central Asia,country
+NOR,Norway,Europe & Central Asia,country
+NPL,Nepal,South Asia,country
+NRS,Non-resource rich Sub-Saharan Africa countries,,aggregate
+NRU,Naoero,East Asia & Pacific,country
+NXS,"IDA countries not classified as fragile situations, excluding Sub-Saharan Africa",,aggregate
+NZL,New Zealand,East Asia & Pacific,country
+OED,OECD members,,aggregate
+OMN,Oman,"Middle East, North Africa, Afghanistan & Pakistan",country
+OSS,Other small states,,aggregate
+PAK,Pakistan,"Middle East, North Africa, Afghanistan & Pakistan",country
+PAN,Panama,Latin America & Caribbean ,country
+PER,Peru,Latin America & Caribbean ,country
+PHL,Philippines,East Asia & Pacific,country
+PLW,Palau,East Asia & Pacific,country
+PNG,Papua New Guinea,East Asia & Pacific,country
+POL,Poland,Europe & Central Asia,country
+PRE,Pre-demographic dividend,,aggregate
+PRI,Puerto Rico (US),Latin America & Caribbean ,country
+PRK,"Korea, Dem. People's Rep.",East Asia & Pacific,country
+PRT,Portugal,Europe & Central Asia,country
+PRY,Paraguay,Latin America & Caribbean ,country
+PSE,West Bank and Gaza,"Middle East, North Africa, Afghanistan & Pakistan",country
+PSS,Pacific island small states,,aggregate
+PST,Post-demographic dividend,,aggregate
+PYF,French Polynesia,East Asia & Pacific,country
+QAT,Qatar,"Middle East, North Africa, Afghanistan & Pakistan",country
+ROU,Romania,Europe & Central Asia,country
+RRS,Resource rich Sub-Saharan Africa countries,,aggregate
+RUS,Russian Federation,Europe & Central Asia,country
+RWA,Rwanda,Sub-Saharan Africa ,country
+SAS,South Asia,,aggregate
+SAU,Saudi Arabia,"Middle East, North Africa, Afghanistan & Pakistan",country
+SDN,Sudan,Sub-Saharan Africa ,country
+SEN,Senegal,Sub-Saharan Africa ,country
+SGP,Singapore,East Asia & Pacific,country
+SLB,Solomon Islands,East Asia & Pacific,country
+SLE,Sierra Leone,Sub-Saharan Africa ,country
+SLV,El Salvador,Latin America & Caribbean ,country
+SMR,San Marino,Europe & Central Asia,country
+SOM,"Somalia, Fed. Rep.",Sub-Saharan Africa ,country
+SRB,Serbia,Europe & Central Asia,country
+SSA,Sub-Saharan Africa (excluding high income),,aggregate
+SSD,South Sudan,Sub-Saharan Africa ,country
+SSF,Sub-Saharan Africa ,,aggregate
+SST,Small states,,aggregate
+STP,Sao Tome and Principe,Sub-Saharan Africa ,country
+SUR,Suriname,Latin America & Caribbean ,country
+SVK,Slovak Republic,Europe & Central Asia,country
+SVN,Slovenia,Europe & Central Asia,country
+SWE,Sweden,Europe & Central Asia,country
+SWZ,Eswatini,Sub-Saharan Africa ,country
+SXM,Sint Maarten (Dutch part),Latin America & Caribbean ,country
+SXZ,Sub-Saharan Africa excluding South Africa,,aggregate
+SYC,Seychelles,Sub-Saharan Africa ,country
+SYR,Syrian Arab Republic,"Middle East, North Africa, Afghanistan & Pakistan",country
+TCA,Turks and Caicos Islands,Latin America & Caribbean ,country
+TCD,Chad,Sub-Saharan Africa ,country
+TEA,East Asia & Pacific (IDA & IBRD countries),,aggregate
+TEC,Europe & Central Asia (IDA & IBRD countries),,aggregate
+TGO,Togo,Sub-Saharan Africa ,country
+THA,Thailand,East Asia & Pacific,country
+TJK,Tajikistan,Europe & Central Asia,country
+TKM,Turkmenistan,Europe & Central Asia,country
+TLA,Latin America & the Caribbean (IDA & IBRD countries),,aggregate
+TLS,Timor-Leste,East Asia & Pacific,country
+TMN,"Middle East, North Africa, Afghanistan & Pakistan (IDA & IBRD)",,aggregate
+TON,Tonga,East Asia & Pacific,country
+TSA,South Asia (IDA & IBRD),,aggregate
+TSS,Sub-Saharan Africa (IDA & IBRD countries),,aggregate
+TTO,Trinidad and Tobago,Latin America & Caribbean ,country
+TUN,Tunisia,"Middle East, North Africa, Afghanistan & Pakistan",country
+TUR,Turkiye,Europe & Central Asia,country
+TUV,Tuvalu,East Asia & Pacific,country
+TZA,Tanzania,Sub-Saharan Africa ,country
+UGA,Uganda,Sub-Saharan Africa ,country
+UKR,Ukraine,Europe & Central Asia,country
+UMC,Upper middle income,,aggregate
+URY,Uruguay,Latin America & Caribbean ,country
+USA,United States,North America,country
+UZB,Uzbekistan,Europe & Central Asia,country
+VCT,St. Vincent and the Grenadines,Latin America & Caribbean ,country
+VEN,"Venezuela, RB",Latin America & Caribbean ,country
+VGB,British Virgin Islands,Latin America & Caribbean ,country
+VIR,Virgin Islands (U.S.),Latin America & Caribbean ,country
+VNM,Viet Nam,East Asia & Pacific,country
+VUT,Vanuatu,East Asia & Pacific,country
+WLD,World,,aggregate
+WSM,Samoa,East Asia & Pacific,country
+XKX,Kosovo,Europe & Central Asia,country
+XZN,Sub-Saharan Africa excluding South Africa and Nigeria,,aggregate
+YEM,"Yemen, Rep.","Middle East, North Africa, Afghanistan & Pakistan",country
+ZAF,South Africa,Sub-Saharan Africa ,country
+ZMB,Zambia,Sub-Saharan Africa ,country
+ZWE,Zimbabwe,Sub-Saharan Africa ,country

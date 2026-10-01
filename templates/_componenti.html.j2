@@ -1,7 +1,7 @@
 {# Pezzi riutilizzabili delle pagine (macro Jinja2). #}
 
 {# ---- Avvisi: serie non scaricate, in ritardo o su fonte di riserva ---- #}
-{% macro avvisi(errori, in_ritardo, riserve, totale_serie, ambito, radice) %}
+{% macro avvisi(errori, in_ritardo, riserve, totale_serie, ambito, radice, attivita=none) %}
 {% if errori %}
 <div class="avviso avviso-errore" role="alert">
   <strong>⚠ Warning: {{ errori|length }} series could not be downloaded</strong>
@@ -17,11 +17,21 @@
 <div class="avviso avviso-ritardo" role="alert">
   <strong>⚠ Warning: {{ in_ritardo|length }} {{ 'series has' if in_ritardo|length == 1 else 'series have' }} not received new data for too long</strong>
   (thresholds: 10 days for daily series, 21 for weekly, 75 for monthly, 120 for quarterly,
-  counted from the end of the period of the latest data point). Check that the source has not changed.
+  counted from the end of the period of the latest data point; 210 days for the semiannual IMF snapshot and 456 for the annual
+  World Bank snapshots, counted from the publication date). Check that the source has not changed.
   <a href="{{ radice }}method/#freshness">How the freshness check works</a>.
   <ul>
     {% for s in in_ritardo %}<li>{{ s.area }} · <code>{{ s.id }}</code> {{ s.nome }}: latest data {{ s.data }}, {{ s.frequenza }} series, {{ s.giorni }} days (threshold {{ s.soglia }})</li>{% endfor %}
   </ul>
+</div>
+{% endif %}
+{# Repository fermo da troppo tempo: GitHub può spegnere in silenzio la build giornaliera dopo 60 giorni senza attività #}
+{% if attivita %}
+<div class="avviso avviso-ritardo" role="alert">
+  <strong>⚠ Warning: no commit to the repository for {{ attivita.giorni }} days</strong> (latest: {{ attivita.ultimo }}).
+  GitHub switches off scheduled workflows of public repositories after {{ attivita.limite }} days without repository activity, and it does not say
+  so: the daily build could stop and this site would keep showing old data. Make a commit, or check on the Actions tab that the workflow is enabled.
+  <a href="{{ radice }}method/#activity">More</a>.
 </div>
 {% endif %}
 {% if riserve %}
