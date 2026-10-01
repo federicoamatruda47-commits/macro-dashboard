@@ -57,7 +57,8 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                             "Differences between ECB and Fed interest rates have historically been one of the factors behind its moves, but not the only one."),
                     livello("jp-cambio", "USD/JPY (yen per 1 dollar)", USDJPY, ["usdjpy"],
                             "How many yen one US dollar buys: when the line rises, the yen is getting weaker. The yen has tended to weaken when Japanese "
-                            "interest rates are much lower than US ones, but it has sometimes strengthened sharply in periods of market stress."),
+                            "interest rates are much lower than US ones, but it has sometimes strengthened sharply in periods of market stress, "
+                            "as in August 2024 when many investors unwound yen-funded carry trades."),
                     livello("cn-cambio", "USD/CNY (yuan per 1 dollar)", USDCNY, ["usdcny"],
                             "How many Chinese yuan one US dollar buys: when the line rises, the yuan is getting weaker. The yuan is managed more tightly "
                             "than the other currencies here, so its moves have historically been smaller and more gradual."),
