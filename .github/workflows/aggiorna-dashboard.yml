@@ -63,3 +63,18 @@ jobs:
     steps:
       - id: deploy
         uses: actions/deploy-pages@v5
+
+  # Avviso di inattività: GitHub spegne i workflow programmati dei repository pubblici dopo 60 giorni senza attività, senza dirlo.
+  # Se l'ultimo commit ha più di 45 giorni questo job apre UNA issue (mai due uguali) e la chiude quando torna un commit.
+  # Non dipende dagli altri job: se la build fallisce l'avviso arriva lo stesso. L'avviso NON compare sul sito pubblico.
+  controlla-attivita:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Controlla da quanto non c'è un commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/controlla_attivita.py

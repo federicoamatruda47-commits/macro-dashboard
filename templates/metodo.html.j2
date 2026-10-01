@@ -14,6 +14,7 @@
     <li><a href="#how-it-works">How it works</a></li>
     <li><a href="#sources">Sources</a></li>
     <li><a href="#freshness">Freshness check</a></li>
+    <li><a href="#annual-data">Annual data</a></li>
     <li><a href="#fallback">Fallback sources</a></li>
     <li><a href="#calculated">Calculated series</a></li>
     <li><a href="#weekly-moves">What changed this week</a></li>
@@ -75,6 +76,32 @@
   {% else %}
   <p class="descrizione"><strong>Right now no series is stale.</strong></p>
   {% endif %}
+</section>
+
+<section class="blocco" id="annual-data">
+  <h2>Annual data by country</h2>
+  <p class="descrizione">Country data that changes only once or twice a year (GDP, inflation, government balance and debt and the IMF projections from the
+    World Economic Outlook, WEO; unemployment, population and governance indicators from the World Bank) is not downloaded at every build.
+    It sits in files in the repository (a "snapshot"): the WEO is refreshed by hand after each release, in April and October (the October 2026 edition is
+    due in mid-October), and the World Bank files after its releases (July for the development indicators, September for the governance indicators).
+    The daily build only reads the files. In the IMF snapshot every figure after the country's <em>latest actual year</em> is an estimate or a projection,
+    and the site will draw it differently. The freshness check counts from the publication date: a warning appears if the IMF snapshot is more than
+    210 days old (six months plus about four weeks, so a new edition does not trigger a false alarm) or a World Bank snapshot more than 456 days
+    (fifteen months). Details of each indicator are in <a href="{{ radice }}method/series/#annual-indicators">Series status</a>.</p>
+  <div class="tabella-scorrevole">
+    <table class="tabella-testo tabella-stretta">
+      <thead><tr><th>Snapshot</th><th>Edition / updated</th><th>Frequency</th><th class="num">Age (days)</th><th class="num">Threshold</th><th class="num">Countries</th><th class="num">Indicators</th><th>Now</th></tr></thead>
+      <tbody>
+        {% for a in m.annuali %}
+        <tr>
+          <td>{{ a.nome }}</td><td>{% if a.presente %}{{ a.edizione + ", published " if a.edizione }}{{ a.data }}{% else %}—{% endif %}</td><td>{{ a.frequenza }}</td>
+          <td class="num">{{ a.giorni if a.presente else "—" }}</td><td class="num">{{ a.soglia }}</td><td class="num">{{ a.n_paesi }}</td><td class="num">{{ a.n_indicatori }}</td>
+          <td>{% if not a.presente %}<span class="stato-errore">⚠ no snapshot</span>{% elif a.in_ritardo %}<span class="stato-ritardo">ⓘ stale</span>{% else %}<span class="stato-ok">✓ fresh</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </section>
 
 <section class="blocco" id="fallback">

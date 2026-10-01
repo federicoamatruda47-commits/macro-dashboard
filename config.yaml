@@ -179,6 +179,53 @@ panoramica:
       - {serie: "BZ=F", etichetta: Brent oil, vai: com-petrolio}
       - {serie: VIXCLS, etichetta: VIX (expected US stock volatility), vai: usa-vix}
 
+# Catalogo degli indicatori ANNUALI per Paese (FMI WEO e Banca Mondiale). Non sono `serie`: sono ~200 Paesi per indicatore e si leggono
+# da uno snapshot nel repository (dati/weo/, dati/bm/), scritto da tools/aggiorna_weo.py (o dall'importatore del file WEO) e da
+# tools/aggiorna_bm.py. Il catalogo dice quali indicatori scaricare e come chiamarli sul sito (dashboard/annuali.py).
+#   id           id interno
+#   nome, unita  testi sul sito (inglese)
+#   fonte        imf (WEO) o wb (Banca Mondiale)
+#   codice       codice presso la fonte
+#   sezione      sezione della pagina del Paese (step 10b)
+#   decimali     cifre decimali mostrate sul sito
+#   sorgente_wb  solo wb: 2 = WDI (predefinito), 3 = WGI
+#   ultimo_effettivo_da  solo imf: se l'FMI non indica l'ultimo anno con dato reale di questo indicatore (accade per PPPPC),
+#                lo si copia da un altro indicatore (qui NGDPD, stesso Paese): è lo stesso aggiornamento dei conti nazionali
+#   nota         avvertenza breve per chi legge i dati
+# Scelte (docs/economies-fonti.md): macro dal WEO (194 Paesi); Banca Mondiale solo per lavoro (stime ILO modellate), popolazione storica e WGI;
+# i codici WB dell'inflazione, del debito e delle partite correnti sono stati scartati per copertura scarsa; disoccupazione WEO (LUR) scartata (115 Paesi).
+indicatori:
+  # ---------------------------------------------------------------- FMI WEO
+  - {id: gdp_nominal, nome: Nominal GDP, unita: USD bn, fonte: imf, codice: NGDPD, sezione: output, decimali: 1}
+  - {id: gdp_growth, nome: Real GDP growth, unita: "% y/y", fonte: imf, codice: NGDP_RPCH, sezione: output, decimali: 1}
+  - {id: gdp_per_capita_ppp, nome: "GDP per capita, PPP", unita: international $, fonte: imf, codice: PPPPC, sezione: output, decimali: 0,
+     ultimo_effettivo_da: NGDPD, nota: "The IMF does not flag the latest actual year of this indicator: the one of nominal GDP is used."}
+  - {id: gdp_per_capita_usd, nome: "GDP per capita, current USD", unita: USD, fonte: imf, codice: NGDPDPC, sezione: output, decimali: 0}
+  - {id: inflation_average, nome: "Inflation, average consumer prices", unita: "% y/y", fonte: imf, codice: PCPIPCH, sezione: prices, decimali: 1}
+  - {id: inflation_end_of_period, nome: "Inflation, end of period", unita: "% y/y", fonte: imf, codice: PCPIEPCH, sezione: prices, decimali: 1}
+  - {id: government_balance, nome: General government net lending/borrowing, unita: "% of GDP", fonte: imf, codice: GGXCNL_NGDP, sezione: public-finances, decimali: 1}
+  - {id: government_primary_balance, nome: General government primary balance, unita: "% of GDP", fonte: imf, codice: GGXONLB_NGDP, sezione: public-finances, decimali: 1}
+  - {id: government_debt, nome: General government gross debt, unita: "% of GDP", fonte: imf, codice: GGXWDG_NGDP, sezione: public-finances, decimali: 1}
+  - {id: current_account, nome: Current account balance, unita: "% of GDP", fonte: imf, codice: BCA_NGDPD, sezione: external, decimali: 1}
+  - {id: population_imf, nome: Population (IMF), unita: millions, fonte: imf, codice: LP, sezione: output, decimali: 1}
+  # ---------------------------------------------------------------- Banca Mondiale: WDI
+  - {id: unemployment_ilo, nome: Unemployment rate (ILO modelled estimate), unita: "% of labour force", fonte: wb, codice: SL.UEM.TOTL.ZS, sezione: labour, decimali: 1,
+     nota: "ILO modelled estimate, not a national statistic: comparable across countries but it can differ from the official figure."}
+  - {id: employment_ilo, nome: "Employment-to-population ratio, 15+ (ILO modelled estimate)", unita: "% of population 15+", fonte: wb, codice: SL.EMP.TOTL.SP.ZS, sezione: labour, decimali: 1,
+     nota: "ILO modelled estimate, not a national statistic; population 15+, so it moves with population ageing."}
+  - {id: population, nome: Population (World Bank), unita: persons, fonte: wb, codice: SP.POP.TOTL, sezione: output, decimali: 0}
+  - {id: gdp_nominal_wb, nome: Nominal GDP (World Bank), unita: current USD, fonte: wb, codice: NY.GDP.MKTP.CD, sezione: output, decimali: 0,
+     nota: "Longer history than the IMF (from 1960): used for the years before 1980."}
+  - {id: gdp_growth_wb, nome: Real GDP growth (World Bank), unita: "% y/y", fonte: wb, codice: NY.GDP.MKTP.KD.ZG, sezione: output, decimali: 1,
+     nota: "Longer history than the IMF (from 1961): used for the years before 1980."}
+  - {id: gdp_per_capita_ppp_wb, nome: "GDP per capita, PPP (World Bank)", unita: international $, fonte: wb, codice: NY.GDP.PCAP.PP.CD, sezione: output, decimali: 0,
+     nota: "From 1990. Use one source per chart: the PPP rounds of the IMF and of the World Bank are not the same."}
+  # ---------------------------------------------------------------- Banca Mondiale: WGI (sorgente 3). Solo il punteggio 0-100 con l'intervallo al 90%: nessun rango.
+  - {id: corruption_score, nome: "Control of Corruption, score (0-100)", unita: score 0-100, fonte: wb, codice: GOV_WGI_CC.SC, sorgente_wb: 3, sezione: governance, decimali: 0,
+     nota: "Perception-based composite on an absolute 0-100 scale (WGI 2025 method). It is a score, not a rank."}
+  - {id: corruption_score_low, nome: "Control of Corruption, lower bound of the 90% interval", unita: score 0-100, fonte: wb, codice: GOV_WGI_CC.SC_LB, sorgente_wb: 3, sezione: governance, decimali: 0}
+  - {id: corruption_score_high, nome: "Control of Corruption, upper bound of the 90% interval", unita: score 0-100, fonte: wb, codice: GOV_WGI_CC.SC_UB, sorgente_wb: 3, sezione: governance, decimali: 0}
+
 # Recessioni disegnate come bande grigie, per le regioni senza una serie scaricabile.
 # (Per gli USA si usa la serie FRED USREC, più in basso.)
 recessioni:

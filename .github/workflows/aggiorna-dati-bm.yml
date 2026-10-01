@@ -1,0 +1,123 @@
+# =====================================================================
+# Aggiornamento mensile dello snapshot della Banca Mondiale (dati/bm/)
+# Una volta al mese scarica gli indicatori (WDI e WGI). Se i dati sono cambiati:
+#   1. esegue test e controlli (le pull request aperte con GITHUB_TOKEN NON fanno
+#      partire altri workflow, quindi i controlli girano qui dentro),
+#   2. apre una pull request con l'esito dei controlli e il riepilogo delle
+#      differenze nella descrizione. Il merge lo fa l'utente (il merge è un suo push).
+# Se i controlli falliscono, la pull request si apre in BOZZA con il titolo "[checks failed]".
+# Se i dati non sono cambiati non succede nulla (nessun commit, nessuna pull request).
+#
+# L'FMI NON è qui: i suoi termini d'uso chiedono richieste avviate da una persona
+# (tools/aggiorna_weo.py, a mano, a ogni nuovo WEO: aprile e ottobre).
+#
+# Prerequisiti (da fare una volta sola sul sito di GitHub):
+#   Settings > Actions > General > Workflow permissions:
+#     - "Read and write permissions"
+#     - spuntare "Allow GitHub Actions to create and approve pull requests"
+#   (senza la seconda voce il ramo viene creato ma la pull request no: il log
+#   stampa il link per aprirla a mano)
+# =====================================================================
+name: Aggiorna dati Banca Mondiale
+
+on:
+  schedule:
+    - cron: "0 6 5 * *"       # il 5 di ogni mese alle 06:00 UTC (WDI esce a luglio, WGI a settembre; il controllo è mensile)
+  workflow_dispatch:           # si può avviare a mano dalla scheda "Actions"
+    inputs:
+      prova:
+        description: "Solo prova: esegue tutto ma non crea il ramo né la pull request"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: aggiorna-dati-bm
+  cancel-in-progress: false
+
+jobs:
+  aggiorna:
+    runs-on: ubuntu-24.04
+    env:
+      # Solo prova (avvio a mano con "prova" spuntato): esegue tutto ma niente ramo e niente pull request
+      PROVA: ${{ github.event_name == 'workflow_dispatch' && inputs.prova }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Installa le librerie
+        run: pip install -r requirements.txt
+
+      - name: Scarica lo snapshot della Banca Mondiale
+        run: python tools/aggiorna_bm.py
+
+      - name: I dati sono cambiati?
+        id: cambiato
+        run: |
+          if [ -n "$(git status --porcelain dati/bm)" ]; then
+            echo "si=true" >> "$GITHUB_OUTPUT"
+            git status --short dati/bm
+          else
+            echo "si=false" >> "$GITHUB_OUTPUT"
+            echo "Nessuna differenza nello snapshot: niente da fare."
+          fi
+
+      # In prova i controlli girano anche se i dati non sono cambiati (per provare tutto il flusso)
+      - name: Controlli (test, build, inventario, link)
+        if: steps.cambiato.outputs.si == 'true' || env.PROVA == 'true'
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: |
+          mkdir -p esiti
+          : > esiti/esiti.txt
+          esegui() {
+            nome="$1"; shift
+            if "$@" > "esiti/$nome.log" 2>&1; then echo "$nome|superato" >> esiti/esiti.txt; else echo "$nome|FALLITO" >> esiti/esiti.txt; fi
+          }
+          esegui test python -m unittest discover -s tests -t .
+          esegui build python build.py
+          esegui inventario-controlla python tools/inventario.py controlla
+          esegui inventario-sito python tools/inventario.py sito
+          esegui link python tools/controlla_link.py
+          cat esiti/esiti.txt
+
+      - name: Testo della pull request
+        if: steps.cambiato.outputs.si == 'true' || env.PROVA == 'true'
+        run: |
+          python tools/riepilogo_snapshot.py dati/bm > riepilogo.md || true     # esce con 3 se non ci sono differenze
+          mese="$(date -u +%Y-%m)"
+          python tools/descrizione_pr.py --esiti esiti/esiti.txt --riepilogo riepilogo.md > descrizione.md || true   # esce con 4 se un controllo è fallito
+          python tools/descrizione_pr.py --esiti esiti/esiti.txt --mese "$mese" --titolo > titolo.txt || true
+          { echo '### Pull request (prova: non creata)'; cat titolo.txt; echo; cat descrizione.md; } >> "$GITHUB_STEP_SUMMARY"
+          cat titolo.txt
+
+      - name: Crea il ramo e la pull request
+        if: steps.cambiato.outputs.si == 'true' && env.PROVA != 'true'
+        run: |
+          mese="$(date -u +%Y-%m)"
+          ramo="dati/bm-$mese"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$ramo"
+          git add dati/bm
+          git commit -m "Aggiorna lo snapshot della Banca Mondiale ($mese)"
+          git push --force origin "$ramo"
+          bozza=""
+          if grep -q FALLITO esiti/esiti.txt; then bozza="--draft"; fi
+          numero="$(gh pr list --head "$ramo" --state open --json number --jq '.[0].number')"
+          if [ -n "$numero" ]; then
+            gh pr edit "$numero" --title "$(cat titolo.txt)" --body-file descrizione.md
+            echo "Pull request #$numero aggiornata."
+          elif ! gh pr create --base "${{ github.event.repository.default_branch }}" --head "$ramo" $bozza --title "$(cat titolo.txt)" --body-file descrizione.md; then
+            echo "::error::Il ramo $ramo è stato creato ma la pull request no (probabilmente manca l'impostazione 'Allow GitHub Actions to create and approve pull requests')."
+            echo "Aprila a mano: https://github.com/${{ github.repository }}/compare/${{ github.event.repository.default_branch }}...$ramo"
+            exit 1
+          fi

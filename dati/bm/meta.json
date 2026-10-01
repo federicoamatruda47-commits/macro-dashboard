@@ -1,0 +1,16 @@
+{
+  "fonte": "World Bank (World Development Indicators, Worldwide Governance Indicators)",
+  "indicatori": [
+    "GOV_WGI_CC.SC",
+    "GOV_WGI_CC.SC_LB",
+    "GOV_WGI_CC.SC_UB",
+    "NY.GDP.MKTP.CD",
+    "NY.GDP.MKTP.KD.ZG",
+    "NY.GDP.PCAP.PP.CD",
+    "SL.EMP.TOTL.SP.ZS",
+    "SL.UEM.TOTL.ZS",
+    "SP.POP.TOTL"
+  ],
+  "wdi_aggiornato": "2026-07-13",
+  "wgi_aggiornato": "2026-09-25"
+}

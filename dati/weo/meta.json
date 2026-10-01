@@ -1,0 +1,19 @@
+{
+  "edizione": "April 2026",
+  "fonte": "International Monetary Fund, World Economic Outlook (WEO)",
+  "indicatori": [
+    "BCA_NGDPD",
+    "GGXCNL_NGDP",
+    "GGXONLB_NGDP",
+    "GGXWDG_NGDP",
+    "LP",
+    "NGDPD",
+    "NGDPDPC",
+    "NGDP_RPCH",
+    "PCPIEPCH",
+    "PCPIPCH",
+    "PPPPC"
+  ],
+  "pubblicato": "2026-04-14",
+  "ultimo_effettivo": "LATEST_ACTUAL_ANNUAL_DATA (FY2024/25 = 2024); if missing, copied from PPPPC <- NGDPD"
+}

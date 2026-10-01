@@ -14,7 +14,18 @@ SITI_FONTI = {
     "yahoo": "https://finance.yahoo.com/",
     "mof": "https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/index.htm",
     "statjp": "https://db.nomics.world/STATJP",
+    "imf": "https://data.imf.org/en/datasets/IMF.RES:WEO",
+    "wb": "https://data.worldbank.org/",
 }
+
+
+def url_indicatore(fonte: str, codice: str) -> str:
+    """Pagina web di un indicatore annuale presso la fonte (WEO: DataMapper; Banca Mondiale: data.worldbank.org, dove i punti dei
+    codici WGI diventano trattini bassi). Link per le persone, non l'indirizzo dell'API."""
+    if fonte == "imf":
+        return f"https://www.imf.org/external/datamapper/{quote(codice)}@WEO"
+    return f"https://data.worldbank.org/indicator/{quote(codice.replace('.', '_') if codice.startswith('GOV_WGI_') else codice)}"
+
 
 # Il portale del BIS organizza le serie per "argomento" (topic): non coincide con il nome del dataset
 ARGOMENTI_BIS = {"WS_CBPOL": "CBPOL", "WS_LONG_CPI": "CPI"}
