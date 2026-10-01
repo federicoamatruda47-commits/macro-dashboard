@@ -219,6 +219,7 @@ python -m http.server 8000 --directory site   # anteprima su http://localhost:80
 - **Giappone**: JGB giornalieri dal Ministero delle Finanze (`jgbcme_all.csv` + `jgbcme.csv` del mese; 2A dal 1974, 10A dal 1986, 30A dal 1999). Riserva FRED solo per il 10A
   (`IRLTLT01JPM156N`, mensile). CPI: DBnomics `STATJP/CPIm/001` (totale), `/733` e `/740` (core, core-core): indici dal 1970, ultimo agosto, variazione annua con `yoy`. Il grafico del Giappone usa tutto Statistics Bureau; il BIS (`WS_LONG_CPI/M.JP.771`, un mese indietro) resta solo nel confronto dell'inflazione tra Paesi, per una fonte uniforme.
   FRED/OCSE per CPI Giappone e Cina sono **fermi** (2021 e 2025): non usarli.
+- **BIS: risposte vuote**: a volte il BIS risponde 200 con un CSV vuoto; `bis.py` riprova (3 tentativi) e scrive ogni nuovo tentativo nel log della build. Riserva candidata per il tasso BoJ, non attivata: FRED `IRSTCI01JPM156N` (call money, mensile, non è il tasso di policy; vedi docs/ristrutturazione.md).
 - **Corea**: rendimento 10A solo mensile (FRED `IRLTLT01KRM156N`). Il 3A giornaliero esiste solo su ECOS (Bank of Korea),
   che richiede la registrazione con numero di telefono coreano: non usata. La chiave `sample` di ECOS restituisce al massimo 10 righe.
 - **Cina**: non inclusi rendimento 10A, LPR 5A e PPI (nessuna fonte gratuita aggiornata: NBS su DBnomics è ferma a 02/2026, FRED/OCSE al 2022-2023).
