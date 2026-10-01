@@ -149,3 +149,54 @@ Lo snapshot ha lo stesso formato nei due casi (colonne: paese ISO3, indicatore, 
 - Le serie WEO non hanno un "ultimo dato" giornaliero: contano la **data di pubblicazione dello snapshot** e il calendario (aprile e ottobre, a metà mese). Il controllo segnala se lo snapshot ha più di **210 giorni** dalla pubblicazione del WEO (6 mesi + circa 4 settimane di margine). Esempio: WEO del 14/04/2026 → avviso dal 10/11/2026 se non è arrivato quello di ottobre. Il WEO di ottobre 2026 (metà mese) non genera quindi falsi allarmi; l'avviso compare nelle pagine Economies e, in breve, nell'Overview.
 - Banca Mondiale: WDI **annuale con aggiornamento a luglio** (13/07/2026), WGI **annuale a settembre** (25/09/2026): soglia di **15 mesi** dalla data dello snapshot, solo avviso.
 - La soglia standard (10/21/75/120 giorni dalla fine del periodo) non vale per queste serie: si introducono le frequenze `semestrale` (WEO) e `annuale` (WB) in `data.py`, con il motivo scritto in `config.yaml`, come per `soglia_giorni`.
+
+## Sostenibilità del debito italiano (grafico dello step 12)
+
+**Scomposizione** (annuale, in % del PIL): Δ(debito/PIL) = **−saldo primario** + **effetto r−g** + **aggiustamento stock-flussi (SFA, residuo)**, con
+- saldo primario = B9 + D41PAY (indebitamento netto + interessi passivi), in % del PIL dell'anno;
+- effetto r−g = (i − g) / (1 + g) × debito/PIL dell'anno prima, dove i = interessi dell'anno / debito di fine anno prima (tasso implicito) e g = crescita del PIL **nominale** (da `nama_10_gdp`);
+- SFA = residuo: la parte della variazione del debito che non è spiegata dal deficit (privatizzazioni, differenze di cassa/competenza, attività finanziarie, rivalutazioni); **non esiste come serie Eurostat nei dataset provati** (`gov_10dd_sfa` e simili: 404), quindi si calcola come differenza e si etichetta "stock-flow adjustment and other (residual)". Le componenti sommano alla variazione per costruzione (test).
+- Formula nella nota del registro: **Δd = −saldo primario + (i − g)/(1 + g) · d₋₁ + SFA**, calcolata da valori in **milioni di euro**.
+- Opzionale: l'effetto r−g si divide in "interessi" (+i·d₋₁/(1+g)) e "crescita nominale" (−g·d₋₁/(1+g)); la crescita nominale si divide in reale (`CLV_PCH_PRE`) e deflatore.
+
+| Componente | Dataset e filtri Eurostat | Codice | Freq. | Storico | Ultimo dato | Esito |
+|---|---|---|---|---|---|---|
+| Debito pubblico lordo (Maastricht) | `gov_10dd_edpt1`, `geo=IT`, `sector=S13`, `unit=MIO_EUR` (e `PC_GDP`) | `GD` | A | 1995 | 2025 (aggiornato 22/04/2026) | ✔ |
+| Indebitamento netto (saldo) | stesso dataset | `B9` | A | 1995 | 2025 | ✔ |
+| Interessi passivi | stesso dataset | `D41PAY` | A | 1995 | 2025 | ✔ |
+| PIL nominale | `nama_10_gdp`, `geo=IT`, `na_item=B1GQ`, `unit=CP_MEUR` | `B1GQ` | A | 1995 | 2025 (aggiornato 30/09/2026) | ✔ |
+| PIL reale (crescita, opz.) | `nama_10_gdp`, `unit=CLV_PCH_PRE` | `B1GQ` | A | 1996 | 2025 | ✔ |
+| Deflatore del PIL (opz.) | `nama_10_gdp`, `unit=PD15_EUR` | `B1GQ` | A | 1995 | 2025 | ✔ (dato presente; non usato nel calcolo di prova) |
+| Variante area euro | stessi dataset con `geo=EA21` (B9 da 1997; PIL da 1995) | | A | 1997 | 2025 | ✔ (non provata la scomposizione) |
+| Stock-flow adjustment | nessuna serie nei dataset provati | — | — | — | — | ✗ → residuo calcolato |
+
+**Prova sui dati reali (01/10/2026, in % del PIL):**
+
+| Anno | Debito/PIL | Variazione | −Saldo primario | Effetto r−g | SFA (residuo) | Tasso implicito i | Crescita nominale g |
+|---|---|---|---|---|---|---|---|
+| 2022 | 138,3 | −7,8 | +4,0 | −7,6 | −4,2 | 3,04% | 8,68% |
+| 2023 | 134,0 | −4,3 | +3,5 | −5,6 | −2,2 | 2,81% | 7,18% |
+| 2024 | 134,2 | +0,2 | −0,5 | −0,3 | +1,1 | 2,98% | 3,21% |
+| 2025 | 136,7 | +2,5 | −0,8 | +0,6 | +2,6 | 2,94% | 2,46% |
+
+Lettura dei numeri: nel 2022-23 l'inflazione ha spinto la crescita nominale ben sopra il tasso implicito (r−g molto negativo) e ha ridotto il debito; dal 2024 g è sceso sotto i 3-3,2% e r−g è tornato intorno a zero o positivo.
+Il residuo del 2022-23 (−4,2 e −2,2) e del 2025 (+2,6) è grande: serve capire prima dello step 12 da cosa dipende (le note Eurostat sull'aggiustamento, differenze cassa/competenza, crediti d'imposta edilizi) prima di scrivere la riga "How to read it". Cautela: non ho verificato le cause. Ipotesi da confermare con fonti ufficiali (UPB, Banca d'Italia) nello step 12: crediti Superbonus (competenza contro cassa), liquidità del Tesoro, scarti di emissione, titoli indicizzati. La notifica EDP di ottobre 2026 rivedrà gli ultimi anni.
+Il dato 2025 di `gov_10dd_edpt1` è dell'aprile 2026 e potrebbe essere rivisto (notifica EDP di ottobre 2026). Alternativa trimestrale (`gov_10q_ggdebt` a 2026-Q1; interessi trimestrali `gov_10q_ggnfa` da verificare): rinviata.
+
+## Snapshot della Banca Mondiale: chi lo aggiorna
+
+Dati: WDI (indicatori di PIL, disoccupazione, occupazione, popolazione) aggiornati a luglio (13/07/2026 per i dati 2025), WGI a settembre (25/09/2026). Le chiamate funzionano da questo PC; **da GitHub Actions non l'ho provato**.
+
+| Opzione | Come funziona | Pro | Contro |
+|---|---|---|---|
+| **A. Lo aggiorna l'utente a mano** | `python tools/aggiorna_bm.py` dopo luglio e dopo settembre (due volte l'anno, con il WEO se si vuole) | Nessun commit automatico, controllo totale, rispetta il flusso "nessun commit fuori dal flusso"; i dati cambiano di rado | Ci si può dimenticare: per questo c'è la freschezza a 15 mesi con avviso |
+| **B. Workflow mensile che fa commit su `main` solo se i dati cambiano** | `schedule` mensile, scarica, confronta, `git commit` e `git push` solo se c'è differenza | Zero lavoro manuale | **Pubblica senza revisione** (le revisioni della Banca Mondiale cambiano anche valori storici); un push con `GITHUB_TOKEN` **non fa partire** il workflow `push` (il sito si aggiorna alla build giornaliera successiva); `permissions: contents: write` e un'eventuale protezione del ramo; va contro la regola "nessun commit fuori dal flusso senza richiesta" |
+| **C (consigliata). Workflow mensile che apre una pull request solo se i dati cambiano** | come B ma crea un ramo `dati/bm-AAAA-MM` e una PR con il riepilogo delle differenze (quanti paesi/valori cambiano, ultimo anno); l'utente la rivede e la unisce | Automatico ma **con revisione**; l'unione è un'azione dell'utente (un suo push su `main`); nessuna pubblicazione non voluta | Richiede di attivare in Settings > Actions > General "Allow GitHub Actions to create and approve pull requests"; le PR create con `GITHUB_TOKEN` non fanno partire altri workflow: **il workflow stesso esegue test e controlli prima di aprire la PR e ne scrive l'esito nella descrizione** (i test girano comunque anche al merge) |
+
+**Consiglio: C**, con l'opzione A sempre possibile con lo stesso script. Lo script è unico (`tools/aggiorna_bm.py`) e il workflow lo chiama soltanto. L'FMI resta **solo manuale** (termini d'uso: richieste avviate da una persona; API non provata da Actions).
+
+### I commit automatici contano come "attività" per il limite dei 60 giorni?
+- Il repository del sito è **pubblico** (verificato con `gh`): quindi il limite si applica. La documentazione ufficiale dice che i workflow programmati si disattivano "when no repository activity has occurred in 60 days" (pagina *Events that trigger workflows*), **ma non definisce che cosa sia l'"attività"** né dice se un commit fatto da un workflow con `GITHUB_TOKEN` valga (verificato con la pagina originale e con una ricerca).
+- Le fonti della comunità (non ufficiali) concordano su: contano i **push/commit**; le esecuzioni dei workflow, le issue, i tag e le release no; un push fatto con `GITHUB_TOKEN` **potrebbe non contare**. Non c'è conferma ufficiale, quindi **non ci si deve affidare a un commit automatico come "keepalive"**.
+- Conseguenze per il progetto: (1) con l'opzione C l'unione della PR è un push dell'utente, che conta; (2) il rischio vale anche per la build giornaliera già in funzione: se per più di 60 giorni non c'è nessun commit, può fermarsi **senza avvisi**; il sito mostra l'orario dell'ultimo aggiornamento, quindi lo si vede, ma non c'è un allarme. Mitigazione possibile (da valutare nello step 10a): un controllo in `build.py`/Method che avvisa se l'ultimo commit ha più di 45 giorni (ricordandosi di fare un commit), oppure riattivare il workflow a mano dalla scheda Actions.
+
