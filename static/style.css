@@ -23,9 +23,7 @@
   --rialzo: #006300;  --rialzo-sfondo: rgba(0, 131, 0, 0.10);    /* tabella di performance */
   --ribasso: #a82a2a; --ribasso-sfondo: rgba(227, 73, 72, 0.10);
 
-  /* Palette dei grafici (slot 1-8, ordine fisso) */
-  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
-  --s5: #e87ba4; --s6: #008300; --s7: #4a3aa7; --s8: #e34948;
+  /* I colori dei grafici (--c-us, --c-ea, ...) non stanno qui: li scrive ogni pagina da config.yaml (blocco "colori") */
 }
 
 /* Tema scuro: segue l'impostazione del sistema operativo */
@@ -47,9 +45,6 @@
     --ok-testo: #0ca30c;
     --rialzo: #3fc23f;  --rialzo-sfondo: rgba(12, 163, 12, 0.16);
     --ribasso: #ff8a8a; --ribasso-sfondo: rgba(230, 103, 103, 0.16);
-
-    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
-    --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
   }
 }
 
@@ -208,6 +203,8 @@ code { font-size: 0.85em; }
 .scheda-piede { margin-top: 6px; font-size: 0.78rem; color: var(--testo-tenue); }
 .scheda-piede p { margin: 2px 0 0; }
 .nota { color: var(--testo-2); }
+.come-leggerlo { color: var(--testo-2); font-size: 0.85rem; }
+.come-leggerlo strong { color: var(--testo); font-weight: 600; }
 
 /* ---- Tabella "Stato delle serie" ---- */
 .stato summary { cursor: pointer; list-style: revert; }

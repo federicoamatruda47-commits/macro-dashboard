@@ -13,14 +13,14 @@ import yaml
 
 from .sources import FONTI, ErroreFonte
 
-CAMPI_OBBLIGATORI = ["id", "fonte", "nome", "regione", "categoria", "unita", "trasformazione"]
+CAMPI_OBBLIGATORI = ["id", "fonte", "nome", "regione", "paese", "categoria", "unita", "trasformazione"]
 TRASFORMAZIONI = ["livello", "yoy"]
 FONTE_CALCOLATA = "calcolata"  # serie ottenuta da altre serie (componenti: [A, B] -> A − B oppure A / B)
 OPERAZIONI = {"differenza": "−", "rapporto": "/"}  # operazioni possibili per le serie calcolate
 # Come mostrare il nome della fonte sul sito
-NOMI_FONTI = {"fred": "FRED", "ecb": "BCE", "yahoo": "Yahoo Finance", "bis": "BIS",
-              "mof": "Ministero delle Finanze del Giappone",
-              "statjp": "Statistics Bureau of Japan (via DBnomics)", FONTE_CALCOLATA: "Calcolata"}
+NOMI_FONTI = {"fred": "FRED", "ecb": "ECB", "yahoo": "Yahoo Finance", "bis": "BIS",
+              "mof": "Japan Ministry of Finance",
+              "statjp": "Statistics Bureau of Japan (via DBnomics)", FONTE_CALCOLATA: "Calculated"}
 
 # Controllo di freschezza: dopo quanti giorni senza nuovi dati una serie è "in ritardo".
 # Per mensili e trimestrali i giorni si contano dalla FINE del periodo
@@ -37,6 +37,7 @@ class Serie:
     fonte: str
     nome: str
     regione: str
+    paese: str                           # a chi appartiene (us, ea, it, de, fr, jp, cn, kr, uk) o "global"
     categoria: str
     unita: str
     trasformazione: str
@@ -47,10 +48,16 @@ class Serie:
     operazione: str = "differenza"       # solo per fonte "calcolata": A − B ("differenza") o A / B ("rapporto")
     fattore: float = 1.0                 # solo per fonte "calcolata": il risultato viene moltiplicato per questo
     soglia_giorni: int | None = None     # soglia di freschezza propria di questa serie (al posto di quella standard)
+    colore: str | None = None            # chiave del blocco "colori" di config.yaml se diversa dal paese
     dati: pd.Series | None = None  # dati già trasformati (es. in variazione annua)
     errore: str | None = None
     fonte_usata: str | None = None       # es. "fred (riserva)" se si è dovuto usare la riserva
     nota_fonte: str | None = None        # perché si è usata la riserva
+
+    @property
+    def chiave_colore(self) -> str:
+        """Chiave del colore fisso della serie nel blocco "colori" di config.yaml."""
+        return self.colore or self.paese
 
     @property
     def ok(self) -> bool:
@@ -116,8 +123,8 @@ def trova_serie(serie: dict[str, "Serie"], id_serie: str) -> "Serie":
     """
     if id_serie in serie:
         return serie[id_serie]
-    return Serie(id=id_serie, fonte="?", nome=id_serie, regione="?", categoria="?", unita="",
-                 trasformazione="livello", errore="serie non presente in config.yaml")
+    return Serie(id=id_serie, fonte="?", nome=id_serie, regione="?", paese="global", categoria="?", unita="",
+                 trasformazione="livello", errore="series not found in config.yaml")
 
 
 # ---------------------------------------------------------------------
@@ -130,6 +137,13 @@ def carica_config(percorso: Path) -> dict:
         config = yaml.safe_load(file)
 
     id_regioni = {regione["id"] for regione in config.get("regioni", [])}
+    colori = config.get("colori", {})
+    for chiave, colore in colori.items():
+        if "alias" in colore:
+            if colore["alias"] not in colori or "alias" in colori[colore["alias"]]:
+                raise ValueError(f"Colore '{chiave}': l'alias '{colore['alias']}' deve essere un colore definito (non un alias)")
+        elif not ("chiaro" in colore and "scuro" in colore):
+            raise ValueError(f"Colore '{chiave}': servono 'chiaro' e 'scuro' (oppure 'alias')")
     id_serie = [voce.get("id") for voce in config.get("serie", [])]
     doppi = sorted({i for i in id_serie if id_serie.count(i) > 1})
     if doppi:
@@ -162,6 +176,9 @@ def carica_config(percorso: Path) -> dict:
         if voce["trasformazione"] not in TRASFORMAZIONI:
             raise ValueError(f"Serie {voce['id']}: trasformazione '{voce['trasformazione']}' non valida "
                              f"(usa una tra {TRASFORMAZIONI})")
+        if voce.get("colore", voce["paese"]) not in colori:
+            raise ValueError(f"Serie {voce['id']}: il colore '{voce.get('colore', voce['paese'])}' non è definito in 'colori' "
+                             "(per un Paese senza colore proprio usa 'colore: <chiave>')")
         if voce["regione"] not in id_regioni:
             raise ValueError(f"Serie {voce['id']}: regione '{voce['regione']}' non definita in 'regioni'")
     return config
@@ -179,20 +196,21 @@ def _nuova_serie(voce: dict) -> Serie:
                  componenti=voce.get("componenti"),
                  operazione=voce.get("operazione", "differenza"),
                  fattore=float(voce.get("fattore", 1)),
-                 soglia_giorni=voce.get("soglia_giorni"))
+                 soglia_giorni=voce.get("soglia_giorni"),
+                 colore=voce.get("colore"))
 
 
 def _scarica_da(fonte: str, id_fonte: str, trasformazione: str) -> pd.Series:
     funzione_download = FONTI.get(fonte)
     if funzione_download is None:
-        raise ErroreFonte(f"fonte '{fonte}' non supportata")
+        raise ErroreFonte(f"source '{fonte}' not supported")
     return trasforma(funzione_download(id_fonte), trasformazione)
 
 
 def _descrivi_errore(errore: Exception) -> str:
     if isinstance(errore, ErroreFonte):
         return str(errore)
-    return f"errore imprevisto ({type(errore).__name__})"
+    return f"unexpected error ({type(errore).__name__})"
 
 
 def _scarica_una(serie: Serie) -> None:
@@ -211,19 +229,19 @@ def _scarica_una(serie: Serie) -> None:
         serie.dati = _scarica_da(riserva["fonte"], riserva["id"],
                                  riserva.get("trasformazione", serie.trasformazione))
     except Exception as errore:
-        serie.errore += f"; non risponde neanche la riserva ({_descrivi_errore(errore)})"
+        serie.errore += f"; the fallback source does not respond either ({_descrivi_errore(errore)})"
         return
     principale = NOMI_FONTI.get(serie.fonte, serie.fonte.upper())
     alternativa = NOMI_FONTI.get(riserva["fonte"], riserva["fonte"].upper())
-    serie.nota_fonte = (f"{principale} non disponibile ({serie.errore}): "
-                        f"usata la riserva {alternativa} {riserva['id']}")
+    serie.nota_fonte = (f"{principale} unavailable ({serie.errore}): "
+                        f"using the fallback {alternativa} {riserva['id']}")
     # La riserva può essere un dato diverso (es. prezzo spot invece del future) o in un'altra unità
     if riserva.get("unita") and riserva["unita"] != serie.unita:
-        serie.nota_fonte += f", in {riserva['unita']} invece di {serie.unita}"
+        serie.nota_fonte += f", in {riserva['unita']} instead of {serie.unita}"
         serie.unita = riserva["unita"]
     if riserva.get("nota"):
         serie.nota_fonte += f" ({riserva['nota']})"
-    serie.fonte_usata = f"{riserva['fonte']} (riserva)"
+    serie.fonte_usata = f"{riserva['fonte']} (fallback)"
     serie.errore = None
 
 
@@ -238,24 +256,24 @@ def _calcola(serie: Serie, risultati: dict[str, Serie]) -> None:
     componenti = [risultati[c] for c in serie.componenti]
     mancanti = [c.id for c in componenti if not c.ok]
     if mancanti:
-        serie.errore = "manca il dato di partenza: " + ", ".join(mancanti)
+        serie.errore = "missing input data: " + ", ".join(mancanti)
         return
     da_riserva = [c for c in componenti if c.nota_fonte]
     if da_riserva:
         elenco = ", ".join(f"{c.nome} ({c.id})" for c in da_riserva)
-        serie.errore = (f"non calcolata: {elenco} {'viene' if len(da_riserva) == 1 else 'vengono'} "
-                        "dalla fonte di riserva e non si mescolano fonti diverse "
-                        "(es. prezzo spot e future, o unità diverse)")
+        serie.errore = (f"not calculated: {elenco} {'comes' if len(da_riserva) == 1 else 'come'} "
+                        "from the fallback source, and different sources are never mixed "
+                        "(e.g. spot and futures prices, or different units)")
         return
     fonti = {c.fonte_usata for c in componenti}
     if len(fonti) > 1:
-        serie.errore = "non calcolata: le componenti vengono da fonti diverse (" + ", ".join(sorted(fonti)) + ")"
+        serie.errore = "not calculated: the inputs come from different sources (" + ", ".join(sorted(fonti)) + ")"
         return
 
     a, b = componenti
     tabella = pd.concat([a.dati, b.dati], axis=1, join="inner").dropna()
     if tabella.empty:
-        serie.errore = "le due serie di partenza non hanno date in comune"
+        serie.errore = "the two input series have no dates in common"
         return
     if serie.operazione == "rapporto":
         tabella = tabella[tabella.iloc[:, 1] != 0]  # niente divisioni per zero
@@ -284,7 +302,7 @@ def scarica_tutte(config: dict) -> dict[str, Serie]:
             _scarica_una(serie)
 
         if serie.ok:
-            riserva = "  [RISERVA]" if serie.nota_fonte else ""
+            riserva = "  [FALLBACK]" if serie.nota_fonte else ""
             print(f"  OK      {serie.id:<36} {len(serie.dati):>6} dati, "
                   f"ultimo {serie.ultima_data:%d/%m/%Y}{riserva}")
         else:
@@ -322,30 +340,30 @@ def variazione_annua(serie: pd.Series) -> pd.Series:
 
 # Periodi usati nella scheda riassuntiva
 PERIODI_VARIAZIONE = {
-    "1 sett.": pd.DateOffset(weeks=1),
-    "1 mese": pd.DateOffset(months=1),
-    "1 anno": pd.DateOffset(years=1),
+    "1W": pd.DateOffset(weeks=1),
+    "1M": pd.DateOffset(months=1),
+    "1Y": pd.DateOffset(years=1),
 }
 # Periodi della tabella di performance (commodities): in più "da inizio anno"
-DA_INIZIO_ANNO = "da inizio anno"
+DA_INIZIO_ANNO = "YTD"
 PERIODI_PERFORMANCE = {
-    "1 sett.": pd.DateOffset(weeks=1),
-    "1 mese": pd.DateOffset(months=1),
+    "1W": pd.DateOffset(weeks=1),
+    "1M": pd.DateOffset(months=1),
     DA_INIZIO_ANNO: DA_INIZIO_ANNO,  # confronto con l'ultimo dato dell'anno precedente
-    "1 anno": pd.DateOffset(years=1),
+    "1Y": pd.DateOffset(years=1),
 }
 
 
 def tipo_variazione(unita: str) -> str:
     """Come esprimere una variazione in base all'unità della serie.
 
-    - tassi in %            -> differenza in punti base (1 pb = 0,01%)
+    - tassi in %            -> differenza in punti base (1 bp = 0,01%)
     - variazioni annue      -> differenza in punti percentuali
     - indici, punti, ecc.   -> variazione percentuale
     """
     if unita == "%":
-        return "pb"
-    if unita == "% a/a":
+        return "bp"
+    if unita == "% y/y":
         return "pp"
     return "%"
 
@@ -363,7 +381,7 @@ def variazioni(serie: Serie, periodi: dict | None = None) -> dict[str, float | N
             risultato[etichetta] = None
             continue
         # Per i dati mensili la variazione settimanale non ha senso
-        if etichetta == "1 sett." and serie.frequenza in ("mensile", "trimestrale"):
+        if etichetta == "1W" and serie.frequenza in ("mensile", "trimestrale"):
             risultato[etichetta] = None
             continue
         if periodo == DA_INIZIO_ANNO:
@@ -377,7 +395,7 @@ def variazioni(serie: Serie, periodi: dict | None = None) -> dict[str, float | N
 
         precedente = float(serie.dati.asof(data_riferimento))
         attuale = serie.ultimo_valore
-        if tipo == "pb":
+        if tipo == "bp":
             risultato[etichetta] = (attuale - precedente) * 100
         elif tipo == "pp":
             risultato[etichetta] = attuale - precedente

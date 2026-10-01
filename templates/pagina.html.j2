@@ -1,23 +1,23 @@
 {% extends "base.html.j2" %}
 {% from "_componenti.html.j2" import avvisi, riepilogo, tabella_performance, scheda_grafico, stato_serie %}
-{# Pagina di una regione (USA, Eurozona, Commodities, ...): titolo, avvisi, "In sintesi", sezioni con grafici #}
+{# Pagina di una regione (USA, Eurozona, Commodities, ...): titolo, avvisi, "Key numbers", sezioni con grafici #}
 
-{% block titolo %}{{ r.nome }} · Dashboard macro{% endblock %}
+{% block titolo %}{{ r.nome }} · Macro dashboard{% endblock %}
 {% block descrizione %}{{ r.descrizione }}{% endblock %}
 
 {% block contenuto %}
 <section class="intestazione-pagina">
   <h1>{{ r.nome }}</h1>
   {% if r.descrizione %}<p class="descrizione">{{ r.descrizione }}</p>{% endif %}
-  <p class="aggiornamento">Aggiornata il <strong>{{ aggiornato }}</strong></p>
+  <p class="aggiornamento">Updated <strong>{{ aggiornato }}</strong></p>
 </section>
 
-{{ avvisi(r.errori, r.in_ritardo, r.riserve, r.totale_serie, " usate in questa pagina") }}
+{{ avvisi(r.errori, r.in_ritardo, r.riserve, r.totale_serie, " series used on this page") }}
 
 {% if not r.attiva %}
 <div class="in-arrivo">
   <h2>{{ r.nome }}</h2>
-  <p>Questa sezione è in preparazione e arriverà nelle prossime fasi del progetto.</p>
+  <p>This section is being prepared and will arrive in a later phase of the project.</p>
 </div>
 {% else %}
 {# ---- Scheda riassuntiva (solo se la regione ha serie con riepilogo: true) ---- #}
@@ -44,6 +44,5 @@
 {% block script_grafici %}
 {% if r.ha_grafici %}
 <script src="https://cdn.plot.ly/plotly-{{ plotly_versione }}.min.js" charset="utf-8"></script>
-<script src="https://cdn.plot.ly/plotly-locale-it-latest.js" charset="utf-8"></script>
 {% endif %}
 {% endblock %}

@@ -2,8 +2,10 @@
 
 Ogni funzione riceve oggetti `Serie` e restituisce una figura Plotly.
 I colori definitivi (tema chiaro/scuro) li applica il JavaScript della pagina:
-qui ogni linea riceve solo un numero di "slot" (1, 2, 3...) in `meta`.
-Il JavaScript usa lo slot per scegliere il colore giusto della palette.
+qui ogni linea riceve solo la chiave del suo colore fisso (`meta.colore`: "us", "ea", "jp"...,
+la stessa del blocco "colori" di config.yaml). Il colore dipende da CHI è la serie (il Paese o il gruppo
+di materie prime), mai dalla sua posizione nel grafico. Se in un grafico più linee hanno lo stesso colore
+(es. CPI totale e core degli USA), si distinguono dallo stile: piena, tratteggiata, puntinata.
 """
 
 from dataclasses import replace
@@ -14,9 +16,8 @@ from plotly.subplots import make_subplots
 
 from .data import Serie
 
-# Palette categoriale (tema chiaro): usata solo come valore di partenza.
-# Deve restare allineata alle variabili --s1...--s8 in static/style.css.
-PALETTE = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"]
+# Stili di linea per distinguere serie dello stesso colore nello stesso grafico (in ordine di comparsa)
+STILI_LINEA = ["solid", "dash", "dot", "dashdot", "longdash", "longdashdot"]
 COLORE_RECESSIONE = "rgba(137, 135, 129, 0.22)"  # grigio semitrasparente, leggibile in entrambi i temi
 COLORE_INVERSIONE = "rgba(227, 73, 72, 0.45)"    # rosso semitrasparente per le inversioni della curva
 
@@ -45,6 +46,13 @@ def _date(serie: pd.Series) -> list[str]:
 
 def _valori(serie: pd.Series) -> list[float]:
     return serie.round(4).tolist()  # 4 decimali: servono per i cambi (es. EUR/USD 1,1355)
+
+
+def _stile_linea(contatori: dict[str, int], chiave_colore: str) -> str:
+    """Stile della prossima linea di quel colore: la prima piena, la seconda tratteggiata, la terza puntinata..."""
+    n = contatori.get(chiave_colore, 0)
+    contatori[chiave_colore] = n + 1
+    return STILI_LINEA[n % len(STILI_LINEA)]
 
 
 def _suffisso(unita: str) -> str:
@@ -94,7 +102,7 @@ def _layout_base(unita: str) -> dict:
     return dict(
         margin=dict(l=8, r=8, t=8, b=8),
         hovermode="x unified",
-        separators=",.",  # virgola decimale e punto per le migliaia, all'italiana
+        separators=".,",  # punto decimale e virgola per le migliaia, all'inglese
         showlegend=True,
         legend=dict(orientation="h", x=0, y=1.0, xanchor="left", yanchor="bottom", font=dict(size=12)),
         xaxis=dict(type="date", showgrid=False, hoverformat="%d %b %Y", automargin=True,
@@ -143,7 +151,7 @@ def _aggiungi_linea_riferimento(figura: go.Figure, valore: float, etichetta: str
 
 def linee_storiche(serie: list[Serie], recessioni=None, riferimento: tuple[float, str] | None = None,
                    evidenzia_inversioni: bool = False,
-                   etichetta_recessioni: str = "Recessione NBER",
+                   etichetta_recessioni: str = "NBER recession",
                    mostra_unita: bool = False) -> go.Figure | None:
     """Grafico a linee nel tempo, con recessioni e (opzionali) inversioni o linea di riferimento.
 
@@ -165,7 +173,9 @@ def linee_storiche(serie: list[Serie], recessioni=None, riferimento: tuple[float
     fine = max(s.ultima_data for s in disponibili)
     _aggiungi_recessioni(figura, recessioni or [], inizio, fine, etichetta_recessioni)
 
-    for slot, s in enumerate(serie, start=1):  # lo slot segue la posizione in lista, non la disponibilità
+    stili: dict[str, int] = {}
+    for posizione, s in enumerate(serie, start=1):
+        stile = _stile_linea(stili, s.chiave_colore)  # lo stile segue la posizione in lista, non la disponibilità
         if not s.ok:
             continue
         dati = alleggerisci(s.dati)
@@ -176,12 +186,12 @@ def linee_storiche(serie: list[Serie], recessioni=None, riferimento: tuple[float
             figura.add_trace(go.Scatter(
                 x=_date(negativi), y=_valori(negativi), mode="lines", line=dict(width=0),
                 fill="tozeroy", fillcolor=COLORE_INVERSIONE, hoverinfo="skip",
-                name="Inversione (spread < 0)", legendgroup="inversione", showlegend=(slot == 1),
+                name="Inversion (spread < 0)", legendgroup="inversione", showlegend=(posizione == 1),
             ))
 
         figura.add_trace(go.Scatter(
             x=_date(dati), y=_valori(dati), mode="lines", name=s.nome,
-            line=dict(width=2, color=PALETTE[slot - 1]), meta={"slot": slot},
+            line=dict(width=2, dash=stile), meta={"colore": s.chiave_colore},
             hovertemplate=f"%{{y:.{s.decimali}f}}{suffisso}<extra>{s.nome}</extra>",
         ))
 
@@ -193,7 +203,7 @@ def linee_storiche(serie: list[Serie], recessioni=None, riferimento: tuple[float
 
 
 def con_nome(s: Serie, nome: str) -> Serie:
-    """Copia della serie con un altro nome (per le legende dei confronti: "Giappone" invece di "JGB 10 anni")."""
+    """Copia della serie con un altro nome (per le legende dei confronti: "Japan" invece di "JGB 10Y")."""
     return replace(s, nome=nome)
 
 
@@ -201,9 +211,10 @@ def linee_base100(serie: list[tuple]) -> go.Figure | None:
     """Confronto di serie con scale diverse: tutte partono da 100 all'inizio del periodo scelto.
 
     `serie` è una lista di coppie (Serie, invertita), con un terzo elemento facoltativo (dizionario):
-      slot       numero del colore (predefinito: la posizione in lista)
+      linea      identità della linea (predefinito: la posizione in lista): le due varianti di una stessa linea
+                 (valuta locale e USD) hanno la stessa identità, quindi lo stesso stile
       variante   id della variante in cui la linea è visibile (vedi Grafico.varianti); senza, è sempre visibile
-      benchmark  True = linea più spessa e tratteggiata, nel colore neutro del testo (es. indice mondiale)
+      benchmark  True = linea più spessa e tratteggiata, nel colore neutro "mondo" (es. indice mondiale)
     invertita=True usa 1/valore: serve per i cambi quotati "valuta estera per dollaro" (USD/JPY...),
     così per ogni linea "sale" = la valuta si rafforza.
     Qui i dati sono quelli grezzi: la ribasatura a 100 la fa il JavaScript (static/app.js) a ogni cambio
@@ -217,19 +228,23 @@ def linee_base100(serie: list[tuple]) -> go.Figure | None:
     varianti = list(dict.fromkeys(o["variante"] for _, _, o in voci if "variante" in o))
     figura.layout.meta = {**dict(figura.layout.meta), "base100": True, **({"varianti": varianti} if varianti else {})}
 
+    stili: dict[str, int] = {}
+    stile_per_linea: dict = {}  # identità della linea -> stile (uguale per le sue varianti)
     for posizione, (s, inv, opzioni) in enumerate(voci, start=1):
+        identita = opzioni.get("linea", posizione)
+        chiave = "mondo" if opzioni.get("benchmark") else s.chiave_colore
+        if identita not in stile_per_linea:
+            stile_per_linea[identita] = _stile_linea(stili, chiave)
         if not s.ok:
             continue
-        slot = opzioni.get("slot", posizione)
         valori = 1 / s.dati[s.dati != 0] if inv else s.dati
         dati = alleggerisci(valori)
-        meta = {"slot": slot}
-        linea = dict(width=2, color=PALETTE[(slot - 1) % len(PALETTE)])
+        meta = {"colore": chiave}
+        linea = dict(width=2, dash=stile_per_linea[identita])
         if "variante" in opzioni:
             meta["variante"] = opzioni["variante"]
         if opzioni.get("benchmark"):
-            meta["neutro"] = True  # il JavaScript usa il colore del testo, adatto a tema chiaro e scuro
-            linea.update(width=3.5, dash="dash")
+            linea.update(width=3.5, dash="dash")  # il JavaScript usa il colore neutro "mondo"
         figura.add_trace(go.Scatter(
             x=_date(dati), y=[round(v, 8) for v in dati.tolist()], mode="lines", name=s.nome,
             line=linea, meta=meta, hovertemplate=f"%{{y:.1f}}<extra>{s.nome}</extra>",
@@ -238,7 +253,7 @@ def linee_base100(serie: list[tuple]) -> go.Figure | None:
 
 
 def due_pannelli(sopra: Serie, sotto: Serie, recessioni=None, inverti_sotto: bool = False,
-                 etichetta_recessioni: str = "Recessione NBER") -> go.Figure | None:
+                 etichetta_recessioni: str = "NBER recession") -> go.Figure | None:
     """Due grafici a linee uno sopra l'altro, con lo stesso asse del tempo.
 
     Serve a confrontare due serie con unità diverse (es. oro in $ e tasso reale in %)
@@ -261,7 +276,7 @@ def due_pannelli(sopra: Serie, sotto: Serie, recessioni=None, inverti_sotto: boo
     _aggiungi_recessioni(figura, recessioni or [], inizio, fine, etichetta_recessioni, tutti_i_pannelli=True)
 
     for riga, s in enumerate((sopra, sotto), start=1):
-        titolo = s.unita + (" (asse invertito)" if riga == 2 and inverti_sotto else "")
+        titolo = s.unita + (" (inverted axis)" if riga == 2 and inverti_sotto else "")
         figura.update_yaxes(asse_y, row=riga, col=1)
         figura.update_yaxes(ticksuffix=_suffisso(s.unita), title=_titolo_unita(titolo), row=riga, col=1)
         if not s.ok:
@@ -270,7 +285,7 @@ def due_pannelli(sopra: Serie, sotto: Serie, recessioni=None, inverti_sotto: boo
         suffisso = _suffisso(s.unita)
         figura.add_trace(go.Scatter(
             x=_date(dati), y=_valori(dati), mode="lines", name=s.nome,
-            line=dict(width=2, color=PALETTE[riga - 1]), meta={"slot": riga},
+            line=dict(width=2), meta={"colore": s.chiave_colore},
             hovertemplate=f"%{{y:.{s.decimali}f}}{suffisso}<extra>{s.nome}</extra>",
         ), row=riga, col=1)
 
@@ -282,9 +297,9 @@ def due_pannelli(sopra: Serie, sotto: Serie, recessioni=None, inverti_sotto: boo
 
 
 def curva_rendimenti(scadenze: list[tuple[str, Serie]]) -> tuple[go.Figure | None, pd.Timestamp | None]:
-    """Curva dei rendimenti oggi, 1 mese fa e 1 anno fa.
+    """Curva dei rendimenti oggi, 1 mese fa e 1 anno fa (stesso colore del Paese, stili diversi).
 
-    `scadenze` è una lista di coppie (etichetta, Serie), es. ("2A", DGS2).
+    `scadenze` è una lista di coppie (etichetta, Serie), es. ("2Y", DGS2).
     "Oggi" è l'ultimo giorno in cui TUTTE le scadenze disponibili hanno un dato.
     Restituisce la figura e la data usata come "oggi".
     """
@@ -298,23 +313,24 @@ def curva_rendimenti(scadenze: list[tuple[str, Serie]]) -> tuple[go.Figure | Non
     oggi = tabella.index[-1]
 
     confronti = [
-        ("Oggi", oggi),
-        ("1 mese fa", oggi - pd.DateOffset(months=1)),
-        ("1 anno fa", oggi - pd.DateOffset(years=1)),
+        ("Today", oggi, "solid"),
+        ("1 month ago", oggi - pd.DateOffset(months=1), "dash"),
+        ("1 year ago", oggi - pd.DateOffset(years=1), "dot"),
     ]
+    chiave_colore = disponibili[0][1].chiave_colore
     figura = go.Figure(layout=_layout_base("%"))
     figura.update_layout(hovermode="x unified")
-    figura.update_xaxes(type="category", showspikes=False, title=dict(text="Scadenza", font=dict(size=11)))
+    figura.update_xaxes(type="category", showspikes=False, title=dict(text="Maturity", font=dict(size=11)))
 
-    for slot, (nome, data) in enumerate(confronti, start=1):
+    for nome, data, stile in confronti:
         riga = tabella.asof(data)  # ultimo giorno completo disponibile a quella data
         if riga.isna().all():
             continue
         data_effettiva = tabella.index[tabella.index <= data][-1]
-        etichetta = f"{nome} ({data_effettiva:%d/%m/%Y})"
+        etichetta = f"{nome} ({data_effettiva:%d %b %Y})"
         figura.add_trace(go.Scatter(
             x=list(riga.index), y=riga.round(3).tolist(), mode="lines+markers", name=etichetta,
-            line=dict(width=2, color=PALETTE[slot - 1]), marker=dict(size=9), meta={"slot": slot},
+            line=dict(width=2, dash=stile), marker=dict(size=9), meta={"colore": chiave_colore},
             hovertemplate=f"%{{y:.2f}}%<extra>{nome}</extra>",
         ))
     return figura, oggi

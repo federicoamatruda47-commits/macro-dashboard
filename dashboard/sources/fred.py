@@ -26,17 +26,17 @@ def scarica(id_serie: str) -> pd.Series:
     """
     chiave = os.environ.get("FRED_API_KEY", "").strip()
     if not chiave:
-        raise ErroreFonte("variabile FRED_API_KEY non impostata")
+        raise ErroreFonte("FRED_API_KEY variable not set")
 
     parametri = {"series_id": id_serie, "api_key": chiave, "file_type": "json"}
-    ultimo_errore = "errore sconosciuto"
+    ultimo_errore = "unknown error"
 
     for tentativo in range(1, TENTATIVI + 1):
         try:
             risposta = requests.get(URL_OSSERVAZIONI, params=parametri, timeout=TIMEOUT_SECONDI)
         except requests.RequestException as errore:
             # Non usiamo str(errore): conterrebbe l'URL completo, chiave inclusa
-            ultimo_errore = f"errore di rete ({type(errore).__name__})"
+            ultimo_errore = f"network error ({type(errore).__name__})"
         else:
             if risposta.status_code == 200:
                 return _converti_in_serie(risposta.json(), id_serie)
@@ -56,7 +56,7 @@ def _converti_in_serie(json_fred: dict, id_serie: str) -> pd.Series:
     """Trasforma la risposta JSON di FRED in una pandas Series pulita."""
     osservazioni = json_fred.get("observations", [])
     if not osservazioni:
-        raise ErroreFonte("FRED non ha restituito osservazioni")
+        raise ErroreFonte("FRED returned no observations")
 
     tabella = pd.DataFrame(osservazioni)
     # FRED indica i giorni senza dato (es. festivi) con "." -> diventano NaN
@@ -65,7 +65,7 @@ def _converti_in_serie(json_fred: dict, id_serie: str) -> pd.Series:
     serie = serie.dropna().sort_index()
 
     if serie.empty:
-        raise ErroreFonte("la serie non contiene valori numerici")
+        raise ErroreFonte("the series contains no numeric values")
     return serie
 
 

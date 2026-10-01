@@ -5,15 +5,15 @@ from ..data import Serie, trova_serie
 from .modello import Grafico, Sezione
 
 # Tassi di policy: tutti dal BIS, così hanno la stessa definizione e la stessa fonte
-POLICY = [("USA (Fed)", "WS_CBPOL/D.US"), ("Eurozona (BCE)", "WS_CBPOL/D.XM"), ("Giappone (BoJ)", "WS_CBPOL/D.JP"),
-          ("Cina (LPR 1A)", "WS_CBPOL/D.CN"), ("Corea del Sud (BoK)", "WS_CBPOL/D.KR")]
+POLICY = [("US (Fed)", "WS_CBPOL/D.US"), ("Euro area (ECB)", "WS_CBPOL/D.XM"), ("Japan (BoJ)", "WS_CBPOL/D.JP"),
+          ("China (1Y LPR)", "WS_CBPOL/D.CN"), ("South Korea (BoK)", "WS_CBPOL/D.KR")]
 # Rendimenti 10 anni (serie già scaricate per le pagine dei singoli Paesi)
-DECENNALI = [("USA", "DGS10"), ("Eurozona (AAA)", "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y"),
-             ("Giappone", "JGB_10Y"), ("Corea del Sud (mensile)", "IRLTLT01KRM156N")]
+DECENNALI = [("US", "DGS10"), ("Euro area (AAA)", "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y"),
+             ("Japan", "JGB_10Y"), ("South Korea (monthly)", "IRLTLT01KRM156N")]
 # Inflazione: tutta dal BIS
-INFLAZIONE = [("USA", "WS_LONG_CPI/M.US.771"), ("Eurozona", "WS_LONG_CPI/M.XM.771"),
-              ("Giappone", "WS_LONG_CPI/M.JP.771"), ("Cina", "WS_LONG_CPI/M.CN.771"),
-              ("Corea del Sud", "WS_LONG_CPI/M.KR.771")]
+INFLAZIONE = [("US", "WS_LONG_CPI/M.US.771"), ("Euro area", "WS_LONG_CPI/M.XM.771"),
+              ("Japan", "WS_LONG_CPI/M.JP.771"), ("China", "WS_LONG_CPI/M.CN.771"),
+              ("South Korea", "WS_LONG_CPI/M.KR.771")]
 # Valute: (nome, id, invertita). Il cambio EUR/USD è quotato "dollari per euro", gli altri "valuta per dollaro":
 # questi ultimi si invertono, così per ogni linea "sale" = la valuta si rafforza sul dollaro
 VALUTE = [("Euro", "EXR/D.USD.EUR.SP00.A", False), ("Yen", "JPY=X", True),
@@ -48,74 +48,74 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
         """Borse a base 100 con interruttore valuta locale / USD: le linee delle due versioni stanno nella
         stessa figura e il JavaScript mostra solo quelle della versione scelta."""
         voci = []
-        for slot, (nome, locale, usd) in enumerate(BORSE, start=1):
+        for linea, (nome, locale, usd) in enumerate(BORSE, start=1):
             voci.append((charts.con_nome(trova_serie(serie, locale), nome), False,
-                         {"slot": slot, **({"variante": "locale"} if usd else {})}))
+                         {"linea": linea, **({"variante": "locale"} if usd else {})}))
             if usd:
                 voci.append((charts.con_nome(trova_serie(serie, usd), nome), False,
-                             {"slot": slot, "variante": "usd"}))
+                             {"linea": linea, "variante": "usd"}))
         nome_bm, id_bm = BENCHMARK
-        voci.append((charts.con_nome(trova_serie(serie, id_bm), nome_bm), False, {"slot": 8, "benchmark": True}))
+        voci.append((charts.con_nome(trova_serie(serie, id_bm), nome_bm), False, {"linea": 99, "benchmark": True}))
         # Nell'avviso "non disponibile" compaiono le versioni in USD solo se mancano (es. cambio non scaricato)
         ids = [i for _, i, _ in BORSE] + [id_bm]
         ids += [u for _, _, u in BORSE if u and not trova_serie(serie, u).ok]
         return Grafico(
-            id="gl-borse", titolo="Borse a confronto (base 100)", figura=charts.linee_base100(voci),
-            serie_ids=ids, periodo_iniziale="5A", largo=True,
-            varianti=[("locale", "Valuta locale"), ("usd", "In USD")],
-            nota="Con \"Valuta locale\" la performance non tiene conto dei cambi (S&P 500 e MSCI ACWI sono già in "
-                 "dollari); con \"In USD\" ogni indice è diviso per il cambio Yahoo Finance dello stesso giorno, "
-                 "quindi include l'effetto valuta. Tratteggiato: MSCI ACWI, indice mondiale di riferimento "
-                 "(rappresentato dall'ETF iShares ACWI, in dollari). Tutti i prezzi sono chiusure senza dividendi "
-                 "(non \"adjusted\"), per coerenza tra indici ed ETF: l'ETF ACWI distribuisce dividendi, che nel "
-                 "prezzo si vedono come piccoli cali. Il CSI 300 è rappresentato da un ETF (ticker 510300), non "
-                 "dall'indice, e parte dal 2012: con \"Max\" tutte le linee partono dalla stessa data. Hang Seng: "
-                 "il dollaro di Hong Kong è agganciato al dollaro USA, quindi la conversione incide poco. "
-                 "Le chiusure dei mercati e del cambio non avvengono alla stessa ora: piccole differenze di un giorno.")
+            id="gl-borse", titolo="Equity indices compared (base 100)", figura=charts.linee_base100(voci),
+            serie_ids=ids, periodo_iniziale="5Y", largo=True,
+            varianti=[("locale", "Local currency"), ("usd", "In USD")],
+            nota="With \"Local currency\" performance ignores exchange rates (the S&P 500 and MSCI ACWI are already in "
+                 "dollars); with \"In USD\" each index is divided by the Yahoo Finance exchange rate of the same day, "
+                 "so it includes the currency effect. Dashed: MSCI ACWI, the world benchmark index "
+                 "(represented by the iShares ACWI ETF, in dollars). All prices are closes without dividends "
+                 "(not \"adjusted\"), for consistency between indices and ETFs: the ACWI ETF pays out dividends, which show up "
+                 "in the price as small drops. The CSI 300 is represented by an ETF (ticker 510300), not "
+                 "by the index, and starts in 2012: with \"Max\" every line starts on the same date. Hang Seng: "
+                 "the Hong Kong dollar is pegged to the US dollar, so the conversion matters little. "
+                 "Markets and exchange rates do not close at the same time: small one-day differences.")
 
     return [
-        Sezione("tassi-policy", "Tassi di policy",
-                "I tassi con cui le banche centrali guidano il costo del denaro nelle cinque economie.",
+        Sezione("tassi-policy", "Policy rates",
+                "The rates central banks use to steer the cost of money in the five economies.",
                 grafici=[
-                    storico("gl-policy", "Tassi di policy a confronto", POLICY, periodo_iniziale="Max", largo=True,
-                            nota="Tutte le serie vengono dal BIS. Fed: punto medio dell'intervallo obiettivo; "
-                                 "BCE: tasso sui depositi; BoJ: tasso overnight obiettivo; BoK: tasso base. "
-                                 "ATTENZIONE: per la Cina è il Loan Prime Rate a 1 anno, un tasso sui prestiti "
-                                 "bancari, non un tasso overnight come gli altri: tende a stare sopra e non "
-                                 "è confrontabile in modo diretto. La Corea ha circa un mese di ritardo."),
+                    storico("gl-policy", "Policy rates compared", POLICY, periodo_iniziale="Max", largo=True,
+                            nota="All series come from the BIS. Fed: midpoint of the target range; "
+                                 "ECB: deposit facility rate; BoJ: target overnight rate; BoK: base rate. "
+                                 "WARNING: for China it is the 1-year Loan Prime Rate, a bank lending "
+                                 "rate, not an overnight rate like the others: it tends to sit higher and is not "
+                                 "directly comparable. Korea is about a month behind."),
                 ]),
-        Sezione("rendimenti", "Rendimenti a 10 anni",
-                "Il costo con cui i governi si finanziano a 10 anni.",
+        Sezione("rendimenti", "10-year yields",
+                "The cost at which governments borrow for 10 years.",
                 grafici=[
-                    storico("gl-rendimenti", "Rendimenti dei titoli di Stato a 10 anni", DECENNALI,
-                            periodo_iniziale="10A", largo=True,
-                            nota="USA: Treasury (FRED, giornaliero); Eurozona: curva AAA della BCE come proxy "
-                                 "Bund (giornaliero); Giappone: JGB del Ministero delle Finanze (giornaliero); "
-                                 "Corea del Sud: media MENSILE OCSE. La Cina non è inclusa: non esiste una "
-                                 "fonte gratuita aggiornata."),
+                    storico("gl-rendimenti", "10-year government bond yields", DECENNALI,
+                            periodo_iniziale="10Y", largo=True,
+                            nota="US: Treasuries (FRED, daily); euro area: the ECB AAA curve as a Bund "
+                                 "proxy (daily); Japan: JGBs from the Ministry of Finance (daily); "
+                                 "South Korea: OECD MONTHLY average. China is not included: there is no free, "
+                                 "up-to-date source."),
                 ]),
-        Sezione("inflazione", "Inflazione",
-                "Variazione annua dei prezzi al consumo, stessa fonte (BIS) per tutti i Paesi.",
+        Sezione("inflazione", "Inflation",
+                "Annual change in consumer prices, same source (BIS) for every country.",
                 grafici=[
-                    storico("gl-inflazione", "Inflazione CPI a confronto (% annua)", INFLAZIONE,
-                            riferimento=(2, ""), periodo_iniziale="10A", largo=True,
-                            nota="Dati mensili. Linea tratteggiata: 2%, obiettivo di molte banche centrali."),
+                    storico("gl-inflazione", "CPI inflation compared (% y/y)", INFLAZIONE,
+                            riferimento=(2, ""), periodo_iniziale="10Y", largo=True,
+                            nota="Monthly data. Dashed line: 2%, the target of many central banks."),
                 ]),
-        Sezione("valute", "Valute contro il dollaro",
-                "Quanto vale ogni valuta in dollari, normalizzato a 100 all'inizio del periodo scelto "
-                "con i pulsanti 1A / 5A / 10A / Max.",
+        Sezione("valute", "Currencies against the dollar",
+                "How much each currency is worth in dollars, rebased to 100 at the start of the period chosen "
+                "with the 1Y / 5Y / 10Y / Max buttons.",
                 grafici=[
-                    base100("gl-valute", "Valute contro il dollaro (base 100)", VALUTE,
-                            periodo_iniziale="5A", largo=True,
-                            nota="Sopra 100 = la valuta si è rafforzata rispetto al dollaro dall'inizio del "
-                                 "periodo; sotto 100 = si è indebolita. Yen, yuan e won sono quotati come "
-                                 "\"valuta per dollaro\" e qui sono capovolti, così tutte le linee si "
-                                 "leggono nello stesso verso. Euro: cambio BCE delle 14:15; le altre "
-                                 "valute: chiusura Yahoo Finance. Con \"Max\" si parte dalla prima data in cui "
-                                 "esistono tutte le valute."),
+                    base100("gl-valute", "Currencies against the dollar (base 100)", VALUTE,
+                            periodo_iniziale="5Y", largo=True,
+                            nota="Above 100 = the currency has strengthened against the dollar since the start of the "
+                                 "period; below 100 = it has weakened. The yen, yuan and won are quoted as "
+                                 "\"currency per dollar\" and are flipped here, so every line reads "
+                                 "the same way. Euro: ECB rate at 14:15; the other "
+                                 "currencies: Yahoo Finance close. With \"Max\" the chart starts on the first date when "
+                                 "all the currencies exist."),
                 ]),
-        Sezione("borse", "Borse",
-                "Indici azionari, in valuta locale o convertiti in dollari, normalizzati a 100 all'inizio "
-                "del periodo scelto.",
+        Sezione("borse", "Equities",
+                "Equity indices, in local currency or converted to dollars, rebased to 100 at the start "
+                "of the chosen period.",
                 grafici=[borse()]),
     ]

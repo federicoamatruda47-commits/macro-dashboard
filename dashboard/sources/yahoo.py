@@ -39,7 +39,7 @@ def scarica(ticker: str) -> pd.Series:
     Restituisce una pandas Series con le date come indice e numeri decimali
     come valori. In caso di problemi solleva ErroreFonte.
     """
-    ultimo_errore = "errore sconosciuto"
+    ultimo_errore = "unknown error"
 
     for tentativo in range(1, TENTATIVI + 1):
         try:
@@ -47,13 +47,13 @@ def scarica(ticker: str) -> pd.Series:
             # auto_adjust=False: prezzi così come sono (per i future non ci sono dividendi da correggere)
             tabella = titolo.history(period="max", interval="1d", auto_adjust=False)
         except Exception as errore:  # yfinance può sollevare errori di tipi diversi
-            ultimo_errore = f"Yahoo non risponde ({type(errore).__name__})"
+            ultimo_errore = f"Yahoo does not respond ({type(errore).__name__})"
         else:
             if tabella is not None and not tabella.empty and "Close" in tabella:
                 chiusure = _solo_giornate_chiuse(tabella["Close"], _fine_seduta(titolo))
                 return _pulisci(chiusure, ticker)
             # Tabella vuota: ticker inesistente oppure richiesta bloccata da Yahoo
-            ultimo_errore = "Yahoo non ha restituito dati (ticker errato o richiesta bloccata)"
+            ultimo_errore = "Yahoo returned no data (wrong ticker or request blocked)"
 
         if tentativo < TENTATIVI:
             time.sleep(3 * tentativo)  # attesa crescente: 3s, 6s
@@ -95,6 +95,6 @@ def _pulisci(chiusure: pd.Series, ticker: str) -> pd.Series:
     # Stesso giorno ripetuto (raro, succede con il dato del giorno in corso): teniamo l'ultimo
     serie = serie[~serie.index.duplicated(keep="last")].sort_index().rename(ticker)
     if serie.empty:
-        raise ErroreFonte("la serie non contiene valori numerici")
+        raise ErroreFonte("the series contains no numeric values")
     # Nota: i valori negativi NON si scartano (il WTI il 20/04/2020 ha chiuso a −37 $)
     return serie

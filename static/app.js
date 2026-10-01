@@ -2,14 +2,14 @@
    Comportamento della pagina:
    1. redirect dei vecchi indirizzi con #regione
    2. disegno dei grafici Plotly (solo quando stanno per entrare nello schermo)
-   3. pulsanti di periodo 1A / 5A / 10A / Max con scala verticale adattata
+   3. pulsanti di periodo 1Y / 5Y / 10Y / Max con scala verticale adattata
       (nei grafici "base 100" i valori ripartono da 100 all'inizio del periodo)
    4. colori dei grafici presi dal tema (chiaro o scuro) del CSS
    ===================================================================== */
 (function () {
   "use strict";
 
-  const ANNI_PERIODO = { "1A": 1, "5A": 5, "10A": 10 };
+  const ANNI_PERIODO = { "1Y": 1, "5Y": 5, "10Y": 10 };
   const schermoTouch = window.matchMedia("(pointer: coarse)").matches;
   const disegnati = new Set(); // grafici già disegnati
 
@@ -26,7 +26,7 @@
   if (typeof Plotly === "undefined") {
     document.querySelectorAll(".grafico").forEach((el) => {
       el.classList.add("grafico-vuoto");
-      el.textContent = "Impossibile caricare la libreria dei grafici (serve una connessione a Internet).";
+      el.textContent = "The chart library could not be loaded (an Internet connection is required).";
     });
     return;
   }
@@ -50,7 +50,7 @@
     return {
       superficie: v("--superficie"), testo: v("--testo"), testo2: v("--testo-2"),
       tenue: v("--testo-tenue"), griglia: v("--griglia"), asse: v("--asse"),
-      serie: [1, 2, 3, 4, 5, 6, 7, 8].map((i) => v("--s" + i)),
+      colore: (chiave) => v("--c-" + chiave),   // colori fissi dei Paesi, definiti in config.yaml
     };
   }
 
@@ -72,9 +72,9 @@
     layout.hoverlabel = { bgcolor: t.superficie, bordercolor: t.griglia, font: { color: t.testo } };
     layout.dragmode = schermoTouch ? false : "zoom"; // sul telefono il dito deve scorrere la pagina
     data.forEach((traccia) => {
-      const slot = traccia.meta && traccia.meta.slot;
-      if (!slot) return;
-      const colore = traccia.meta.neutro ? t.testo : t.serie[slot - 1]; // "neutro" = benchmark
+      const chiave = traccia.meta && traccia.meta.colore;   // es. "us", "ea", "energia", "mondo"
+      if (!chiave) return;
+      const colore = t.colore(chiave) || t.testo;
       traccia.line = Object.assign({}, traccia.line, { color: colore });
       if (traccia.marker) traccia.marker = Object.assign({}, traccia.marker, { color: colore });
     });
@@ -179,7 +179,7 @@
     });
   }
 
-  // Pulsanti "valuta locale / in USD": mostrano solo le linee della variante scelta (le altre sono nascoste)
+  // Pulsanti "valuta locale / in USD" (Local / USD): mostrano solo le linee della variante scelta (le altre sono nascoste)
   const periodoAttuale = (el) => {
     const premuto = document.querySelector('.periodi button[data-grafico="' + el.id + '"][aria-pressed="true"]');
     return premuto ? premuto.dataset.periodo : "Max"; // dopo uno zoom manuale nessun pulsante è premuto
@@ -232,7 +232,6 @@
   const opzioni = {
     responsive: true,
     displaylogo: false,
-    locale: "it",
     scrollZoom: false,
     // Niente barra degli strumenti: si sovrappone alla legenda. Lo zoom resta
     // disponibile trascinando col mouse, il doppio clic ripristina la vista.

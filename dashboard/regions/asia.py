@@ -27,4 +27,4 @@ def attrezzi(serie: dict[str, Serie]):
 
 def sezione_non_inclusi(testo: str) -> Sezione:
     """Nota in fondo alla pagina sui dati che mancano (nessuna fonte gratuita aggiornata)."""
-    return Sezione("non-inclusi", "Dati non inclusi", testo)
+    return Sezione("non-inclusi", "Data not included", testo)

@@ -38,27 +38,27 @@ def scarica(id_serie: str) -> pd.Series:
         tabella = storico if mese is None else pd.concat([storico, mese])
         _tabella = tabella[~tabella.index.duplicated(keep="last")].sort_index()
     if scadenza not in _tabella:
-        raise ErroreFonte(f"scadenza '{scadenza}' non presente nel file del Ministero")
+        raise ErroreFonte(f"maturity '{scadenza}' not found in the Ministry file")
     serie = _tabella[scadenza].dropna().rename(scadenza)
     if serie.empty:
-        raise ErroreFonte("la serie non contiene valori numerici")
+        raise ErroreFonte("the series contains no numeric values")
     return serie
 
 
 def _scarica_file(nome: str) -> pd.DataFrame:
-    ultimo_errore = "errore sconosciuto"
+    ultimo_errore = "unknown error"
     for tentativo in range(1, TENTATIVI + 1):
         try:
             risposta = requests.get(BASE + nome, headers=INTESTAZIONI, timeout=TIMEOUT_SECONDI)
         except requests.RequestException as errore:
-            ultimo_errore = f"errore di rete ({type(errore).__name__})"
+            ultimo_errore = f"network error ({type(errore).__name__})"
         else:
             if risposta.status_code == 200:
                 return _leggi_csv(risposta.content)
             ultimo_errore = f"HTTP {risposta.status_code}"
         if tentativo < TENTATIVI:
             time.sleep(2 * tentativo)
-    raise ErroreFonte(f"Ministero delle Finanze: {ultimo_errore}")
+    raise ErroreFonte(f"Ministry of Finance: {ultimo_errore}")
 
 
 def _leggi_csv(contenuto: bytes) -> pd.DataFrame:
@@ -67,7 +67,7 @@ def _leggi_csv(contenuto: bytes) -> pd.DataFrame:
     # righe di titolo e avvertenze vengono scartate
     intestazione = next((r for r in righe if r.startswith("Date,")), None)
     if intestazione is None:
-        raise ErroreFonte("file del Ministero delle Finanze in un formato inatteso")
+        raise ErroreFonte("unexpected Ministry of Finance file format")
     dati = [r for r in righe if re.match(r"\d{4}/\d{1,2}/\d{1,2},", r)]
     tabella = pd.read_csv(io.StringIO("\n".join([intestazione] + dati)), na_values=["-"])
     tabella.index = pd.to_datetime(tabella.pop("Date"), format="%Y/%m/%d")

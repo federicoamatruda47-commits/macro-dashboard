@@ -16,11 +16,11 @@ RAME, ALLUMINIO = "HG=F", "ALI=F"
 GRANO, MAIS = "ZW=F", "ZC=F"
 TUTTE = [WTI, BRENT, GAS_USA, GAS_EU, ORO, ARGENTO, RAME, ALLUMINIO, GRANO, MAIS]
 
-NOTA_RECESSIONI = "Bande grigie: recessioni USA (NBER)."
+NOTA_RECESSIONI = "Grey bands: US recessions (NBER)."
 # Aggiunta sotto i grafici che usano davvero dati Yahoo (non se è in uso la riserva FRED)
-NOTA_SCADENZE = ("Future continuo Yahoo Finance: si segue sempre il contratto con la scadenza più "
-                 "vicina e, quando scade, si passa al successivo. In quei giorni possono comparire "
-                 "piccoli salti di prezzo che non sono veri movimenti di mercato.")
+NOTA_SCADENZE = ("Yahoo Finance continuous futures: the contract with the nearest expiry is always followed "
+                 "and, when it expires, the next one takes over. On those days small "
+                 "price jumps can appear that are not real market moves.")
 
 
 def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
@@ -58,70 +58,70 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
 
     return [
         Sezione("performance", "Performance",
-                "Variazione percentuale del prezzo rispetto a 1 settimana, 1 mese, fine dell'anno "
-                "scorso e 1 anno prima. Verde = rialzo, rosso = ribasso.",
-                tabella_performance=TUTTE),
-        Sezione("energia", "Energia",
-                "Petrolio e gas naturale: il WTI è il riferimento americano, il Brent quello "
-                "internazionale; Henry Hub è il gas USA, TTF (Paesi Bassi) il gas europeo.",
+                "Percentage change in price versus 1 week, 1 month, the end of last year "
+                "and 1 year earlier. Green = up, red = down.",
+                tabella_performance=TUTTE, etichetta_performance="Commodity"),
+        Sezione("energia", "Energy",
+                "Oil and natural gas: WTI is the US benchmark, Brent the international one; "
+                "Henry Hub is US gas, TTF (Netherlands) is European gas.",
                 grafici=[
-                    prezzo("com-petrolio", "Petrolio WTI e Brent", [WTI, BRENT], largo=True,
-                           nota="Il 20/04/2020 il future WTI ha chiuso sotto zero (−37 $): "
-                                "a scadenza nessuno aveva spazio per stoccare il petrolio."),
-                    prezzo("com-gas-usa", "Gas naturale Henry Hub (USA)", [GAS_USA]),
-                    prezzo("com-gas-eu", "Gas naturale TTF (Europa)", [GAS_EU], periodo_iniziale="Max",
-                           nota="Su Yahoo dati dal 2017."),
+                    prezzo("com-petrolio", "WTI and Brent crude oil", [WTI, BRENT], largo=True,
+                           nota="On 20 Apr 2020 the WTI future closed below zero (−$37): "
+                                "at expiry nobody had room left to store the oil."),
+                    prezzo("com-gas-usa", "Henry Hub natural gas (US)", [GAS_USA]),
+                    prezzo("com-gas-eu", "TTF natural gas (Europe)", [GAS_EU], periodo_iniziale="Max",
+                           nota="Data on Yahoo from 2017."),
                 ]),
-        Sezione("metalli-preziosi", "Metalli preziosi",
-                "Oro e argento: beni rifugio e riserva di valore. Nessuna fonte di riserva gratuita: "
-                "se Yahoo non risponde i grafici restano vuoti.",
+        Sezione("metalli-preziosi", "Precious metals",
+                "Gold and silver: safe-haven assets and stores of value. There is no free fallback "
+                "source: if Yahoo does not respond the charts stay empty.",
                 grafici=[
-                    prezzo("com-oro", "Oro", [ORO]),
-                    prezzo("com-argento", "Argento", [ARGENTO]),
+                    prezzo("com-oro", "Gold", [ORO]),
+                    prezzo("com-argento", "Silver", [ARGENTO]),
                 ]),
-        Sezione("metalli-industriali", "Metalli industriali",
-                "Rame e alluminio sono usati in edilizia, elettricità e manifattura: i loro prezzi "
-                "seguono il ciclo economico globale (soprattutto la domanda cinese).",
+        Sezione("metalli-industriali", "Industrial metals",
+                "Copper and aluminium are used in construction, electrical equipment and manufacturing: their prices "
+                "follow the global economic cycle (above all Chinese demand).",
                 grafici=[
-                    prezzo("com-rame", "Rame", [RAME]),
-                    prezzo("com-alluminio", "Alluminio (COMEX)", [ALLUMINIO], periodo_iniziale="Max",
-                           nota="Future COMEX poco scambiato (il riferimento mondiale è il London Metal "
-                                "Exchange, non gratuito): il prezzo è coerente con quello LME ma può "
-                                "muoversi a scatti. Su Yahoo dati dal 2014."),
+                    prezzo("com-rame", "Copper", [RAME]),
+                    prezzo("com-alluminio", "Aluminium (COMEX)", [ALLUMINIO], periodo_iniziale="Max",
+                           nota="A thinly traded COMEX future (the world benchmark is the London Metal "
+                                "Exchange, which is not free): the price is consistent with the LME one but can "
+                                "move in jumps. Data on Yahoo from 2014."),
                 ]),
-        Sezione("agricoli", "Agricoli", "Future del Chicago Board of Trade, in centesimi di dollaro per bushel "
-                "(circa 27 kg di grano o 25 kg di mais).",
+        Sezione("agricoli", "Agricultural", "Chicago Board of Trade futures, in US cents per bushel "
+                "(about 27 kg of wheat or 25 kg of corn).",
                 grafici=[
-                    prezzo("com-grano", "Grano", [GRANO]),
-                    prezzo("com-mais", "Mais", [MAIS]),
+                    prezzo("com-grano", "Wheat", [GRANO]),
+                    prezzo("com-mais", "Corn", [MAIS]),
                 ]),
-        Sezione("analisi", "Commodities e tassi",
-                "Grafici a due pannelli con lo stesso asse del tempo: la commodity in alto, il tasso "
-                "USA in basso, ognuno con la sua scala (niente doppio asse). Il periodo mostrato è "
-                "quello in cui esistono entrambe le serie: i dati su TIPS e breakeven partono dal 2003.",
+        Sezione("analisi", "Commodities and rates",
+                "Two-panel charts with the same time axis: the commodity on top, the US "
+                "rate below, each with its own scale (no dual axis). The period shown is "
+                "the one in which both series exist: TIPS and breakeven data start in 2003.",
                 grafici=[
-                    confronto("com-oro-reale", "Oro vs tasso reale USA 10 anni (TIPS)", ORO, "DFII10",
-                              "L'oro non paga interessi: quando il rendimento reale sale, tenerlo "
-                              "\"costa\" di più e il prezzo tende a scendere. Per questo l'asse del tasso "
-                              "reale è INVERTITO (i valori alti stanno in basso): se il legame tiene, le "
-                              "due linee salgono e scendono insieme. Dal 2022 il legame si è indebolito "
-                              "per gli acquisti di oro delle banche centrali.",
+                    confronto("com-oro-reale", "Gold vs 10-year US real yield (TIPS)", ORO, "DFII10",
+                              "Gold pays no interest: when the real yield rises, holding it "
+                              "\"costs\" more and the price tends to fall. That is why the real-yield axis is "
+                              "INVERTED (high values at the bottom): if the link holds, the "
+                              "two lines rise and fall together. Since 2022 the link has weakened "
+                              "because of gold purchases by central banks.",
                               inverti=True),
-                    confronto("com-rame-oro", "Rapporto rame/oro vs Treasury 10 anni",
+                    confronto("com-rame-oro", "Copper/gold ratio vs 10-year Treasury",
                               "RAPPORTO_RAME_ORO", "DGS10",
-                              "Rame (metallo ciclico) diviso oro (bene rifugio), moltiplicato per 1000: "
-                              "sale quando il mercato si aspetta più crescita e tende a muoversi insieme "
-                              "ai rendimenti a 10 anni. Calcolato solo se entrambi i prezzi vengono da Yahoo."),
-                    confronto("com-petrolio-breakeven", "Petrolio WTI vs inflazione attesa 10 anni (breakeven)",
+                              "Copper (a cyclical metal) divided by gold (a safe haven), multiplied by 1000: "
+                              "it rises when the market expects more growth and tends to move together "
+                              "with 10-year yields. Calculated only if both prices come from Yahoo."),
+                    confronto("com-petrolio-breakeven", "WTI crude oil vs 10-year expected inflation (breakeven)",
                               WTI, "T10YIE",
-                              "Il prezzo dell'energia pesa molto sull'inflazione attesa dal mercato "
-                              "(breakeven = rendimento nominale meno rendimento reale): le due serie "
-                              "tendono a muoversi insieme."),
-                    prezzo("com-brent-wti", "Spread Brent − WTI", ["SPREAD_BRENT_WTI"], largo=True,
+                              "The price of energy weighs heavily on the inflation the market expects "
+                              "(breakeven = nominal yield minus real yield): the two series "
+                              "tend to move together."),
+                    prezzo("com-brent-wti", "Brent − WTI spread", ["SPREAD_BRENT_WTI"], largo=True,
                            periodo_iniziale="Max", riferimento=(0, ""),
-                           nota="Differenza tra i due future sul petrolio. Calcolato solo se entrambi i "
-                                "prezzi vengono da Yahoo: le riserve FRED sono prezzi spot e non si "
-                                "mescolano con i future. Il Brent è un contratto ICE che scade prima del "
-                                "WTI: nei giorni di scadenza lo spread può saltare."),
+                           nota="Difference between the two oil futures. Calculated only if both "
+                                "prices come from Yahoo: the FRED fallbacks are spot prices and are never "
+                                "mixed with futures. Brent is an ICE contract that expires before "
+                                "WTI: on expiry days the spread can jump."),
                 ]),
     ]

@@ -4,21 +4,21 @@
 
 {% block contenuto %}
 <section class="intestazione-pagina">
-  <h1>Dashboard macro</h1>
-  <p class="descrizione">Dashboard macroeconomica statica, rigenerata ogni giorno. Scegli una pagina.</p>
-  <p class="aggiornamento">Aggiornata il <strong>{{ aggiornato }}</strong> · fonti dati: FRED, BCE, BIS, Yahoo Finance, Ministero delle Finanze giapponese e Statistics Bureau of Japan</p>
+  <h1>Macro dashboard</h1>
+  <p class="descrizione">A static macroeconomic dashboard, rebuilt every day. Choose a page.</p>
+  <p class="aggiornamento">Updated <strong>{{ aggiornato }}</strong> · data sources: FRED, ECB, BIS, Yahoo Finance, Japan Ministry of Finance and Statistics Bureau of Japan</p>
 </section>
 
 {{ avvisi(errori, in_ritardo, riserve, totale_serie, "") }}
 
 <section class="blocco" aria-labelledby="pagine">
-  <h2 id="pagine">Pagine</h2>
+  <h2 id="pagine">Pages</h2>
   <div class="griglia-kpi griglia-pagine">
     {% for p in regioni %}
     <a class="scheda-pagina" href="{{ p.id }}/">
-      <h3>{{ p.nome }}{% if not p.attiva %} <span class="presto">in arrivo</span>{% endif %}</h3>
+      <h3>{{ p.nome }}{% if not p.attiva %} <span class="presto">coming soon</span>{% endif %}</h3>
       <p>{{ p.descrizione }}</p>
-      <p class="kpi-data">{{ p.n_grafici }} grafici</p>
+      <p class="kpi-data">{{ p.n_grafici }} charts</p>
     </a>
     {% endfor %}
   </div>

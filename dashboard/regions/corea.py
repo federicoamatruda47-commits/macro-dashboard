@@ -15,37 +15,37 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
     _, storico = attrezzi(serie)
 
     return [
-        Sezione("politica-monetaria", "Politica monetaria",
-                "Il tasso base della Bank of Korea (BoK) è il tasso di riferimento per il mercato monetario.",
+        Sezione("politica-monetaria", "Monetary policy",
+                "The Bank of Korea (BoK) base rate is the reference rate for the money market.",
                 grafici=[
-                    storico("kr-policy", "Tasso base BoK", [POLICY], periodo_iniziale="Max", largo=True,
-                            nota="Fonte BIS, dati giornalieri. Il BIS pubblica la Corea con circa un mese "
-                                 "di ritardo: per questa serie l'avviso di dati non aggiornati scatta "
-                                 "dopo 45 giorni invece di 10."),
+                    storico("kr-policy", "BoK base rate", [POLICY], periodo_iniziale="Max", largo=True,
+                            nota="Source: BIS, daily data. The BIS publishes Korea with about a month "
+                                 "of delay: for this series the stale-data warning triggers "
+                                 "after 45 days instead of 10."),
                 ]),
-        Sezione("titoli-di-stato", "Titoli di Stato",
-                "Rendimento dei titoli di Stato coreani a 10 anni.",
+        Sezione("titoli-di-stato", "Government bonds",
+                "Yield on Korean government bonds at 10 years.",
                 grafici=[
-                    storico("kr-ktb", "Titoli di Stato 10 anni (dati MENSILI)", [KTB_10A],
+                    storico("kr-ktb", "10-year government bonds (MONTHLY data)", [KTB_10A],
                             periodo_iniziale="Max", largo=True,
-                            nota="Dati mensili (media del mese, fonte OCSE tramite FRED), con circa un mese "
-                                 "di ritardo: il dato giornaliero non è disponibile gratuitamente."),
+                            nota="Monthly data (monthly average, source OECD via FRED), with about a month "
+                                 "of delay: daily data is not freely available."),
                 ]),
-        Sezione("inflazione", "Inflazione", "Variazione annua dei prezzi al consumo.",
+        Sezione("inflazione", "Inflation", "Change in consumer prices compared with a year earlier.",
                 grafici=[
-                    storico("kr-inflazione", "CPI Corea del Sud (% annua)", [CPI], riferimento=(2, ""),
-                            periodo_iniziale="10A", largo=True,
-                            nota="Fonte BIS, dati mensili. Linea tratteggiata: obiettivo della BoK al 2%."),
+                    storico("kr-inflazione", "South Korea CPI (% y/y)", [CPI], riferimento=(2, ""),
+                            periodo_iniziale="10Y", largo=True,
+                            nota="Source: BIS, monthly data. Dashed line: the BoK's 2% target."),
                 ]),
-        Sezione("cambio", "Cambio", grafici=[
-            storico("kr-cambio", "USD/KRW (won per 1 dollaro)", [CAMBIO], periodo_iniziale="10A", largo=True,
+        Sezione("cambio", "Exchange rate", grafici=[
+            storico("kr-cambio", "USD/KRW (won per 1 dollar)", [CAMBIO], periodo_iniziale="10Y", largo=True,
                     mostra_unita=True,
-                    nota="Sale = il won si indebolisce. Se Yahoo non risponde si usa FRED."),
+                    nota="Up = the won weakens. If Yahoo does not respond FRED is used."),
         ]),
-        Sezione("borsa", "Borsa", grafici=[
-            storico("kr-kospi", "KOSPI", [KOSPI], periodo_iniziale="10A", largo=True,
-                    nota="Indice in punti, chiusure giornaliere. Fonte Yahoo Finance (non ufficiale)."),
+        Sezione("borsa", "Equities", grafici=[
+            storico("kr-kospi", "KOSPI", [KOSPI], periodo_iniziale="10Y", largo=True,
+                    nota="Index in points, daily closes. Source: Yahoo Finance (unofficial)."),
         ]),
-        sezione_non_inclusi("Non incluso: rendimento 3A (dato giornaliero disponibile solo tramite API della "
-                            "Bank of Korea con registrazione coreana)."),
+        sezione_non_inclusi("Not included: 3-year yield (the daily data is only available through the Bank of "
+                            "Korea API, which requires a Korean registration)."),
     ]
