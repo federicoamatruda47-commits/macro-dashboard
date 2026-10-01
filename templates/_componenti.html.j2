@@ -20,7 +20,7 @@
   counted from the end of the period of the latest data point). Check that the source has not changed.
   <a href="{{ radice }}method/#freshness">How the freshness check works</a>.
   <ul>
-    {% for s in in_ritardo %}<li>{{ s.regione }} · <code>{{ s.id }}</code> {{ s.nome }}: latest data {{ s.data }}, {{ s.frequenza }} series, {{ s.giorni }} days (threshold {{ s.soglia }})</li>{% endfor %}
+    {% for s in in_ritardo %}<li>{{ s.area }} · <code>{{ s.id }}</code> {{ s.nome }}: latest data {{ s.data }}, {{ s.frequenza }} series, {{ s.giorni }} days (threshold {{ s.soglia }})</li>{% endfor %}
   </ul>
 </div>
 {% endif %}

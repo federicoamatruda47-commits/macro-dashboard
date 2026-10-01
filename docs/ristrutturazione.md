@@ -16,8 +16,8 @@ Piano approvato dall'utente il 01/10/2026, con le scelte della sezione 0 e due a
 | 4c | Mercati: Credit | **fatto e in `main`** |
 | 4d | Mercati: Equities (con colonna "Last", vedi sotto) | **fatto e in `main`** |
 | 4e-1 | Mercati: Rates & curves, parte 1 (tassi di policy, curve, rendimenti a 10 anni, pendenza e inversioni) | **fatto e in `main`** |
-| 4e-2 | Mercati: Rates & curves, parte 2 (inflazione e tassi reali) | **fatto sul ramo** `ristrutturazione/step-4e2`, in attesa dell'ok per il merge |
-| 5 | Economies (hub + 5 segnaposto + UNRATE in USA); `regioni` → `pagine` nel config; via le vecchie pagine e il Confronto globale | da fare |
+| 4e-2 | Mercati: Rates & curves, parte 2 (inflazione e tassi reali) | **fatto e in `main`** (con lo step 4 completo) |
+| 5 | Economies (hub + 5 segnaposto + UNRATE in USA); `regioni` → `pagine` nel config; via le vecchie pagine e il Confronto globale | **fatto sul ramo** `ristrutturazione/step-5`, in attesa dell'ok per il merge |
 | 6 | Overview (14 numeri chiave con sparkline, "What changed this week", schede, avvisi); diventa `/` | da fare |
 | 7 | Rifinitura: peso pagine, link rotti, README e screenshot, CLAUDE.md, codice morto (opz.: nomi interni in inglese) | da fare |
 
@@ -328,3 +328,9 @@ Il workflow GitHub non cambia (pubblica già tutta `site/`).
 - 01/10/2026: step 4e-2 sul ramo `ristrutturazione/step-4e2`: `/markets/rates/` ora ha anche "Inflation and real rates" (`gl-inflazione`, `usa-reali`) e "Inflation by country" (`usa-inflazione`, `eur-inflazione`, `jp-inflazione`), 8 numeri chiave (con CPI USA e HICP area euro), tutti con "How to read it".
   `cn-inflazione` e `kr-inflazione` assorbiti da `gl-inflazione`. Le pagine Euro area, Japan, China, South Korea, Global comparison sono rimaste senza grafici: non si generano più (`senza_pagina: true`) e i vecchi indirizzi rimandano a `markets/` (Global comparison a `markets/rates/`).
   Resta temporaneamente la pagina `usa` (solo disoccupazione, in menu come "United States") fino allo step 5. Rinominate cinque serie di inflazione con il prefisso US / Euro-area. **Tutti i grafici di Markets sono fatti: lo step 4 è completo.** `markets/rates` pesa 2,15 MB (da ridurre allo step 7).
+- 01/10/2026: step 4e-2 unito in `main`. La riga del Giappone è stata completata dopo aver verificato i dati: l'inflazione totale giapponese è stata sopra il 2% da aprile 2022 a dicembre 2025 (massimo 4,4% a gennaio 2023) ed è tornata per lo più sotto il 2% nel 2026
+  (1,96% ad agosto 2026); il tasso BoJ (BIS) è passato da −0,10% a 0,05% a marzo 2024 e poi è salito più volte. La frase proposta dall'utente ("Since 2022 inflation has stayed above 2%") non era esatta per i dati più recenti, quindi la riga dice "from April 2022 to the end of 2025".
+- 01/10/2026: step 5 sul ramo `ristrutturazione/step-5`. Nuova sezione Economies: hub `/economies/` e pagine `economies/usa` (disoccupazione, con "How to read it"; `dashboard/economie/usa.py`), `economies/italy`, `economies/euro-area`, `economies/uk`, `economies/compare` (pagine vuote "coming soon" con navigazione precedente/successiva)
+  e schede "later" per Japan, China, South Korea. Stati delle pagine nel blocco `pagine`: `attiva`, `in-arrivo` (pagina vuota), `dopo` (solo scheda). Rimosso il blocco `regioni`, il pacchetto `dashboard/regions/` (il modello è ora `dashboard/modello.py`),
+  i campi `regione` e `riepilogo` delle serie (le serie hanno `paese`; la pagina Series status mostra l'"area" dal nome del Paese) e le pagine Home provvisoria "Countries"/"Global comparison". Aggiunte le voci colore `de` (Germany) e `global` come etichette.
+  Vecchi indirizzi: `usa/` → `economies/usa/`; `eurozona/`, `giappone/`, `cina/`, `corea/` → `markets/`; `globale/` → `markets/rates/`; `commodities/` → `markets/commodities/`.

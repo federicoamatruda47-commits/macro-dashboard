@@ -1,6 +1,6 @@
 """Pagina Commodities: materie prime (energia, metalli, agricoli) e loro legame con i tassi USA.
 
-Non è una regione geografica, ma segue la stessa struttura di usa.py ed eurozona.py:
+Non è una pagina geografica:
 riceve le serie già pronte (dizionario id -> Serie) e decide come combinarle nei grafici.
 Le bande grigie sono le recessioni USA (NBER): i prezzi sono in dollari e i mercati
 di riferimento (NYMEX, COMEX, CBOT) sono americani.
@@ -9,7 +9,7 @@ Le note tecniche stanno in contenuti/note.yaml: qui si indicano solo gli id.
 
 from .. import charts
 from ..data import Serie, trova_serie
-from ..regions.modello import Grafico, Sezione
+from ..modello import Grafico, Sezione
 
 WTI, BRENT, GAS_USA, GAS_EU = "CL=F", "BZ=F", "NG=F", "TTF=F"
 ORO, ARGENTO = "GC=F", "SI=F"

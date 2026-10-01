@@ -9,7 +9,7 @@ tra Paesi non ne hanno. Le economie hanno la loro vista nella sezione Economies 
 
 from .. import charts
 from ..data import Serie, trova_serie
-from ..regions.modello import Grafico, Sezione
+from ..modello import Grafico, Sezione
 
 # Tassi di policy confrontati: tutti dal BIS, così hanno la stessa definizione e la stessa fonte
 POLICY = [("US (Fed)", "WS_CBPOL/D.US"), ("Euro area (ECB)", "WS_CBPOL/D.XM"), ("Japan (BoJ)", "WS_CBPOL/D.JP"),

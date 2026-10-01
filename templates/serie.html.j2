@@ -23,7 +23,7 @@
       <tbody>
         {% for s in stato %}
         <tr>
-          <td>{{ s.nome }}<br><span class="kpi-data">{{ s.regione }}</span></td>
+          <td>{{ s.nome }}<br><span class="kpi-data">{{ s.area }}</span></td>
           <td>{% if s.url %}<a href="{{ s.url }}" target="_blank" rel="noopener"><code>{{ s.id }}</code> ↗</a>{% else %}<code>{{ s.id }}</code>{% endif %}</td>
           <td>{{ s.fonte }}{% if s.nota_fonte %} <span class="stato-ritardo" title="{{ s.nota_fonte }}">ⓘ</span>{% endif %}</td>
           <td>{{ s.frequenza }}</td>

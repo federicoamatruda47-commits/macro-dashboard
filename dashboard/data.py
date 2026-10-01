@@ -13,7 +13,7 @@ import yaml
 
 from .sources import FONTI, ErroreFonte
 
-CAMPI_OBBLIGATORI = ["id", "fonte", "nome", "regione", "paese", "categoria", "unita", "trasformazione"]
+CAMPI_OBBLIGATORI = ["id", "fonte", "nome", "paese", "categoria", "unita", "trasformazione"]
 TRASFORMAZIONI = ["livello", "yoy"]
 FONTE_CALCOLATA = "calcolata"  # serie ottenuta da altre serie (componenti: [A, B] -> A − B oppure A / B)
 OPERAZIONI = {"differenza": "−", "rapporto": "/"}  # operazioni possibili per le serie calcolate
@@ -36,12 +36,10 @@ class Serie:
     id: str
     fonte: str
     nome: str
-    regione: str
     paese: str                           # a chi appartiene (us, ea, it, de, fr, jp, cn, kr, uk) o "global"
     categoria: str
     unita: str
     trasformazione: str
-    riepilogo: bool = False
     decimali: int = 2                    # cifre decimali mostrate sul sito (es. 4 per EUR/USD)
     riserva: dict | None = None          # fonte alternativa se la principale non risponde
     componenti: list[str] | None = None  # solo per fonte "calcolata": [A, B]
@@ -123,7 +121,7 @@ def trova_serie(serie: dict[str, "Serie"], id_serie: str) -> "Serie":
     """
     if id_serie in serie:
         return serie[id_serie]
-    return Serie(id=id_serie, fonte="?", nome=id_serie, regione="?", paese="global", categoria="?", unita="",
+    return Serie(id=id_serie, fonte="?", nome=id_serie, paese="global", categoria="?", unita="",
                  trasformazione="livello", errore="series not found in config.yaml")
 
 
@@ -136,7 +134,6 @@ def carica_config(percorso: Path) -> dict:
     with open(percorso, encoding="utf-8") as file:
         config = yaml.safe_load(file)
 
-    id_regioni = {regione["id"] for regione in config.get("regioni", [])}
     colori = config.get("colori", {})
     for chiave, colore in colori.items():
         if "alias" in colore:
@@ -179,8 +176,8 @@ def carica_config(percorso: Path) -> dict:
         if voce.get("colore", voce["paese"]) not in colori:
             raise ValueError(f"Serie {voce['id']}: il colore '{voce.get('colore', voce['paese'])}' non è definito in 'colori' "
                              "(per un Paese senza colore proprio usa 'colore: <chiave>')")
-        if voce["regione"] not in id_regioni:
-            raise ValueError(f"Serie {voce['id']}: regione '{voce['regione']}' non definita in 'regioni'")
+        if voce["paese"] not in colori:
+            raise ValueError(f"Serie {voce['id']}: il paese '{voce['paese']}' non è definito in 'colori'")
     return config
 
 
@@ -190,7 +187,6 @@ def carica_config(percorso: Path) -> dict:
 
 def _nuova_serie(voce: dict) -> Serie:
     return Serie(**{campo: voce[campo] for campo in CAMPI_OBBLIGATORI},
-                 riepilogo=bool(voce.get("riepilogo", False)),
                  decimali=int(voce.get("decimali", 2)),
                  riserva=voce.get("riserva"),
                  componenti=voce.get("componenti"),
