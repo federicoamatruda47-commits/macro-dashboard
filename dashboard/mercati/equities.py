@@ -69,7 +69,8 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
             note=["rebase-base100", "price-no-dividends", "usd-conversion", "acwi-etf", "csi300-etf",
                   "hang-seng-hkd", "index-daily-closes"],
             come_leggerlo="Each line starts at 100 when the chosen period begins, so markets with very different index levels can be compared. "
-                          "\"Local currency\" ignores exchange rates, while \"In USD\" converts each index into dollars and so includes currency moves.")
+                          "\"Local currency\" ignores exchange rates, while \"In USD\" converts each index into dollars and so includes currency moves. "
+                          "Prices exclude dividends, so markets with high dividend yields look weaker than their total return.")
 
     return [
         Sezione("performance", "Performance",
