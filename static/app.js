@@ -1,6 +1,6 @@
 /* =====================================================================
    Comportamento della pagina:
-   1. tab delle regioni
+   1. redirect dei vecchi indirizzi con #regione
    2. disegno dei grafici Plotly (solo quando stanno per entrare nello schermo)
    3. pulsanti di periodo 1A / 5A / 10A / Max con scala verticale adattata
       (nei grafici "base 100" i valori ripartono da 100 all'inizio del periodo)
@@ -14,34 +14,13 @@
   const disegnati = new Set(); // grafici già disegnati
 
   // ------------------------------------------------------------------
-  // 1. Tab delle regioni
+  // 1. Vecchi indirizzi: prima il sito era una pagina sola con le tab (index.html#usa).
+  //    Ora ogni regione ha la sua pagina: chi arriva dalla home con un vecchio #usa va a usa/.
   // ------------------------------------------------------------------
-  const tabs = Array.from(document.querySelectorAll(".tab"));
-
-  function mostraRegione(id, aggiornaIndirizzo) {
-    tabs.forEach((tab) => {
-      const attiva = tab.dataset.regione === id;
-      tab.setAttribute("aria-selected", attiva ? "true" : "false");
-      tab.tabIndex = attiva ? 0 : -1;
-      document.getElementById("pannello-" + tab.dataset.regione).hidden = !attiva;
-    });
-    if (aggiornaIndirizzo) history.replaceState(null, "", "#" + id);
+  if (document.body.hasAttribute("data-home") && /^#[a-z]+$/.test(location.hash)) {
+    const link = document.querySelector('.griglia-pagine a[href="' + location.hash.slice(1) + '/"]');
+    if (link) { location.replace(link.getAttribute("href")); return; }
   }
-
-  tabs.forEach((tab, i) => {
-    tab.addEventListener("click", () => mostraRegione(tab.dataset.regione, true));
-    // Frecce sinistra/destra per spostarsi tra le tab da tastiera
-    tab.addEventListener("keydown", (e) => {
-      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
-      const prossima = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
-      prossima.focus();
-      mostraRegione(prossima.dataset.regione, true);
-    });
-  });
-
-  const daIndirizzo = location.hash.slice(1);
-  if (tabs.some((t) => t.dataset.regione === daIndirizzo)) mostraRegione(daIndirizzo, false);
-  else if (tabs.length) mostraRegione(tabs[0].dataset.regione, false);
 
   // Se plotly.js non si carica (es. offline) mostriamo un messaggio al posto dei grafici
   if (typeof Plotly === "undefined") {

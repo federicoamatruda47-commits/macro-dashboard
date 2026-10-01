@@ -1,0 +1,52 @@
+<!doctype html>
+{# =====================================================================
+   Struttura comune a tutte le pagine (Jinja2): testata, menu a due righe, piede.
+   Ogni pagina riempie i blocchi "contenuto" e (se ha grafici) "script_grafici".
+   {{ radice }} è il prefisso relativo per tornare alla radice del sito ("", "../", ...).
+   ===================================================================== #}
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titolo %}Dashboard macro{% endblock %}</title>
+  <meta name="description" content="{% block descrizione %}Dashboard macroeconomica aggiornata ogni giorno: tassi, curva, inflazione, credito.{% endblock %}">
+  {# ?v=... cambia a ogni generazione: il browser scarica sempre il CSS aggiornato #}
+  <link rel="stylesheet" href="{{ radice }}style.css?v={{ versione }}">
+</head>
+<body{% if id_pagina == 'home' %} data-home{% endif %}>
+  {# ---- Testata e menu: restano in cima mentre si scorre ---- #}
+  <header class="testata-sito">
+    <div class="contenitore">
+      <a class="marchio" href="{{ radice or './' }}">Dashboard macro</a>
+      <nav class="menu" aria-label="Menu principale">
+        <ul class="menu-riga">
+          {% for v in menu %}
+          <li><a href="{{ v.href }}"{% if v.attiva %} aria-current="page"{% endif %}>{{ v.titolo }}</a></li>
+          {% endfor %}
+        </ul>
+        {% if sottomenu %}
+        <ul class="menu-riga menu-sotto" aria-label="Pagine della sezione">
+          {% for v in sottomenu %}
+          <li><a href="{{ v.href }}"{% if v.attiva %} aria-current="page"{% endif %}>{{ v.titolo }}</a></li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main class="contenitore">
+    {% block contenuto %}{% endblock %}
+  </main>
+
+  <footer class="piede contenitore">
+    <p>Dati: Federal Reserve Bank of St. Louis (FRED), incluse le serie ICE BofA, Moody's, CBOE e NBER ivi pubblicate;
+      Banca centrale europea (ECB Data Portal); Yahoo Finance (prezzi dei future sulle commodities, fonte non ufficiale),
+      Fondo Monetario Internazionale via FRED (prezzi mensili di riserva); Banca dei Regolamenti Internazionali (BIS: tassi di policy e inflazione); Ministero delle Finanze del Giappone (rendimenti dei JGB); Statistics Bureau of Japan (via DBnomics: CPI core del Giappone); OCSE via FRED (rendimento coreano a 10 anni); date delle recessioni dell'area euro: CEPR-EABCN Euro Area Business Cycle Dating Committee.
+      Dashboard a scopo di studio, non è una consulenza finanziaria.</p>
+  </footer>
+
+  {% block script_grafici %}{% endblock %}
+  <script src="{{ radice }}app.js?v={{ versione }}"></script>
+</body>
+</html>

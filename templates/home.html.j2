@@ -1,0 +1,26 @@
+{% extends "base.html.j2" %}
+{% from "_componenti.html.j2" import avvisi %}
+{# Home provvisoria (step 1): elenco delle pagine e avvisi su tutte le serie. Dallo step 6 diventa la Panoramica. #}
+
+{% block contenuto %}
+<section class="intestazione-pagina">
+  <h1>Dashboard macro</h1>
+  <p class="descrizione">Dashboard macroeconomica statica, rigenerata ogni giorno. Scegli una pagina.</p>
+  <p class="aggiornamento">Aggiornata il <strong>{{ aggiornato }}</strong> · fonti dati: FRED, BCE, BIS, Yahoo Finance, Ministero delle Finanze giapponese e Statistics Bureau of Japan</p>
+</section>
+
+{{ avvisi(errori, in_ritardo, riserve, totale_serie, "") }}
+
+<section class="blocco" aria-labelledby="pagine">
+  <h2 id="pagine">Pagine</h2>
+  <div class="griglia-kpi griglia-pagine">
+    {% for p in regioni %}
+    <a class="scheda-pagina" href="{{ p.id }}/">
+      <h3>{{ p.nome }}{% if not p.attiva %} <span class="presto">in arrivo</span>{% endif %}</h3>
+      <p>{{ p.descrizione }}</p>
+      <p class="kpi-data">{{ p.n_grafici }} grafici</p>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

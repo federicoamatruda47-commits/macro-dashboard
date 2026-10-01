@@ -10,6 +10,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from plotly.offline import get_plotlyjs_version
 
 from .data import NOMI_FONTI, OPERAZIONI, PERIODI_PERFORMANCE, Serie, tipo_variazione, trova_serie, variazioni
+from .pagine import HOME, costruisci_menu, percorso, radice
 from .regions import REGIONI, Grafico
 
 FUSO_ORARIO = ZoneInfo("Europe/Rome")
@@ -137,11 +138,36 @@ def _voce_ritardo(s: Serie, oggi: pd.Timestamp, nomi_regioni: dict[str, str]) ->
             "giorni": s.giorni_senza_dati(oggi), "soglia": s.soglia_ritardo}
 
 
+def _serie_usate(sezioni, serie: dict[str, Serie]) -> list[Serie]:
+    """Le serie che una pagina usa davvero (grafici e tabelle, più le componenti delle serie calcolate).
+
+    Serve a mostrare in ogni pagina solo gli avvisi che la riguardano.
+    """
+    trovate: dict[str, Serie] = {}
+
+    def aggiungi(id_serie: str) -> None:
+        s = trova_serie(serie, id_serie)
+        if s.id in trovate:
+            return
+        trovate[s.id] = s
+        for componente in s.componenti or []:
+            aggiungi(componente)
+
+    for sezione in sezioni:
+        for grafico in sezione.grafici:
+            for i in grafico.serie_ids:
+                aggiungi(i)
+        for i in sezione.tabella_performance:
+            aggiungi(i)
+    return list(trovate.values())
+
+
 def prepara_contesto(config: dict, serie: dict[str, Serie]) -> dict:
     """Raccoglie tutto ciò che serve al modello HTML."""
     adesso = datetime.now(FUSO_ORARIO)
     oggi = pd.Timestamp(adesso.date())
 
+    nomi_regioni = {r["id"]: r["nome"] for r in config["regioni"]}
     regioni = []
     for regione in config["regioni"]:
         serie_regione = [s for s in serie.values() if s.regione == regione["id"]]
@@ -149,8 +175,11 @@ def prepara_contesto(config: dict, serie: dict[str, Serie]) -> dict:
         attiva = regione.get("attiva", False) and costruttore is not None
 
         sezioni = []
+        usate: list[Serie] = []
         if attiva:
-            for sezione in costruttore(serie, config):
+            oggetti = costruttore(serie, config)
+            usate = _serie_usate(oggetti, serie)
+            for sezione in oggetti:
                 sezioni.append({
                     "id": sezione.id, "titolo": sezione.titolo, "descrizione": sezione.descrizione,
                     "grafici": [_dati_grafico(g, serie, oggi) for g in sezione.grafici],
@@ -160,12 +189,19 @@ def prepara_contesto(config: dict, serie: dict[str, Serie]) -> dict:
                 })
 
         regioni.append({
-            "id": regione["id"], "nome": regione["nome"], "attiva": attiva, "sezioni": sezioni,
+            "id": regione["id"], "nome": regione["nome"], "descrizione": regione.get("descrizione", ""),
+            "attiva": attiva, "sezioni": sezioni,
             "riepilogo": [_scheda_riepilogo(s, oggi) for s in serie_regione if s.riepilogo],
             "stato": [_riga_stato(s, oggi) for s in serie_regione],
+            "n_grafici": sum(len(sez["grafici"]) for sez in sezioni),
+            "ha_grafici": any(g["json"] for sez in sezioni for g in sez["grafici"]),
+            # Solo gli avvisi che riguardano le serie di questa pagina
+            "totale_serie": len(usate),
+            "errori": [{"id": s.id, "nome": s.nome, "errore": s.errore} for s in usate if not s.ok],
+            "in_ritardo": [_voce_ritardo(s, oggi, nomi_regioni) for s in usate if s.in_ritardo(oggi)],
+            "riserve": [{"id": s.id, "nome": s.nome, "nota": s.nota_fonte} for s in usate if s.nota_fonte],
         })
 
-    nomi_regioni = {r["id"]: r["nome"] for r in config["regioni"]}
     return {
         "aggiornato": adesso.strftime("%d/%m/%Y alle %H:%M") + " (ora italiana)",
         "regioni": regioni,
@@ -182,21 +218,37 @@ def prepara_contesto(config: dict, serie: dict[str, Serie]) -> dict:
 # Scrittura dei file
 # ---------------------------------------------------------------------
 
-def genera_sito(config: dict, serie: dict[str, Serie], radice: Path) -> Path:
-    """Scrive site/index.html e copia i file statici. Restituisce il percorso della pagina."""
-    cartella_site = radice / "site"
+def genera_sito(config: dict, serie: dict[str, Serie], radice_progetto: Path) -> Path:
+    """Scrive site/index.html (home) e site/<regione>/index.html per ogni pagina, più CSS e JavaScript.
+
+    Restituisce il percorso della home.
+    """
+    cartella_site = radice_progetto / "site"
     cartella_site.mkdir(exist_ok=True)
 
-    ambiente = Environment(loader=FileSystemLoader(radice / "templates"),
+    ambiente = Environment(loader=FileSystemLoader(radice_progetto / "templates"),
                            autoescape=select_autoescape(["html", "j2"]),
                            trim_blocks=True, lstrip_blocks=True)
-    html = ambiente.get_template("index.html.j2").render(**prepara_contesto(config, serie))
+    contesto = prepara_contesto(config, serie)
+    comune = {chiave: contesto[chiave]
+              for chiave in ("aggiornato", "plotly_versione", "versione")}
 
-    pagina = cartella_site / "index.html"
-    pagina.write_text(html, encoding="utf-8")
+    def scrivi(id_pagina: str, modello: str, **dati) -> Path:
+        menu, sottomenu = costruisci_menu(config, id_pagina)
+        html = ambiente.get_template(modello).render(
+            **comune, **dati, id_pagina=id_pagina, radice=radice(id_pagina), menu=menu, sottomenu=sottomenu)
+        file = cartella_site / percorso(id_pagina) / "index.html"
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_text(html, encoding="utf-8")
+        return file
+
+    for regione in contesto["regioni"]:
+        scrivi(regione["id"], "pagina.html.j2", r=regione)
+    pagina = scrivi(HOME, "home.html.j2", **{k: contesto[k] for k in
+                                             ("regioni", "errori", "in_ritardo", "riserve", "totale_serie")})
 
     # CSS e JavaScript
-    for file in (radice / "static").iterdir():
+    for file in (radice_progetto / "static").iterdir():
         shutil.copy2(file, cartella_site / file.name)
     # Dice a GitHub Pages di pubblicare i file così come sono (senza Jekyll)
     (cartella_site / ".nojekyll").touch()
