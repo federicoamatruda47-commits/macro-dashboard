@@ -276,3 +276,42 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .pagina-vicina a { color: var(--accento); font-weight: 600; text-decoration: none; }
 .pagina-vicina a span { color: var(--testo-tenue); font-weight: 400; margin: 0 4px; }
 .pagina-vicina a:hover { text-decoration: underline; }
+
+/* ---- Overview: schede cliccabili, mini-grafico, stato dei dati, movimenti della settimana ---- */
+.kpi-link { display: block; color: inherit; text-decoration: none; }
+.kpi-link:hover { border-color: var(--accento); }
+.sparkline { display: block; width: 100%; height: 34px; margin: 4px 0 2px; }
+.chips-stato { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0; padding: 0; list-style: none; }
+.chip {
+  display: inline-block; padding: 4px 12px; border: 1px solid var(--griglia); border-radius: 999px;
+  color: var(--testo-2); font-size: 0.85rem; text-decoration: none;
+}
+.chip:hover { border-color: var(--accento); color: var(--testo); }
+.chip-avviso { border-color: var(--avviso-bordo); background: var(--avviso-sfondo); color: var(--testo); }
+.chip-ok { color: var(--ok-testo); }
+.titolo-gruppo + .griglia-kpi { margin-bottom: 8px; }
+
+.movimenti { margin: 12px 0 0; padding: 0; list-style: none; counter-reset: mov; }
+.movimenti li {
+  display: grid; grid-template-columns: minmax(150px, 1.6fr) 110px minmax(80px, 1fr) 110px; align-items: center; gap: 4px 12px;
+  padding: 10px 12px; margin-bottom: 6px; counter-increment: mov;
+  background: var(--superficie); border: 1px solid var(--bordo); border-radius: 10px;
+}
+.mov-nome::before { content: counter(mov); display: inline-block; width: 1.4em; color: var(--testo-tenue); font-variant-numeric: tabular-nums; }
+.mov-nome a { color: var(--testo); font-weight: 600; text-decoration: none; }
+.mov-nome a:hover { color: var(--accento); }
+.mov-valore { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+.mov-barra { height: 8px; border-radius: 4px; background: var(--griglia); overflow: hidden; }
+.mov-barra span { display: block; height: 100%; background: var(--testo-2); border-radius: 4px; }
+.mov-punteggio { text-align: right; font-variant-numeric: tabular-nums; color: var(--testo-2); font-size: 0.9rem; }
+.settimana-tranquilla { padding: 14px; background: var(--superficie); border: 1px solid var(--bordo); border-radius: 10px; }
+.nota-movimenti { margin-top: 10px; }
+.nota-movimenti a, .esplora-more a { color: var(--accento); }
+.esplora-markets { margin-bottom: 10px; }
+@media (max-width: 600px) {
+  .movimenti li { grid-template-columns: 1fr auto; }
+  .mov-nome { grid-column: 1 / -1; }
+  .mov-barra { grid-column: 1 / -1; }
+  .mov-punteggio { text-align: left; grid-column: 1; grid-row: 2; }
+  .mov-valore { grid-column: 2; grid-row: 2; justify-self: end; }
+}

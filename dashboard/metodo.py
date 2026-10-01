@@ -5,6 +5,7 @@ soglie di freschezza, fonti di riserva in uso, serie calcolate e note raggruppat
 Le note tecniche stanno in contenuti/note.yaml; render.py le passa già lette.
 """
 
+from . import movimenti
 from .data import FONTE_CALCOLATA, NOMI_FONTI, OPERAZIONI, SOGLIA_RITARDO_GIORNI, Serie
 from .fonti_url import SITI_FONTI
 
@@ -92,6 +93,32 @@ def serie_calcolate(config: dict, serie: dict[str, Serie]) -> list[dict]:
             formula += f" × {voce['fattore']:g}"
         righe.append({"nome": voce["nome"], "formula": formula, "ok": s.ok, "errore": s.errore})
     return righe
+
+
+NOMI_GRUPPI_MOVIMENTI = {
+    "us_rates": "US Treasury yields, real yields and curve slopes", "ea_rates": "Euro-area AAA yields and slope",
+    "ea_spreads": "Euro-area sovereign spread", "jp_rates": "Japanese government bond yields",
+    "us_credit": "US corporate credit spreads", "ea_credit": "Euro high-yield spread",
+    "us_equities": "US equity indices", "ea_equities": "Euro-area equity indices and banks", "asia_equities": "Asian equity indices",
+    "world_equities": "World equities (ACWI)", "vix": "VIX", "usd": "The dollar (EUR/USD and the broad index)",
+    "jpy": "USD/JPY", "cny": "USD/CNY", "krw": "USD/KRW", "oil": "Oil (WTI and Brent)", "gas_us": "US natural gas",
+    "gas_eu": "European natural gas", "precious_metals": "Gold and silver", "industrial_metals": "Copper and aluminium",
+    "grains": "Wheat and corn",
+}
+
+
+def descrivi_movimenti(config: dict, serie: dict[str, Serie], classifica: movimenti.Classifica) -> dict:
+    """I parametri di "What changed this week" (letti da dashboard/movimenti.py), i gruppi e quante serie hanno superato la soglia."""
+    gruppi: dict[str, list[str]] = {}
+    for voce in config["serie"]:
+        if voce.get("movimenti"):
+            gruppi.setdefault(voce["gruppo_movimenti"], []).append(serie[voce["id"]].etichetta)
+    return {
+        "soglia": f"{movimenti.SOGLIA:g}", "massimo": movimenti.MASSIMO, "giorni": movimenti.GIORNI, "anni": movimenti.ANNI_STORICO,
+        "minimo": movimenti.MIN_OSSERVAZIONI, "n_serie": sum(len(v) for v in gruppi.values()),
+        "n_controllate": classifica.n_controllate, "n_sopra_soglia": classifica.n_sopra_soglia,
+        "gruppi": [{"nome": NOMI_GRUPPI_MOVIMENTI.get(g, g), "serie": ", ".join(nomi)} for g, nomi in gruppi.items()],
+    }
 
 
 def raggruppa_note(note: dict, usi_note: dict[str, list[dict]]) -> list[dict]:

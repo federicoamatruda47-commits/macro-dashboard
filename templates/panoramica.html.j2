@@ -1,0 +1,86 @@
+{% extends "base.html.j2" %}
+{# Overview (la pagina iniziale): numeri chiave con mini-grafico, "What changed this week", schede verso le altre pagine, avvisi in breve. #}
+
+{% block titolo %}Macro dashboard · Overview{% endblock %}
+
+{% macro scheda_numero(k, radice) %}
+{% set tag = 'a' if k.href else 'div' %}
+<{{ tag }} class="kpi{% if k.href %} kpi-link{% endif %}{% if not k.ok %} kpi-errore{% endif %}"{% if k.href %} href="{{ radice }}{{ k.href }}"{% endif %}>
+  <h3>{{ k.nome }}</h3>
+  {% if k.ok %}
+  <p class="kpi-valore">{{ k.valore }}{% if k.unita %} <span class="kpi-unita">{{ k.unita }}</span>{% endif %}</p>
+  {{ k.sparkline|safe }}
+  <p class="kpi-data{% if k.ritardo %} in-ritardo{% endif %}">as of {{ k.data }}{% if k.ritardo %} · stale{% endif %}</p>
+  <dl class="kpi-variazioni{% if k.variazioni|length == 4 %} kpi-variazioni-4{% endif %}">
+    {% for v in k.variazioni %}<div><dt>{{ v.etichetta }}</dt><dd>{{ v.testo }}</dd></div>{% endfor %}
+  </dl>
+  {% else %}
+  <p class="kpi-valore">n/a</p>
+  <p class="kpi-data">⚠ {{ k.errore }}</p>
+  {% endif %}
+</{{ tag }}>
+{% endmacro %}
+
+{% block contenuto %}
+<section class="intestazione-pagina">
+  <h1>Overview</h1>
+  <p class="descrizione">Where rates, inflation and markets stand today, and what moved this week.</p>
+  <p class="aggiornamento">Updated <strong>{{ aggiornato }}</strong> · {{ totale_serie }} series</p>
+  <ul class="chips-stato" aria-label="Data status">
+    {% if in_ritardo %}<li><a class="chip chip-avviso" href="{{ radice }}method/#freshness">⚠ {{ in_ritardo|length }} stale {{ 'series' }}</a></li>{% endif %}
+    {% if errori %}<li><a class="chip chip-avviso" href="{{ radice }}method/series/">⚠ {{ errori|length }} unavailable {{ 'series' }}</a></li>{% endif %}
+    {% if riserve %}<li><a class="chip" href="{{ radice }}method/#fallback">ⓘ {{ riserve|length }} on fallback sources</a></li>{% endif %}
+    {% if not in_ritardo and not errori and not riserve %}<li><a class="chip chip-ok" href="{{ radice }}method/series/">✓ All {{ totale_serie }} series up to date</a></li>{% endif %}
+  </ul>
+</section>
+
+<section class="blocco" aria-labelledby="numeri-chiave">
+  <h2 id="numeri-chiave">Key numbers</h2>
+  <p class="descrizione">Latest value, one-year trend and change over the last week (1W), month (1M), year to date (YTD, equities) and year (1Y).
+    Changes in rates are in basis points (bp = 0.01%), changes in inflation in percentage points (pp), changes in prices and indices in %.
+    Click a card to see its chart.</p>
+  {% for g in panoramica %}
+  <h3 class="titolo-gruppo">{{ g.titolo }}</h3>
+  <div class="griglia-kpi">
+    {% for k in g.schede %}{{ scheda_numero(k, radice) }}{% endfor %}
+  </div>
+  {% endfor %}
+</section>
+
+<section class="blocco" aria-labelledby="cosa-e-cambiato">
+  <h2 id="cosa-e-cambiato">What changed this week</h2>
+  <p class="descrizione">Week to {{ movimenti.settimana_al }}. The biggest moves compared with each series' own normal volatility: {{ movimenti.n_controllate }}
+    series checked, only moves of {{ movimenti.soglia }}× the normal weekly move or more are listed.</p>
+  {% if movimenti.righe %}
+  <ol class="movimenti">
+    {% for r in movimenti.righe %}
+    <li>
+      <span class="mov-nome">{% if r.href %}<a href="{{ radice }}{{ r.href }}">{{ r.etichetta }}</a>{% else %}{{ r.etichetta }}{% endif %}{% if r.data %} <span class="kpi-data">as of {{ r.data }}</span>{% endif %}</span>
+      <span class="mov-valore mov-{{ r.direzione }}">{{ '▲' if r.direzione == 'up' else '▼' }} {{ r.movimento }}</span>
+      <span class="mov-barra" aria-hidden="true"><span style="width: {{ r.barra }}%"></span></span>
+      <span class="mov-punteggio">{{ r.punteggio }} normal</span>
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <p class="settimana-tranquilla"><strong>A quiet week.</strong> None of the {{ movimenti.n_controllate }} series moved by {{ movimenti.soglia }}× its normal weekly move or more.</p>
+  {% endif %}
+  <p class="descrizione nota-movimenti">"×normal" is this week's move divided by the typical weekly move of the same series over the previous 3 years: 3.0× means three
+    times a normal week. It is not a probability. At most one series per group is shown (all US Treasury yields count as one) and at most
+    {{ movimenti.massimo }} rows. <a href="{{ radice }}method/#weekly-moves">How this is calculated and why the bar is {{ movimenti.soglia }}×</a>.</p>
+</section>
+
+<section class="blocco" aria-labelledby="esplora">
+  <h2 id="esplora">Explore</h2>
+  {% for gruppo in ["Markets", "More"] %}
+  <div class="griglia-kpi griglia-pagine esplora-{{ gruppo|lower }}">
+    {% for p in esplora if p.gruppo == gruppo %}
+    <a class="scheda-pagina" href="{{ radice }}{{ p.href }}">
+      <h3>{{ p.nome }}</h3>
+      <p>{{ p.descrizione }}</p>
+    </a>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}

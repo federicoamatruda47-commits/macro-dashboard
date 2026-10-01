@@ -47,10 +47,18 @@ class Serie:
     fattore: float = 1.0                 # solo per fonte "calcolata": il risultato viene moltiplicato per questo
     soglia_giorni: int | None = None     # soglia di freschezza propria di questa serie (al posto di quella standard)
     colore: str | None = None            # chiave del blocco "colori" di config.yaml se diversa dal paese
+    movimenti: bool = False              # True = entra nel calcolo di "What changed this week" (dashboard/movimenti.py)
+    gruppo_movimenti: str | None = None  # nel calcolo conta al massimo una serie per gruppo (es. tutti i tassi USA)
+    etichetta_breve: str | None = None   # nome più corto/chiaro per l'Overview, se `nome` non basta
     dati: pd.Series | None = None  # dati già trasformati (es. in variazione annua)
     errore: str | None = None
     fonte_usata: str | None = None       # es. "fred (riserva)" se si è dovuto usare la riserva
     nota_fonte: str | None = None        # perché si è usata la riserva
+
+    @property
+    def etichetta(self) -> str:
+        """Il nome da mostrare nell'Overview: quello breve se c'è, altrimenti il nome."""
+        return self.etichetta_breve or self.nome
 
     @property
     def chiave_colore(self) -> str:
@@ -161,6 +169,8 @@ def carica_config(percorso: Path) -> dict:
                 raise ValueError(f"Serie {voce['id']}: 'operazione' deve essere una tra {list(OPERAZIONI)}")
             if not isinstance(voce.get("fattore", 1), (int, float)):
                 raise ValueError(f"Serie {voce['id']}: 'fattore' deve essere un numero")
+        if voce.get("movimenti") and not voce.get("gruppo_movimenti"):
+            raise ValueError(f"Serie {voce['id']}: una serie con 'movimenti: true' deve avere 'gruppo_movimenti'")
         soglia = voce.get("soglia_giorni")
         if soglia is not None and not (isinstance(soglia, int) and soglia > 0):
             raise ValueError(f"Serie {voce['id']}: 'soglia_giorni' deve essere un numero intero positivo")
@@ -193,7 +203,10 @@ def _nuova_serie(voce: dict) -> Serie:
                  operazione=voce.get("operazione", "differenza"),
                  fattore=float(voce.get("fattore", 1)),
                  soglia_giorni=voce.get("soglia_giorni"),
-                 colore=voce.get("colore"))
+                 colore=voce.get("colore"),
+                 movimenti=bool(voce.get("movimenti", False)),
+                 gruppo_movimenti=voce.get("gruppo_movimenti"),
+                 etichetta_breve=voce.get("etichetta_breve"))
 
 
 def _scarica_da(fonte: str, id_fonte: str, trasformazione: str) -> pd.Series:

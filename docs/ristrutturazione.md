@@ -18,13 +18,13 @@ Piano approvato dall'utente il 01/10/2026, con le scelte della sezione 0 e due a
 | 4e-1 | Mercati: Rates & curves, parte 1 (tassi di policy, curve, rendimenti a 10 anni, pendenza e inversioni) | **fatto e in `main`** |
 | 4e-2 | Mercati: Rates & curves, parte 2 (inflazione e tassi reali) | **fatto e in `main`** (con lo step 4 completo) |
 | 5 | Economies (hub + 5 segnaposto + UNRATE in USA); `regioni` → `pagine` nel config; via le vecchie pagine e il Confronto globale | **fatto e in `main`** |
-| 6 | Overview (14 numeri chiave con sparkline, "What changed this week", schede, avvisi); diventa `/` | **in corso**: proposta di dettaglio del calcolo dei movimenti in attesa di approvazione (nessun codice ancora) |
+| 6 | Overview (14 numeri chiave con sparkline, "What changed this week", schede, avvisi); diventa `/` | **fatto sul ramo** `ristrutturazione/step-6`, in attesa dell'ok per il merge |
 | 7 | Rifinitura: peso pagine, link rotti, README e screenshot, CLAUDE.md, codice morto (opz.: nomi interni in inglese) | da fare |
 
 Flusso di lavoro: un ramo per step (`ristrutturazione/step-N`); a fine step riepilogo all'utente e **attesa dell'ok prima del merge** su `main`
 (il merge pubblica il sito tramite GitHub Actions). Il merge si fa a fine di ogni step (non tutto alla fine), con `git push origin main`. Nessun commit/push fuori da questo flusso senza richiesta.
 
-Strumenti di controllo: `python tools/inventario.py controlla` (deve passare a ogni step), `python tools/inventario.py sito` (dopo `python build.py`: controlla le pagine HTML vere e ne stampa il peso), `python tools/controlla_link.py` (link interni rotti, dopo `build.py`), `python tools/inventario.py salva`
+Strumenti di controllo: `python tools/inventario.py controlla` (deve passare a ogni step), `python tools/inventario.py sito` (dopo `python build.py`: controlla le pagine HTML vere e ne stampa il peso), `python tools/controlla_link.py` (link interni rotti, dopo `build.py`), `python -m unittest discover -s tests -t .` (test di `dashboard/movimenti.py`; con `PROVE_CON_RETE=1` anche gli episodi storici), `python tools/inventario.py salva`
 (solo allo step 0, rigenera la baseline), `python tools/valida_palette.py --pairs all` (colori dei Paesi; da rilanciare se se ne cambia uno). Mappa vecchio grafico → nuovo posto: [mappa-grafici.yaml](mappa-grafici.yaml).
 
 ## Regole per le righe "How to read it" (richieste dall'utente il 01/10/2026, valgono per tutto lo step 4)
@@ -337,3 +337,8 @@ Il workflow GitHub non cambia (pubblica già tutta `site/`).
 - 01/10/2026: step 5 unito in `main` (riga della disoccupazione con la definizione corretta di forza lavoro, verificata in `main`; riga del Giappone approvata dall'utente nella versione verificata sui dati).
 - 01/10/2026: step 6 avviato sul ramo `ristrutturazione/step-6`. Prima del codice, proposta di dettaglio del calcolo "What changed this week" con un prototipo su dati reali (fuori dal progetto): 66 serie candidate giornaliere/settimanali, 18 sopra 1,5× in una settimana volatile per i tassi;
   con al massimo una serie per gruppo restano 8 gruppi su 21 sopra 1,5× (primi: Real yield 10Y TIPS 3,0×, AAA 3M −2,6×, JGB 2Y 2,5×, HY USA 2,5×, spread euro vs AAA 2,2×).
+- 01/10/2026: step 6 (Overview) sul ramo `ristrutturazione/step-6`. Decisioni dell'utente sul calcolo: deviazione standard; **soglia 2×** (non 1,5×) con massimo 5 righe, motivata nella pagina Method (con 1,5× circa il 13% delle serie la supera per caso in una settimana normale, con 2× circa il 5%);
+  gruppi come proposti; nota "non sono probabilità" sotto la tabella. Codice: `dashboard/movimenti.py` (funzioni pure), `dashboard/sparkline.py` (mini-grafici SVG), 54 serie con `movimenti: true` e `gruppo_movimenti` in 21 gruppi, blocco `panoramica:` con i 14 numeri chiave (3 gruppi),
+  template `panoramica.html.j2` (home), sezione "What changed this week" in `/method/`. Test: `tests/test_movimenti.py` (19 test su dati inventati + 3 episodi storici con `PROVE_CON_RETE=1`: WTI settimana al 9/3/2020 −34% = −8,1×, VIX settimana al 27/2/2020 +152% = +8,1×).
+  Scoperta dai test sui dati veri: il VIX, in settimane già turbolente (al 13/3/2020, +38%), vale solo 1,8× perché si muove molto anche in settimane normali (deviazione standard ~21%): lo dice anche la pagina Method.
+  Risultato di oggi: 9 serie su 54 sopra 2×; in lista: US 10Y real yield +28 bp 3,0×, Euro AAA 3M −14 bp 2,6×, Japan 2Y +10 bp 2,5×, US high-yield spread +40 bp 2,5×, Euro-area spread vs AAA 10Y +6 bp 2,2×. Il test in CI non è ancora nel workflow GitHub (da decidere).
