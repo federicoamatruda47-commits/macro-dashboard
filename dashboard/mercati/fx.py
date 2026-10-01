@@ -8,7 +8,7 @@ l'indice del dollaro USA e usa le recessioni NBER.
 
 from .. import charts
 from ..data import Serie, trova_serie
-from ..regions.modello import Grafico, Sezione
+from ..modello import Grafico, Sezione
 
 EURUSD = "EXR/D.USD.EUR.SP00.A"     # BCE, quotato "dollari per euro"
 USDJPY, USDCNY, USDKRW = "JPY=X", "CNY=X", "KRW=X"  # Yahoo, quotati "valuta per dollaro"

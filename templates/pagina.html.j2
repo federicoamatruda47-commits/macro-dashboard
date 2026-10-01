@@ -1,6 +1,6 @@
 {% extends "base.html.j2" %}
 {% from "_componenti.html.j2" import avvisi, riepilogo, tabella_performance, scheda_grafico %}
-{# Pagina di una regione (USA, Eurozona, Commodities, ...): titolo, avvisi, "Key numbers", sezioni con grafici #}
+{# Pagina del sito (Markets, Economies...): titolo, una riga, avvisi, "Key numbers", sezioni con grafici; se non è attiva, "coming soon" #}
 
 {% block titolo %}{{ r.nome }} · Macro dashboard{% endblock %}
 {% block descrizione %}{{ r.descrizione }}{% endblock %}
@@ -21,11 +21,12 @@
 
 {% if not r.attiva %}
 <div class="in-arrivo">
-  <h2>{{ r.nome }}</h2>
-  <p>This section is being prepared and will arrive in a later phase of the project.</p>
+  <h2>Coming soon</h2>
+  <p>This page is being prepared. Meanwhile, the <a href="{{ radice }}markets/">Markets</a> pages already compare rates, credit, equities,
+    currencies and commodities across these economies.</p>
 </div>
 {% else %}
-{# ---- Scheda riassuntiva (solo se la regione ha serie con riepilogo: true) ---- #}
+{# ---- Numeri chiave (solo se la pagina ne ha) ---- #}
 {% if r.riepilogo %}{{ riepilogo(r) }}{% endif %}
 
 {# ---- Sezioni con i grafici ---- #}
@@ -42,6 +43,8 @@
 </section>
 {% endfor %}
 
+{% endif %}
+
 {% if r.precedente or r.successivo %}
 <nav class="pagina-vicina" aria-label="Neighbouring pages">
   {% if r.precedente %}<a class="precedente" href="{{ r.precedente.href }}">‹ <span>Previous</span> {{ r.precedente.nome }}</a>{% else %}<span></span>{% endif %}
@@ -50,7 +53,6 @@
 {% endif %}
 <p class="descrizione">Every series on this site, with its source and status: <a href="{{ radice }}method/series/">Series status</a>.
   Sources, rules and known limits: <a href="{{ radice }}method/">Sources &amp; method</a>.</p>
-{% endif %}
 {% endblock %}
 
 {% block script_grafici %}

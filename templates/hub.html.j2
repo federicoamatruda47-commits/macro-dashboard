@@ -18,16 +18,16 @@
   <h2 id="pagine-hub">Pages</h2>
   <div class="griglia-kpi griglia-pagine">
     {% for f in figlie %}
-    {% if f.in_arrivo %}
-    <div class="scheda-pagina scheda-in-arrivo">
-      <h3>{{ f.nome }} <span class="presto">coming soon</span></h3>
-      <p>{{ f.descrizione }}</p>
-    </div>
-    {% else %}
-    <a class="scheda-pagina" href="{{ f.href }}">
-      <h3>{{ f.nome }}</h3>
+    {% if f.href %}
+    <a class="scheda-pagina{% if f.etichetta %} scheda-in-arrivo{% endif %}" href="{{ f.href }}">
+      <h3>{{ f.nome }}{% if f.etichetta %} <span class="presto">{{ f.etichetta }}</span>{% endif %}</h3>
       <p>{{ f.descrizione }}</p>
     </a>
+    {% else %}
+    <div class="scheda-pagina scheda-in-arrivo">
+      <h3>{{ f.nome }} <span class="presto">{{ f.etichetta }}</span></h3>
+      <p>{{ f.descrizione }}</p>
+    </div>
     {% endif %}
     {% endfor %}
   </div>

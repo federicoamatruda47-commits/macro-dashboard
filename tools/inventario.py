@@ -30,8 +30,8 @@ RADICE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RADICE))
 
 from dashboard.data import carica_config  # noqa: E402
-from dashboard.mercati import PAGINE  # noqa: E402
-from dashboard.regions import REGIONI  # noqa: E402
+from dashboard.economie import PAGINE as PAGINE_ECONOMIE  # noqa: E402
+from dashboard.mercati import PAGINE as PAGINE_MERCATI  # noqa: E402
 
 BASELINE = RADICE / "docs" / "inventario-baseline.json"
 MAPPA = RADICE / "docs" / "mappa-grafici.yaml"
@@ -40,7 +40,7 @@ MAPPA = RADICE / "docs" / "mappa-grafici.yaml"
 def raccogli(config: dict) -> dict:
     """Fotografia del sito di adesso: grafici, tabelle di performance, serie di config.yaml e serie usate."""
     grafici, tabelle = [], []
-    for id_regione, costruttore in {**REGIONI, **PAGINE}.items():
+    for id_regione, costruttore in {**PAGINE_MERCATI, **PAGINE_ECONOMIE}.items():
         for sezione in costruttore({}, config):
             for g in sezione.grafici:
                 grafici.append({"id": g.id, "pagina": id_regione, "titolo": g.titolo, "serie_ids": list(g.serie_ids)})

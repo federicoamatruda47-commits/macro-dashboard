@@ -8,7 +8,7 @@ USA-area euro non ne ha.
 
 from .. import charts
 from ..data import Serie, trova_serie
-from ..regions.modello import Grafico, Sezione
+from ..modello import Grafico, Sezione
 
 HY_USA, HY_EURO = "BAMLH0A0HYM2", "BAMLHE00EHYIOAS"
 IG_USA, BAA = "BAMLC0A0CM", "BAA10Y"

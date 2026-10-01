@@ -7,7 +7,7 @@ Sempre prezzi di chiusura senza dividendi (non "adjusted"). Niente bande di rece
 
 from .. import charts
 from ..data import Serie, trova_serie
-from ..regions.modello import Grafico, Sezione
+from ..modello import Grafico, Sezione
 
 # Indici americani
 SP500, NASDAQ100, RUSSELL2000, SP500_EW = "^GSPC", "^NDX", "^RUT", "^SPXEW"

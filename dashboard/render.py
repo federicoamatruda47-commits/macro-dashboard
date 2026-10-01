@@ -17,10 +17,13 @@ from .data import (FONTE_CALCOLATA, NOMI_FONTI, OPERAZIONI, PERIODI_PERFORMANCE,
                    variazioni)
 from .fonti_url import url_serie
 from .pagine import HOME, PAGINA_METODO, PAGINA_SERIE, REINDIRIZZAMENTI, costruisci_menu, percorso, radice
+from .economie import PAGINE as PAGINE_ECONOMIE
 from .mercati import PAGINE as PAGINE_MERCATI
-from .regions import REGIONI, Grafico
+from .modello import Grafico
 
 FUSO_ORARIO = ZoneInfo("Europe/Rome")
+# Costruttore delle sezioni di ogni pagina con contenuti (le pagine "in-arrivo" non ne hanno)
+COSTRUTTORI = {**PAGINE_MERCATI, **PAGINE_ECONOMIE}
 
 
 # Frequenze delle serie come si leggono sul sito (dentro il codice restano in italiano)
@@ -189,9 +192,9 @@ def _riga_stato(s: Serie, oggi: pd.Timestamp) -> dict:
     }
 
 
-def _voce_ritardo(s: Serie, oggi: pd.Timestamp, nomi_regioni: dict[str, str]) -> dict:
+def _voce_ritardo(s: Serie, oggi: pd.Timestamp, nomi_aree: dict[str, str]) -> dict:
     """Una riga dell'avviso 'dati non aggiornati'."""
-    return {"id": s.id, "nome": s.nome, "regione": nomi_regioni.get(s.regione, s.regione),
+    return {"id": s.id, "nome": s.nome, "area": nomi_aree.get(s.paese, s.paese),
             "data": formatta_data(s.ultima_data), "frequenza": FREQUENZE.get(s.frequenza),
             "giorni": s.giorni_senza_dati(oggi), "soglia": s.soglia_ritardo}
 
@@ -256,14 +259,14 @@ def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict) -> dict:
     oggi = pd.Timestamp(adesso.date())
     adesso_utc = adesso.astimezone(timezone.utc)
 
-    nomi_regioni = {r["id"]: r["nome"] for r in config["regioni"]}
+    nomi_aree = {chiave: voce["nome"] for chiave, voce in config["colori"].items()}  # es. "us" -> United States
     usi_serie: dict[str, list[dict]] = {}   # id serie -> grafici e tabelle che la usano (per Series status)
     usi_note: dict[str, list[dict]] = {}    # id nota -> grafici che la richiamano (per Known limits)
     def costruisci_voce(voce: dict, costruttore, id_numeri_chiave: list[str], ytd: bool) -> dict:
-        """Una pagina (una regione o una pagina di mercato) con tutto ciò che serve al modello HTML."""
+        """Una pagina del sito con tutto ciò che serve al modello HTML."""
         id_pagina = voce["id"]
         slug = id_pagina.replace("/", "-")  # per gli id HTML delle sezioni (niente "/")
-        attiva = voce.get("attiva", voce.get("stato") == "attiva") and costruttore is not None
+        attiva = voce.get("stato") == "attiva" and costruttore is not None
 
         sezioni = []
         usate: list[Serie] = []
@@ -301,16 +304,14 @@ def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict) -> dict:
             # Solo gli avvisi che riguardano le serie di questa pagina
             "totale_serie": len(usate),
             "errori": [{"id": s.id, "nome": s.nome, "errore": s.errore} for s in usate if not s.ok],
-            "in_ritardo": [_voce_ritardo(s, oggi, nomi_regioni) for s in usate if s.in_ritardo(oggi)],
+            "in_ritardo": [_voce_ritardo(s, oggi, nomi_aree) for s in usate if s.in_ritardo(oggi)],
             "riserve": [{"id": s.id, "nome": s.nome, "nota": s.nota_fonte} for s in usate if s.nota_fonte],
         }
 
-    regioni = [costruisci_voce(r, REGIONI.get(r["id"]),
-                               r.get("numeri_chiave", [s.id for s in serie.values() if s.regione == r["id"] and s.riepilogo]), False)
-               for r in config["regioni"] if not r.get("senza_pagina")]
-    pagine = [costruisci_voce(p, PAGINE_MERCATI.get(p["id"]), p.get("numeri_chiave", []), bool(p.get("ytd")))
-              for p in config.get("pagine", []) if p.get("tipo") != "hub" and p.get("stato") == "attiva"]
-    # Pagina precedente e successiva dentro lo stesso gruppo (nell'ordine di config.yaml), solo tra quelle attive
+    # Le pagine "attive" e "in-arrivo" hanno un file; quelle "dopo" sono solo schede nell'hub
+    pagine = [costruisci_voce(p, COSTRUTTORI.get(p["id"]), p.get("numeri_chiave", []), bool(p.get("ytd")))
+              for p in config.get("pagine", []) if p.get("tipo") != "hub" and p.get("stato") in ("attiva", "in-arrivo")]
+    # Pagina precedente e successiva dentro lo stesso gruppo (nell'ordine di config.yaml)
     voci_pagine = {p["id"]: p for p in config.get("pagine", [])}
     for i, pagina in enumerate(pagine):
         gruppo = voci_pagine[pagina["id"]].get("gruppo")
@@ -324,7 +325,7 @@ def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict) -> dict:
     stato = []
     for s in serie.values():
         riga = _riga_stato(s, oggi)
-        riga["regione"] = nomi_regioni.get(s.regione, s.regione)
+        riga["area"] = nomi_aree.get(s.paese, s.paese)
         riga["usi"] = usi_serie.get(s.id, [])
         stato.append(riga)
     standard, proprie = metodo.soglie_freschezza(config)
@@ -337,10 +338,9 @@ def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict) -> dict:
             "regola_calcolate": metodo.REGOLA_CALCOLATE, "gruppi_note": metodo.raggruppa_note(note, usi_note),
         },
         "aggiornato": f"{adesso_utc.day} {adesso_utc:%b %Y}, {adesso_utc:%H:%M} UTC",
-        "regioni": regioni,
         "pagine": pagine,
         "errori": [{"id": s.id, "nome": s.nome, "errore": s.errore} for s in serie.values() if not s.ok],
-        "in_ritardo": [_voce_ritardo(s, oggi, nomi_regioni) for s in serie.values() if s.in_ritardo(oggi)],
+        "in_ritardo": [_voce_ritardo(s, oggi, nomi_aree) for s in serie.values() if s.in_ritardo(oggi)],
         "riserve": [{"id": s.id, "nome": s.nome, "nota": s.nota_fonte} for s in serie.values() if s.nota_fonte],
         "totale_serie": len(serie),
         "css_colori": css_colori(config),
@@ -363,7 +363,7 @@ def scrivi_reindirizzamento(cartella_site: Path, vecchio: str, nuovo: str, ambie
 
 
 def genera_sito(config: dict, serie: dict[str, Serie], radice_progetto: Path) -> Path:
-    """Scrive site/index.html (home) e site/<regione>/index.html per ogni pagina, più CSS e JavaScript.
+    """Scrive site/index.html (home) e site/<id pagina>/index.html per ogni pagina, più CSS e JavaScript.
 
     Restituisce il percorso della home.
     """
@@ -375,7 +375,7 @@ def genera_sito(config: dict, serie: dict[str, Serie], radice_progetto: Path) ->
                            trim_blocks=True, lstrip_blocks=True)
     contesto = prepara_contesto(config, serie, carica_note(radice_progetto))
     # Regola del sito: ogni grafico ha una riga "How to read it" (si scrive pagina per pagina durante la ristrutturazione)
-    senza = [g["id"] for r in contesto["regioni"] for s in r["sezioni"] for g in s["grafici"] if not g["come_leggerlo"]]
+    senza = [g["id"] for r in contesto["pagine"] for s in r["sezioni"] for g in s["grafici"] if not g["come_leggerlo"]]
     if senza:
         print(f"Warning: {len(senza)} charts have no 'come_leggerlo' line (How to read it), e.g. {', '.join(senza[:4])}...")
     comune = {chiave: contesto[chiave]
@@ -391,17 +391,19 @@ def genera_sito(config: dict, serie: dict[str, Serie], radice_progetto: Path) ->
         return file
 
     avvisi = {k: contesto[k] for k in ("errori", "in_ritardo", "riserve", "totale_serie")}
-    for regione in contesto["regioni"] + contesto["pagine"]:
-        scrivi(regione["id"], "pagina.html.j2", r=regione)
+    for pagina_dati in contesto["pagine"]:
+        scrivi(pagina_dati["id"], "pagina.html.j2", r=pagina_dati)
     for hub in [p for p in config.get("pagine", []) if p.get("tipo") == "hub"]:
-        figlie = [{"nome": p["nome"], "descrizione": p.get("descrizione", ""), "in_arrivo": p.get("stato") != "attiva",
-                   "href": p["id"].rsplit("/", 1)[-1] + "/"} for p in config["pagine"] if p.get("gruppo") == hub["id"]]
+        etichette = {"in-arrivo": "coming soon", "dopo": "later"}   # le pagine "attive" non hanno etichetta
+        figlie = [{"nome": p["nome"], "descrizione": p.get("descrizione", ""), "etichetta": etichette.get(p.get("stato")),
+                   "href": None if p.get("stato") == "dopo" else p["id"].rsplit("/", 1)[-1] + "/"}
+                  for p in config["pagine"] if p.get("gruppo") == hub["id"]]
         scrivi(hub["id"], "hub.html.j2", pagina=hub, figlie=figlie, **avvisi)
     for vecchio, nuovo in REINDIRIZZAMENTI.items():
         scrivi_reindirizzamento(cartella_site, vecchio, nuovo, ambiente)
     scrivi(PAGINA_METODO, "metodo.html.j2", m=contesto["metodo"], **avvisi)
     scrivi(PAGINA_SERIE, "serie.html.j2", stato=contesto["stato"], **avvisi)
-    pagina = scrivi(HOME, "home.html.j2", regioni=contesto["regioni"] + contesto["pagine"], **avvisi)
+    pagina = scrivi(HOME, "home.html.j2", regioni=contesto["pagine"], **avvisi)
 
     # CSS e JavaScript
     for file in (radice_progetto / "static").iterdir():

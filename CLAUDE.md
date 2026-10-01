@@ -23,8 +23,8 @@ prima del merge**. Prima di dichiarare finito uno step: `python tools/inventario
 mappa in `docs/mappa-grafici.yaml`). **Righe "How to read it" (`come_leggerlo`, regole dell'utente del 01/10/2026, valgono per tutto lo step 4 e oltre):** linguaggio semplice, una o due frasi,
 comprensibili a chi non è del settore; prudenti e fattuali: descrivono relazioni storiche ("historically", "has tended to"), mai previsioni o certezze,
 e citano le eccezioni importanti quando servono (es. oro e tassi reali dopo il 2022). **Alla fine di ogni pagina dello step 4 si mostra all'utente una tabella
-con tutte le righe "How to read it" di quella pagina, da rivedere prima del merge.** Le pagine nuove stanno in `dashboard/mercati/` (registro in `__init__.py`)
-e nel blocco `pagine:` di `config.yaml`.
+con tutte le righe "How to read it" di quella pagina, da rivedere prima del merge.** Le pagine stanno in `dashboard/mercati/` e `dashboard/economie/` (registro in `__init__.py`)
+e nel blocco `pagine:` di `config.yaml` (non esiste più il blocco `regioni`, né il campo `regione` delle serie).
 Quando la ristrutturazione sarà finita, le sezioni "Struttura" e "Regole" qui sotto vanno riscritte.
 
 ## Regole del progetto
