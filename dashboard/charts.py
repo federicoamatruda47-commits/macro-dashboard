@@ -6,6 +6,8 @@ qui ogni linea riceve solo un numero di "slot" (1, 2, 3...) in `meta`.
 Il JavaScript usa lo slot per scegliere il colore giusto della palette.
 """
 
+from dataclasses import replace
+
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -187,6 +189,39 @@ def linee_storiche(serie: list[Serie], recessioni=None, riferimento: tuple[float
         _aggiungi_linea_riferimento(figura, 0, "")
     if riferimento is not None:
         _aggiungi_linea_riferimento(figura, *riferimento)
+    return figura
+
+
+def con_nome(s: Serie, nome: str) -> Serie:
+    """Copia della serie con un altro nome (per le legende dei confronti: "Giappone" invece di "JGB 10 anni")."""
+    return replace(s, nome=nome)
+
+
+def linee_base100(serie: list[tuple[Serie, bool]]) -> go.Figure | None:
+    """Confronto di serie con scale diverse: tutte partono da 100 all'inizio del periodo scelto.
+
+    `serie` è una lista di coppie (Serie, invertita). invertita=True usa 1/valore: serve per i cambi
+    quotati "valuta estera per dollaro" (USD/JPY...), così per ogni linea "sale" = la valuta si rafforza.
+    Qui i dati sono quelli grezzi: la ribasatura a 100 la fa il JavaScript (static/app.js) a ogni cambio
+    di periodo, partendo dalla prima data in cui esistono TUTTE le serie.
+    """
+    disponibili = [(s, inv) for s, inv in serie if s.ok]
+    if not disponibili:
+        return None
+    figura = go.Figure(layout=_layout_base(""))
+    _aggiungi_linea_riferimento(figura, 100, "")
+    figura.layout.meta = {**dict(figura.layout.meta), "base100": True}
+
+    for slot, (s, inv) in enumerate(serie, start=1):  # lo slot segue la posizione in lista
+        if not s.ok:
+            continue
+        valori = 1 / s.dati[s.dati != 0] if inv else s.dati
+        dati = alleggerisci(valori)
+        figura.add_trace(go.Scatter(
+            x=_date(dati), y=[round(v, 8) for v in dati.tolist()], mode="lines", name=s.nome,
+            line=dict(width=2, color=PALETTE[slot - 1]), meta={"slot": slot},
+            hovertemplate=f"%{{y:.1f}}<extra>{s.nome}</extra>",
+        ))
     return figura
 
 

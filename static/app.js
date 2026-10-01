@@ -3,6 +3,7 @@
    1. tab delle regioni
    2. disegno dei grafici Plotly (solo quando stanno per entrare nello schermo)
    3. pulsanti di periodo 1A / 5A / 10A / Max con scala verticale adattata
+      (nei grafici "base 100" i valori ripartono da 100 all'inizio del periodo)
    4. colori dei grafici presi dal tema (chiaro o scuro) del CSS
    ===================================================================== */
 (function () {
@@ -122,6 +123,30 @@
     return [inizio.toISOString().slice(0, 10), fine.toISOString().slice(0, 10)];
   }
 
+  // Grafici "base 100" (confronti di valute e borse): tutte le linee valgono 100 nella stessa data iniziale.
+  // La data è l'inizio del periodo scelto, ma mai prima della prima data in cui ESISTONO tutte le serie.
+  // `originali` = dati grezzi [{x, y}] di ogni traccia. Restituisce l'intervallo del tempo e i nuovi valori.
+  function base100(originali, periodo) {
+    let inizio = "";
+    originali.forEach((o) => { if (o.x.length && giorno(o.x[0]) > inizio) inizio = giorno(o.x[0]); });
+    const fine = giorno(ultimaData(originali));
+    const anni = ANNI_PERIODO[periodo];
+    if (anni) {
+      const d = new Date(fine);
+      d.setFullYear(d.getFullYear() - anni);
+      const dal = d.toISOString().slice(0, 10);
+      if (dal > inizio) inizio = dal;
+    }
+    const y = originali.map((o) => {
+      // Valore alla data iniziale; se in quel giorno la borsa era chiusa, l'ultimo disponibile prima
+      let k = -1;
+      o.x.forEach((x, i) => { if (giorno(x) <= inizio) k = i; });
+      const base = o.y[k < 0 ? 0 : k];
+      return o.y.map((v) => (v === null ? null : (v / base) * 100));
+    });
+    return { x: [inizio, fine], y: y };
+  }
+
   // Per ogni asse verticale: minimo e massimo dei valori visibili nel periodo scelto (+ margine del 6%).
   // Restituisce es. { yaxis: [1, 5], yaxis2: [3, -1] }. Gli assi "invertiti" hanno l'intervallo al contrario.
   function intervalliY(data, layout, da, a) {
@@ -174,7 +199,12 @@
   }
 
   async function impostaPeriodo(el, periodo) {
-    const x = intervalloX(el.data, periodo);
+    let x = intervalloX(el.data, periodo);
+    if (el._originali) {  // grafico base 100: si ricalcolano i valori a partire dalla nuova data iniziale
+      const r = base100(el._originali, periodo);
+      x = r.x;
+      await Plotly.restyle(el, { y: r.y });
+    }
     const modifiche = modificheY(intervalliY(el.data, el.layout, x && x[0], x && x[1]));
     assi(el.layout, "x").forEach((asse) => {  // nei grafici a due pannelli il tempo è condiviso
       if (x) Object.assign(modifiche, { [asse + ".range"]: x, [asse + ".autorange"]: false });
@@ -218,7 +248,13 @@
     // Periodo iniziale (solo per i grafici con asse temporale)
     const periodo = el.dataset.periodo;
     if (periodo) {
-      const x = intervalloX(data, periodo);
+      let x = intervalloX(data, periodo);
+      if (layout.meta && layout.meta.base100) {
+        el._originali = data.map((tr) => ({ x: tr.x, y: tr.y }));
+        const r = base100(el._originali, periodo);
+        x = r.x;
+        data.forEach((tr, i) => { tr.y = r.y[i]; });
+      }
       if (x) assi(layout, "x").forEach((asse) => { layout[asse].range = x; });
       const intervalli = intervalliY(data, layout, x && x[0], x && x[1]);
       Object.keys(intervalli).forEach((asse) => {

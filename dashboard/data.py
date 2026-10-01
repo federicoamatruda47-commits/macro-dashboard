@@ -18,7 +18,9 @@ TRASFORMAZIONI = ["livello", "yoy"]
 FONTE_CALCOLATA = "calcolata"  # serie ottenuta da altre serie (componenti: [A, B] -> A − B oppure A / B)
 OPERAZIONI = {"differenza": "−", "rapporto": "/"}  # operazioni possibili per le serie calcolate
 # Come mostrare il nome della fonte sul sito
-NOMI_FONTI = {"fred": "FRED", "ecb": "BCE", "yahoo": "Yahoo Finance", FONTE_CALCOLATA: "Calcolata"}
+NOMI_FONTI = {"fred": "FRED", "ecb": "BCE", "yahoo": "Yahoo Finance", "bis": "BIS",
+              "mof": "Ministero delle Finanze del Giappone",
+              "statjp": "Statistics Bureau of Japan (via DBnomics)", FONTE_CALCOLATA: "Calcolata"}
 
 # Controllo di freschezza: dopo quanti giorni senza nuovi dati una serie è "in ritardo".
 # Per mensili e trimestrali i giorni si contano dalla FINE del periodo
@@ -44,6 +46,7 @@ class Serie:
     componenti: list[str] | None = None  # solo per fonte "calcolata": [A, B]
     operazione: str = "differenza"       # solo per fonte "calcolata": A − B ("differenza") o A / B ("rapporto")
     fattore: float = 1.0                 # solo per fonte "calcolata": il risultato viene moltiplicato per questo
+    soglia_giorni: int | None = None     # soglia di freschezza propria di questa serie (al posto di quella standard)
     dati: pd.Series | None = None  # dati già trasformati (es. in variazione annua)
     errore: str | None = None
     fonte_usata: str | None = None       # es. "fred (riserva)" se si è dovuto usare la riserva
@@ -81,6 +84,8 @@ class Serie:
 
     @property
     def soglia_ritardo(self) -> int | None:
+        if self.soglia_giorni is not None:
+            return self.soglia_giorni
         return SOGLIA_RITARDO_GIORNI.get(self.frequenza) if self.frequenza else None
 
     def giorni_senza_dati(self, oggi: pd.Timestamp) -> int | None:
@@ -145,6 +150,9 @@ def carica_config(percorso: Path) -> dict:
                 raise ValueError(f"Serie {voce['id']}: 'operazione' deve essere una tra {list(OPERAZIONI)}")
             if not isinstance(voce.get("fattore", 1), (int, float)):
                 raise ValueError(f"Serie {voce['id']}: 'fattore' deve essere un numero")
+        soglia = voce.get("soglia_giorni")
+        if soglia is not None and not (isinstance(soglia, int) and soglia > 0):
+            raise ValueError(f"Serie {voce['id']}: 'soglia_giorni' deve essere un numero intero positivo")
         riserva = voce.get("riserva")
         if riserva is not None:
             if not (isinstance(riserva, dict) and "fonte" in riserva and "id" in riserva):
@@ -170,7 +178,8 @@ def _nuova_serie(voce: dict) -> Serie:
                  riserva=voce.get("riserva"),
                  componenti=voce.get("componenti"),
                  operazione=voce.get("operazione", "differenza"),
-                 fattore=float(voce.get("fattore", 1)))
+                 fattore=float(voce.get("fattore", 1)),
+                 soglia_giorni=voce.get("soglia_giorni"))
 
 
 def _scarica_da(fonte: str, id_fonte: str, trasformazione: str) -> pd.Series:

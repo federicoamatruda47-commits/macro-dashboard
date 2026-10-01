@@ -8,7 +8,7 @@ in modo semplice e proporre un piano prima di modifiche importanti.
 Roadmap in 3 fasi:
 1. **USA** (fatta): politica monetaria, curva Treasury, spread, tassi reali, inflazione, credito, condizioni
 2. **Eurozona** (fatta): DFR, curva AAA (proxy Bund), spread sovrani, HICP, HY in euro, EUR/USD. Fonte BCE, riserva FRED
-3. **Asia** (Giappone, Cina, Corea) + sezione **Confronto globale** (fonti previste: BIS, Yahoo tramite `sources/yahoo.py`)
+3. **Asia** (fatta): tab Giappone, Cina, Corea del Sud + tab **Confronto globale** (fonti: BIS, Ministero delle Finanze giapponese, Statistics Bureau of Japan via DBnomics, FRED/OCSE, Yahoo)
 
 Tab tematica **Commodities** (fatta): tabella di performance, energia, metalli preziosi e industriali, agricoli,
 grafici commodities vs tassi USA. Fonte Yahoo Finance (future continui), riserva FRED (spot o medie mensili FMI).
@@ -45,6 +45,12 @@ grafici commodities vs tassi USA. Fonte Yahoo Finance (future continui), riserva
   assi invertiti (`layout.meta.assi_invertiti`).
 - Sotto i grafici con future continui Yahoo compare la nota sui cambi di scadenza (piccoli salti di prezzo).
 - Prima di aggiungere una serie, verificarne sulla fonte **storico e ultimo dato** (non solo che esista).
+- **Soglia di freschezza personalizzata**: una serie può avere `soglia_giorni: N` in `config.yaml` (sostituisce quella standard).
+  Va usata solo con il motivo scritto nel config (oggi: tasso BoK dal BIS, 45 giorni, perché il BIS pubblica la Corea con ~1 mese di ritardo).
+- **Dati senza fonte gratuita aggiornata = righe eliminate, non serie "non disponibili"**: non si mettono in config (altrimenti
+  l'avviso resterebbe acceso per sempre) e in fondo alla pagina si scrive una nota (`regions/asia.sezione_non_inclusi`).
+- Asia: nessuna banda di recessione (nessuna fonte ufficiale e automatica). Grafici "base 100" (`charts.linee_base100`): il JavaScript
+  ribasa a 100 all'inizio del periodo scelto, ma non prima della prima data in cui esistono tutte le serie (`base100()` in `static/app.js`).
 - Non fare commit o push senza richiesta esplicita dell'utente.
 
 ## Struttura
@@ -54,21 +60,27 @@ config.yaml              regioni/tab, recessioni CEPR, elenco delle serie (id, f
 build.py                 comando unico: scarica → calcola → genera site/
 dashboard/
   sources/               un modulo per fonte; ognuno espone scarica(id) -> pandas.Series
-    __init__.py          registro FONTI {"fred": ..., "ecb": ..., "yahoo": ...}
+    __init__.py          registro FONTI {"fred", "ecb", "yahoo", "bis", "mof", "statjp"}
     fred.py              API ufficiale FRED (retry, errori senza chiave nel messaggio)
     ecb.py               API ECB Data Portal, senza chiave; id = "DATASET/CHIAVE" (es. FM/D.U2.EUR.4F.KR.DFR.LEV)
     yahoo.py             Yahoo Finance via yfinance (non ufficiale), id = ticker (es. CL=F); riusabile per borse e cambi
+    bis.py               API BIS (stats.bis.org), senza chiave; id = "DATASET/CHIAVE" (es. WS_CBPOL/D.JP tassi di policy, WS_LONG_CPI/M.JP.771 inflazione a/a)
+    mof_giappone.py      CSV del Ministero delle Finanze giapponese (JGB giornalieri); id = JGB_2Y, JGB_10Y, JGB_30Y
+    statjp.py            Statistics Bureau of Japan via DBnomics (CPI core); id = "CPIm/733" (senza freschi) o "CPIm/740" (senza freschi né energia)
     errori.py            ErroreFonte
   data.py                classe Serie, lettura config, download con riserva, serie calcolate (A − B o A / B, stessa fonte),
                          trasformazioni (livello / yoy), variazioni 1s/1m/1a (+ da inizio anno), controllo di freschezza
   charts.py              grafici riutilizzabili: linee_storiche (recessioni, inversioni, linea di riferimento, unità sull'asse),
                          due_pannelli, curva_rendimenti, periodi_recessione (da USREC), periodi_da_trimestri (da elenco CEPR)
   regions/
-    __init__.py          registro REGIONI {"usa": ..., "eurozona": ..., "commodities": ...}
+    __init__.py          registro REGIONI {"usa", "eurozona", "commodities", "giappone", "cina", "corea", "globale"}
     modello.py           dataclass Sezione (anche tabella_performance) e Grafico (anche alto)
     usa.py               composizione della pagina USA
     eurozona.py          composizione della pagina Eurozona
     commodities.py       composizione della tab Commodities (tematica, non geografica)
+    asia.py              attrezzi comuni a Giappone/Cina/Corea (grafici senza recessioni, nota "dati non inclusi")
+    giappone.py cina.py corea.py   pagine dei tre Paesi
+    globale.py           Confronto globale (policy, 10 anni, inflazione, valute e borse a base 100)
   render.py              prepara i dati per il template e scrive site/
 templates/index.html.j2  pagina HTML (Jinja2)
 static/style.css         stile, tema chiaro/scuro, layout per telefono
@@ -131,3 +143,17 @@ python -m http.server 8000 --directory site   # anteprima su http://localhost:80
   spesso su GitHub, valutare il Pink Sheet mensile della Banca Mondiale (file Excel, servirebbe una fonte nuova).
 - WTI: il 20/04/2020 il future ha chiuso a −37 $: `yahoo.py` non scarta i valori negativi.
 - I cambi di scadenza si vedono nei dati (es. il Brent di novembre scade l'ultimo giorno lavorativo di settembre).
+
+### Asia e Confronto globale (verificate il 01/10/2026)
+- **BIS** `WS_CBPOL` (tassi di policy, giornalieri; USA/EA/JP/CN a fine settembre, **Corea ferma a fine agosto**): CN è l'**LPR a 1 anno**
+  (dal 20/08/2019; prima tasso ufficiale sui prestiti), US il punto medio dell'obiettivo Fed, XM il tasso sui depositi BCE.
+  `WS_LONG_CPI/M.<PAESE>.771` = inflazione annua mensile (JP e KR fino a luglio, CN/US/XM fino ad agosto). L'unità 628 sono gli indici.
+- **Giappone**: JGB giornalieri dal Ministero delle Finanze (`jgbcme_all.csv` + `jgbcme.csv` del mese; 2A dal 1974, 10A dal 1986, 30A dal 1999). Riserva FRED solo per il 10A
+  (`IRLTLT01JPM156N`, mensile). Core CPI: DBnomics `STATJP/CPIm/733` e `/740` (indici dal 1970, ultimo agosto; la variazione annua si calcola con `yoy`).
+  FRED/OCSE per CPI Giappone e Cina sono **fermi** (2021 e 2025): non usarli.
+- **Corea**: rendimento 10A solo mensile (FRED `IRLTLT01KRM156N`). Il 3A giornaliero esiste solo su ECOS (Bank of Korea),
+  che richiede la registrazione con numero di telefono coreano: non usata. La chiave `sample` di ECOS restituisce al massimo 10 righe.
+- **Cina**: non inclusi rendimento 10A, LPR 5A e PPI (nessuna fonte gratuita aggiornata: NBS su DBnomics è ferma a 02/2026, FRED/OCSE al 2022-2023).
+  **CSI 300**: su Yahoo `000300.SS` restituisce una sola candela, quindi si usa l'ETF `510300.SS` (dal 2012, prezzo in yuan) con nota sul sito.
+- Yahoo: `^N225`, `^HSI`, `^KS11`, `^GSPC`, `^STOXX50E`, `FTSEMIB.MI`, `JPY=X`, `CNY=X`, `KRW=X` (cambi "valuta per dollaro", riserve FRED `DEXJPUS`, `DEXCHUS`, `DEXKOUS`).
+- Nel Confronto globale i cambi yen/yuan/won sono capovolti (1/x) per essere letti nello stesso verso dell'euro (EUR/USD BCE).

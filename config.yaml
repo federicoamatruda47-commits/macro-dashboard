@@ -6,10 +6,13 @@
 #
 # Per aggiungere una serie basta copiare un blocco e cambiarne i campi:
 #   id             codice della serie presso la fonte (es. su FRED "DGS10")
-#   fonte          modulo che la scarica: "fred", "ecb" o "yahoo" (in futuro: "bis")
+#   fonte          modulo che la scarica: "fred", "ecb", "yahoo", "bis", "mof" (Giappone) o "statjp"
+#                  (Statistics Bureau of Japan via DBnomics)
 #                  oppure "calcolata" = differenza o rapporto tra due altre serie (vedi componenti)
 #                  Per la BCE l'id è "DATASET/CHIAVE", es. FM/D.U2.EUR.4F.KR.DFR.LEV
 #                  Per Yahoo l'id è il ticker, es. CL=F (future continuo sul WTI)
+#                  Per il BIS l'id è "DATASET/CHIAVE", es. WS_CBPOL/D.JP (tasso di policy del Giappone)
+#                  Per "mof" l'id è JGB_ seguito dalla scadenza, es. JGB_10Y; per "statjp" è "CPIm/740"
 #   nome           etichetta mostrata sul sito
 #   regione        tab in cui compare (deve esistere nella lista "regioni")
 #   categoria      gruppo tematico (serve a orientarsi e per i confronti futuri)
@@ -31,6 +34,8 @@
 #   operazione     solo per fonte "calcolata": "differenza" (A − B, predefinita) o "rapporto" (A / B)
 #   fattore        solo per fonte "calcolata": moltiplica il risultato (es. 1000 per un rapporto piccolo)
 #   decimali       cifre decimali mostrate sul sito (predefinito 2)
+#   soglia_giorni  soglia di freschezza propria della serie (giorni), al posto di quella standard
+#                  per la sua frequenza. Da usare SOLO con un motivo scritto accanto (es. fonte lenta)
 #
 # Nota: una serie scaricata ma non usata da nessun grafico compare comunque
 # nella scheda riassuntiva (se riepilogo: true) e nella tabella "Stato delle serie".
@@ -48,12 +53,19 @@ regioni:
   - id: commodities
     nome: Commodities
     attiva: true
-  - id: asia
-    nome: Asia
-    attiva: false
+  # Asia (fase 3): tre paesi, nessuna banda di recessione (nessuna fonte ufficiale e automatica)
+  - id: giappone
+    nome: Giappone
+    attiva: true
+  - id: cina
+    nome: Cina
+    attiva: true
+  - id: corea
+    nome: Corea del Sud
+    attiva: true
   - id: globale
     nome: Confronto globale
-    attiva: false
+    attiva: true
 
 # Recessioni disegnate come bande grigie, per le regioni senza una serie scaricabile.
 # (Per gli USA si usa la serie FRED USREC, più in basso.)
@@ -569,3 +581,247 @@ serie:
     trasformazione: livello
     riepilogo: false
     decimali: 3
+
+  # =================================================================
+  # ASIA E CONFRONTO GLOBALE (fase 3, verificate il 01/10/2026)
+  # Tassi di policy e inflazione: BIS (unica fonte coerente per tutti i Paesi, senza chiave).
+  # JGB giapponesi: Ministero delle Finanze (giornalieri). Corea 10A: solo mensile (FRED/OCSE).
+  # Non inclusi per mancanza di fonti gratuite aggiornate: Cina rendimento 10A, LPR 5 anni, PPI;
+  # Corea rendimento 3A (giornaliero solo via API della Bank of Korea, con registrazione coreana).
+  # =================================================================
+
+  # --- Giappone ------------------------------------------------------
+  - id: WS_CBPOL/D.JP
+    fonte: bis
+    nome: Tasso di policy BoJ
+    regione: giappone
+    categoria: politica_monetaria
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+  - id: JGB_2Y
+    fonte: mof
+    nome: JGB 2 anni
+    regione: giappone
+    categoria: rendimenti
+    unita: "%"
+    trasformazione: livello
+    riepilogo: false
+    decimali: 3
+  - id: JGB_10Y
+    fonte: mof
+    nome: JGB 10 anni
+    regione: giappone
+    categoria: rendimenti
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+    decimali: 3
+    riserva: {fonte: fred, id: IRLTLT01JPM156N, nota: "media mensile OCSE"}
+  - id: JGB_30Y
+    fonte: mof
+    nome: JGB 30 anni
+    regione: giappone
+    categoria: rendimenti
+    unita: "%"
+    trasformazione: livello
+    riepilogo: false
+    decimali: 3
+  - id: WS_LONG_CPI/M.JP.771
+    fonte: bis
+    nome: Inflazione CPI Giappone
+    regione: giappone
+    categoria: inflazione
+    unita: "% a/a"
+    trasformazione: livello
+    riepilogo: true
+  - id: CPIm/733
+    fonte: statjp
+    nome: CPI core Giappone (senza alimentari freschi)
+    regione: giappone
+    categoria: inflazione
+    unita: "% a/a"
+    trasformazione: yoy
+    riepilogo: true
+  - id: CPIm/740
+    fonte: statjp
+    nome: CPI core-core Giappone (senza freschi né energia)
+    regione: giappone
+    categoria: inflazione
+    unita: "% a/a"
+    trasformazione: yoy
+    riepilogo: false
+  - id: JPY=X
+    fonte: yahoo
+    nome: USD/JPY
+    regione: giappone
+    categoria: cambio
+    unita: yen per dollaro
+    trasformazione: livello
+    riepilogo: true
+    riserva: {fonte: fred, id: DEXJPUS}
+  - id: ^N225
+    fonte: yahoo
+    nome: Nikkei 225
+    regione: giappone
+    categoria: borsa
+    unita: punti
+    trasformazione: livello
+    riepilogo: true
+    decimali: 0
+
+  # --- Cina ----------------------------------------------------------
+  - id: WS_CBPOL/D.CN
+    fonte: bis
+    nome: LPR 1 anno (PBoC)
+    regione: cina
+    categoria: politica_monetaria
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+  - id: WS_LONG_CPI/M.CN.771
+    fonte: bis
+    nome: Inflazione CPI Cina
+    regione: cina
+    categoria: inflazione
+    unita: "% a/a"
+    trasformazione: livello
+    riepilogo: true
+  - id: CNY=X
+    fonte: yahoo
+    nome: USD/CNY
+    regione: cina
+    categoria: cambio
+    unita: yuan per dollaro
+    trasformazione: livello
+    riepilogo: true
+    decimali: 4
+    riserva: {fonte: fred, id: DEXCHUS}
+  - id: 510300.SS
+    fonte: yahoo
+    nome: CSI 300 (ETF 510300)
+    regione: cina
+    categoria: borsa
+    unita: yuan
+    trasformazione: livello
+    riepilogo: true
+    decimali: 3
+  - id: ^HSI
+    fonte: yahoo
+    nome: Hang Seng
+    regione: cina
+    categoria: borsa
+    unita: punti
+    trasformazione: livello
+    riepilogo: true
+    decimali: 0
+
+  # --- Corea del Sud -------------------------------------------------
+  - id: WS_CBPOL/D.KR
+    fonte: bis
+    nome: Tasso base BoK
+    regione: corea
+    categoria: politica_monetaria
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+    # Il BIS pubblica la Corea con circa un mese di ritardo (a inizio ottobre l'ultimo dato è di fine agosto):
+    # con la soglia standard di 10 giorni l'avviso resterebbe acceso per sempre.
+    soglia_giorni: 45
+  - id: IRLTLT01KRM156N
+    fonte: fred
+    nome: Titoli di Stato 10 anni Corea (mensile)
+    regione: corea
+    categoria: rendimenti
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+  - id: WS_LONG_CPI/M.KR.771
+    fonte: bis
+    nome: Inflazione CPI Corea
+    regione: corea
+    categoria: inflazione
+    unita: "% a/a"
+    trasformazione: livello
+    riepilogo: true
+  - id: KRW=X
+    fonte: yahoo
+    nome: USD/KRW
+    regione: corea
+    categoria: cambio
+    unita: won per dollaro
+    trasformazione: livello
+    riepilogo: true
+    decimali: 1
+    riserva: {fonte: fred, id: DEXKOUS}
+  - id: ^KS11
+    fonte: yahoo
+    nome: KOSPI
+    regione: corea
+    categoria: borsa
+    unita: punti
+    trasformazione: livello
+    riepilogo: true
+    decimali: 0
+
+  # --- Confronto globale (solo le serie che non appartengono già a un'altra pagina) ---
+  - id: WS_CBPOL/D.US
+    fonte: bis
+    nome: Tasso di policy Fed
+    regione: globale
+    categoria: politica_monetaria
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+    decimali: 3
+  - id: WS_CBPOL/D.XM
+    fonte: bis
+    nome: Tasso di policy BCE (depositi)
+    regione: globale
+    categoria: politica_monetaria
+    unita: "%"
+    trasformazione: livello
+    riepilogo: true
+  - id: WS_LONG_CPI/M.US.771
+    fonte: bis
+    nome: Inflazione CPI USA
+    regione: globale
+    categoria: inflazione
+    unita: "% a/a"
+    trasformazione: livello
+    riepilogo: true
+  - id: WS_LONG_CPI/M.XM.771
+    fonte: bis
+    nome: Inflazione CPI Eurozona
+    regione: globale
+    categoria: inflazione
+    unita: "% a/a"
+    trasformazione: livello
+    riepilogo: true
+  - id: ^GSPC
+    fonte: yahoo
+    nome: S&P 500
+    regione: globale
+    categoria: borsa
+    unita: punti
+    trasformazione: livello
+    riepilogo: true
+    decimali: 0
+  - id: ^STOXX50E
+    fonte: yahoo
+    nome: Euro Stoxx 50
+    regione: globale
+    categoria: borsa
+    unita: punti
+    trasformazione: livello
+    riepilogo: true
+    decimali: 0
+  - id: FTSEMIB.MI
+    fonte: yahoo
+    nome: FTSE MIB
+    regione: globale
+    categoria: borsa
+    unita: punti
+    trasformazione: livello
+    riepilogo: true
+    decimali: 0
