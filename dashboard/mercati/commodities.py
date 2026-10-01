@@ -99,8 +99,8 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                 "(about 27 kg of wheat or 25 kg of corn).",
                 grafici=[
                     prezzo("com-grano", "Wheat", [GRANO],
-                           come_leggerlo="Wheat is a staple food crop. Its price has historically reacted to harvests, weather and export "
-                                         "restrictions in the main producing countries."),
+                           come_leggerlo="Wheat is a staple food crop. Its price has historically reacted to harvests, weather, export "
+                                         "restrictions and wars in the main producing countries, as in 2022 after Russia's invasion of Ukraine."),
                     prezzo("com-mais", "Corn", [MAIS],
                            come_leggerlo="Corn is used for food, animal feed and biofuel. Its price has historically depended on harvests and weather, "
                                          "and has often moved together with other grains."),
