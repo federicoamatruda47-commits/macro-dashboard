@@ -13,7 +13,7 @@ SOLO_INTESTAZIONE = "FREQ,REF_AREA,UNIT_MEASURE,TIME_PERIOD,OBS_VALUE\n"
 
 
 def risposta(testo: str, stato: int = 200):
-    return mock.Mock(status_code=stato, text=testo)
+    return mock.Mock(status_code=stato, text=testo, content=testo.encode("utf-8"))
 
 
 def scarica_con(risposte: list):
@@ -48,9 +48,30 @@ class TestRispostaVuota(unittest.TestCase):
         self.assertEqual(str(esito), "the BIS returned no data")
         self.assertIn("giving up", log)
 
-    def test_risposta_buona_al_primo_colpo_non_scrive_nulla(self):
+    def test_risposta_buona_al_primo_colpo_scrive_solo_il_peso(self):
         serie, chiamate, log = scarica_con([risposta(CSV_BUONO)])
-        self.assertEqual((chiamate, log), (1, ""))
+        self.assertEqual(chiamate, 1)
+        self.assertNotIn("empty response", log)
+        self.assertEqual(len(log.strip().splitlines()), 1)                           # una riga: id, KB e numero di valori
+
+    def test_la_richiesta_chiede_dataonly(self):
+        log = io.StringIO()
+        with mock.patch.object(bis.requests, "get", return_value=risposta(CSV_BUONO)) as get, redirect_stdout(log):
+            bis.scarica("WS_CBPOL/D.JP")
+        self.assertEqual(get.call_args.kwargs["params"], {"format": "csv", "detail": "dataonly"})
+        self.assertIn("WS_CBPOL/D.JP", log.getvalue())
+        self.assertIn("2 values", log.getvalue())                      # il peso e il numero di valori finiscono nel log
+
+    def test_risposta_dataonly_senza_colonne_di_testo(self):
+        csv = "FREQ,REF_AREA,TIME_PERIOD,OBS_VALUE\nD,JP,2026-09-28,1.25\nD,JP,2026-09-29,1.25\n"      # forma di detail=dataonly (senza UNIT_MEASURE)
+        serie, chiamate, _ = scarica_con([risposta(csv)])
+        self.assertEqual((chiamate, len(serie), float(serie.iloc[-1])), (1, 2, 1.25))
+
+    def test_pause_tra_i_tentativi_10_e_30_secondi(self):
+        with mock.patch.object(bis.requests, "get", side_effect=[risposta("")] * 3), mock.patch.object(bis.time, "sleep") as sonno, redirect_stdout(io.StringIO()):
+            with self.assertRaises(ErroreFonte):
+                bis.scarica("WS_CBPOL/D.JP")
+        self.assertEqual([c.args[0] for c in sonno.call_args_list], [10, 30])
 
     def test_404_non_si_riprova(self):
         esito, chiamate, _ = scarica_con([risposta("", 404)])
