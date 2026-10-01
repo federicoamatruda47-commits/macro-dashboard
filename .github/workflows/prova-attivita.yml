@@ -16,10 +16,10 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v7
-      - name: 1. Soglia a 0 - deve aprire una issue
-        run: python3 tools/controlla_attivita.py --soglia 0 --prova
+      - name: 1. Soglia a -1 (sempre scattata) - deve aprire una issue
+        run: python3 tools/controlla_attivita.py --soglia=-1 --prova
       - name: 2. Di nuovo - NON deve aprirne un'altra
-        run: python3 tools/controlla_attivita.py --soglia 0 --prova
+        run: python3 tools/controlla_attivita.py --soglia=-1 --prova
       - name: Quante issue "[PROVA]" aperte ci sono? (deve essere 1)
         run: |
           n="$(gh issue list --state open --json title --jq '[.[] | select(.title | startswith("[PROVA]"))] | length')"
