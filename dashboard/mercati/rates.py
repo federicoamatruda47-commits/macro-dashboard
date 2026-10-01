@@ -106,12 +106,14 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                               [("US 10Y-2Y", PENDENZA_USA), ("Euro-area AAA 10Y-2Y", PENDENZA_EA)],
                               ["curve-inversion", "aaa-bund-proxy"],
                               "The slope is the 10-year yield minus the 2-year yield. When it falls below zero (red area) the curve is inverted: short-term rates are "
-                              "higher than long-term ones, which in the US has often come before recessions, though with long and variable delays.",
+                              "higher than long-term ones, which in the US has often come before recessions, though with long and variable delays. "
+                              "The long inversion of 2022-2024 has not been followed by a recession so far, a reminder that the signal can fail.",
                               periodo_iniziale="Max", largo=True, evidenzia_inversioni=True),
                     paese("usa-spread", "10Y-2Y and 10Y-3M spreads", [PENDENZA_USA, SPREAD_USA_3M], nber, "NBER recession",
                           ["curve-inversion", "bands-nber"],
                           "Two versions of the US slope: 10-year minus 2-year, and 10-year minus 3-month. Both have historically turned negative before many US recessions "
-                          "(grey bands), but the delay has varied and the signal is not a forecast.",
+                          "(grey bands), but the delay has varied and the signal is not a forecast. The long inversions that began in 2022 "
+                          "(10Y-2Y until 2024, 10Y-3M until 2025) have not been followed by a recession so far, a reminder that the signal can fail.",
                           periodo_iniziale="Max", largo=True, evidenzia_inversioni=True),
                 ]),
         Sezione("dettaglio", "Yields by country",
@@ -131,7 +133,7 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                                                                             [trova_serie(serie, i) for i in JGB]],
                               ["jgb-history"],
                               "Japanese government bond yields at 2, 10 and 30 years. They stayed unusually low for decades "
-                              "while the Bank of Japan held its policy rate near zero or below.",
+                              "while the Bank of Japan held its policy rate near zero or below and, from 2016 to 2024, capped the 10-year yield.",
                               periodo_iniziale="10Y", largo=True),
                 ]),
     ]
