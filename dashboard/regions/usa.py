@@ -1,7 +1,7 @@
 """Pagina Stati Uniti: quali grafici mostrare e in che ordine.
 
 Questo file non scarica nulla: riceve le serie già pronte (dizionario id -> Serie)
-e decide come combinarle nei grafici.
+e decide come combinarle nei grafici. I testi mostrati sul sito sono in inglese.
 """
 
 from .. import charts
@@ -9,7 +9,7 @@ from ..data import Serie, trova_serie
 from .modello import Grafico, Sezione
 
 # Scadenze della curva: (etichetta sull'asse, id della serie)
-SCADENZE = [("3M", "DGS3MO"), ("2A", "DGS2"), ("5A", "DGS5"), ("10A", "DGS10"), ("30A", "DGS30")]
+SCADENZE = [("3M", "DGS3MO"), ("2Y", "DGS2"), ("5Y", "DGS5"), ("10Y", "DGS10"), ("30Y", "DGS30")]
 
 # Azioni (Yahoo Finance): le definizioni delle serie stanno in config.yaml, qui solo gli id
 SP500, NASDAQ100, RUSSELL2000, SP500_EW = "^GSPC", "^NDX", "^RUT", "^SPXEW"
@@ -39,77 +39,76 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
     # La curva "oggi vs 1 mese vs 1 anno" ha una forma diversa dagli altri grafici
     figura_curva, _ = charts.curva_rendimenti([(etichetta, trova_serie(serie, i)) for etichetta, i in SCADENZE])
     grafico_curva = Grafico(
-        id="usa-curva-oggi", titolo="Curva dei Treasury: oggi, 1 mese fa, 1 anno fa",
+        id="usa-curva-oggi", titolo="Treasury curve: today, 1 month ago, 1 year ago",
         figura=figura_curva, serie_ids=[i for _, i in SCADENZE], storico=False,
     )
 
     return [
-        Sezione("politica-monetaria", "Politica monetaria", grafici=[
-            storico("usa-dff", "Fed funds effettivo", ["DFF"], periodo_iniziale="Max", largo=True),
+        Sezione("politica-monetaria", "Monetary policy", grafici=[
+            storico("usa-dff", "Effective Fed funds rate", ["DFF"], periodo_iniziale="Max", largo=True),
         ]),
-        Sezione("curva", "Curva dei Treasury",
-                "Rendimenti dei titoli di Stato USA per scadenza. Uno spread 10A-2A o 10A-3M "
-                "negativo (curva invertita) ha spesso anticipato le recessioni.",
+        Sezione("curva", "Treasury curve",
+                "Yields on US government bonds by maturity. A negative 10Y-2Y or 10Y-3M spread "
+                "(an inverted curve) has often preceded recessions.",
                 grafici=[
                     grafico_curva,
-                    storico("usa-rendimenti", "Rendimenti per scadenza nel tempo",
-                            [i for _, i in SCADENZE], periodo_iniziale="10A"),
-                    storico("usa-spread", "Spread 10A-2A e 10A-3M", ["T10Y2Y", "T10Y3M"],
+                    storico("usa-rendimenti", "Yields by maturity over time",
+                            [i for _, i in SCADENZE], periodo_iniziale="10Y"),
+                    storico("usa-spread", "10Y-2Y and 10Y-3M spreads", ["T10Y2Y", "T10Y3M"],
                             evidenzia_inversioni=True, periodo_iniziale="Max", largo=True,
-                            nota="Area rossa: curva invertita (spread sotto zero). "
-                                 "Bande grigie: recessioni NBER."),
+                            nota="Red area: inverted curve (spread below zero). "
+                                 "Grey bands: NBER recessions."),
                 ]),
-        Sezione("tassi-reali", "Tassi reali e inflazione attesa",
-                "Rendimento del Treasury indicizzato all'inflazione (TIPS) e inflazione "
-                "attesa dal mercato (breakeven = nominale meno reale). Dati dal 2003.",
+        Sezione("tassi-reali", "Real rates and expected inflation",
+                "Yield on the inflation-indexed Treasury (TIPS) and the inflation expected by the market "
+                "(breakeven = nominal minus real). Data from 2003.",
                 grafici=[
-                    storico("usa-reali", "Tasso reale 10A e breakeven 10A", ["DFII10", "T10YIE"],
+                    storico("usa-reali", "10Y real yield and 10Y breakeven", ["DFII10", "T10YIE"],
                             periodo_iniziale="Max", largo=True),
                 ]),
-        Sezione("inflazione", "Inflazione", "Variazione dei prezzi rispetto a un anno prima.", grafici=[
-            storico("usa-inflazione", "CPI headline, CPI core e PCE core (% annua)",
+        Sezione("inflazione", "Inflation", "Change in prices compared with a year earlier.", grafici=[
+            storico("usa-inflazione", "Headline CPI, core CPI and core PCE (% y/y)",
                     ["CPIAUCSL", "CPILFESL", "PCEPILFE"], riferimento=(2, ""),
-                    periodo_iniziale="10A", largo=True,
-                    nota="Linea tratteggiata: obiettivo della Fed al 2% (misurato sul PCE). "
-                         "Bande grigie: recessioni NBER."),
+                    periodo_iniziale="10Y", largo=True,
+                    nota="Dashed line: the Fed's 2% target (measured on PCE). "
+                         "Grey bands: NBER recessions."),
         ]),
-        Sezione("credito", "Credito",
-                "Premio di rendimento richiesto sulle obbligazioni societarie rispetto ai Treasury.",
+        Sezione("credito", "Credit",
+                "Extra yield investors demand on corporate bonds compared with Treasuries.",
                 grafici=[
-                    storico("usa-baa", "Spread Baa (Moody's) - Treasury 10A", ["BAA10Y"],
+                    storico("usa-baa", "Baa (Moody's) spread vs 10Y Treasury", ["BAA10Y"],
                             periodo_iniziale="Max",
-                            nota="Serie con storico lungo (dal 1986): utile per confrontare "
-                                 "le crisi passate."),
-                    storico("usa-oas", "OAS Investment Grade e High Yield (ICE BofA)",
+                            nota="A long-history series (from 1986): useful to compare past crises."),
+                    storico("usa-oas", "Investment Grade and High Yield OAS (ICE BofA)",
                             ["BAMLC0A0CM", "BAMLH0A0HYM2"], periodo_iniziale="Max",
-                            nota="Gli OAS ICE BofA su FRED partono da ottobre 2023: per motivi di "
-                                 "licenza FRED pubblica solo gli ultimi anni. Per lo storico lungo "
-                                 "guarda lo spread Baa - Treasury 10A."),
+                            nota="ICE BofA OAS series on FRED only start in October 2023: for licensing reasons "
+                                 "FRED publishes only the last few years. For the long history "
+                                 "see the Baa vs 10Y Treasury spread."),
                 ]),
-        Sezione("azioni", "Azioni",
-                "I principali indici azionari USA: variazioni di prezzo e, sotto, quanto il rialzo "
-                "dell'S&P 500 dipende da pochi titoli molto grandi.",
-                tabella_performance=AZIONI, etichetta_performance="Indice",
+        Sezione("azioni", "Equities",
+                "The main US equity indices: price changes and, below, how much of the S&P 500's rise "
+                "depends on a few very large stocks.",
+                tabella_performance=AZIONI, etichetta_performance="Index",
                 grafici=[
-                    base100("usa-indici-azionari", "Indici azionari USA (base 100)", [SP500, NASDAQ100, RUSSELL2000],
-                            periodo_iniziale="5A", largo=True,
-                            nota="Normalizzati a 100 all'inizio del periodo scelto con i pulsanti 1A / 5A / 10A / Max. "
-                                 "Prezzi di chiusura degli indici senza dividendi (non \"adjusted\"). "
-                                 "S&P 500: 500 grandi società; Nasdaq 100: le 100 maggiori non finanziarie del "
-                                 "Nasdaq (molta tecnologia); Russell 2000: piccole società."),
-                    storico("usa-concentrazione", "Concentrazione: S&P 500 Equal Weight / S&P 500", [RAPPORTO_EW],
+                    base100("usa-indici-azionari", "US equity indices (base 100)", [SP500, NASDAQ100, RUSSELL2000],
+                            periodo_iniziale="5Y", largo=True,
+                            nota="Rebased to 100 at the start of the period chosen with the 1Y / 5Y / 10Y / Max buttons. "
+                                 "Closing prices of the indices without dividends (not \"adjusted\"). "
+                                 "S&P 500: 500 large companies; Nasdaq 100: the 100 largest non-financial companies "
+                                 "on the Nasdaq (a lot of technology); Russell 2000: small companies."),
+                    storico("usa-concentrazione", "Concentration: S&P 500 Equal Weight / S&P 500", [RAPPORTO_EW],
                             periodo_iniziale="Max", largo=True,
-                            nota="Rapporto (×100) tra l'indice S&P 500 con tutti i titoli dello stesso peso e "
-                                 "l'S&P 500 pesato per capitalizzazione. Se scende, il mercato si concentra su pochi "
-                                 "giganti: il titolo \"medio\" va peggio dell'indice. Se sale, il rialzo si allarga. "
-                                 "Conta la direzione, non il livello (dipende dalla data di partenza degli indici, "
-                                 "12/2006). Indici di prezzo, senza dividendi. Bande grigie: recessioni NBER."),
+                            nota="Ratio (×100) between the S&P 500 with every stock at the same weight and "
+                                 "the S&P 500 weighted by market capitalisation. When it falls, the market is concentrating on a few "
+                                 "giants: the \"average\" stock does worse than the index. When it rises, the rally broadens. "
+                                 "What matters is the direction, not the level (it depends on the indices' start date, "
+                                 "Dec 2006). Price indices, without dividends. Grey bands: NBER recessions."),
                 ]),
-        Sezione("condizioni", "Condizioni finanziarie e lavoro", grafici=[
-            storico("usa-vix", "VIX (volatilità attesa S&P 500)", ["VIXCLS"], periodo_iniziale="5A"),
-            storico("usa-dollaro", "Dollaro broad (indice nominale, gen 2006 = 100)", ["DTWEXBGS"],
+        Sezione("condizioni", "Financial conditions and labour", grafici=[
+            storico("usa-vix", "VIX (expected volatility of the S&P 500)", ["VIXCLS"], periodo_iniziale="5Y"),
+            storico("usa-dollaro", "Broad dollar (nominal index, Jan 2006 = 100)", ["DTWEXBGS"],
                     periodo_iniziale="Max"),
-            storico("usa-disoccupazione", "Tasso di disoccupazione", ["UNRATE"], periodo_iniziale="Max",
+            storico("usa-disoccupazione", "Unemployment rate", ["UNRATE"], periodo_iniziale="Max",
                     largo=True),
         ]),
     ]

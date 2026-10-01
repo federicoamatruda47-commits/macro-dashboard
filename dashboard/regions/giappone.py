@@ -15,42 +15,42 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
     _, storico = attrezzi(serie)
 
     return [
-        Sezione("politica-monetaria", "Politica monetaria",
-                "Tasso obiettivo della Bank of Japan sul mercato overnight (call rate non garantito). "
-                "Per decenni è rimasto vicino a zero, e per alcuni anni negativo.",
+        Sezione("politica-monetaria", "Monetary policy",
+                "The Bank of Japan's target for the overnight market (uncollateralised call rate). "
+                "For decades it stayed close to zero, and for some years it was negative.",
                 grafici=[
-                    storico("jp-policy", "Tasso di policy BoJ", [POLICY], periodo_iniziale="Max", largo=True,
-                            nota="Fonte BIS, dati giornalieri."),
+                    storico("jp-policy", "BoJ policy rate", [POLICY], periodo_iniziale="Max", largo=True,
+                            nota="Source: BIS, daily data."),
                 ]),
-        Sezione("titoli-di-stato", "Titoli di Stato (JGB)",
-                "Rendimenti giornalieri dei titoli di Stato giapponesi a 2, 10 e 30 anni, "
-                "pubblicati dal Ministero delle Finanze.",
+        Sezione("titoli-di-stato", "Government bonds (JGB)",
+                "Daily yields on Japanese government bonds at 2, 10 and 30 years, "
+                "published by the Ministry of Finance.",
                 grafici=[
-                    storico("jp-jgb", "Rendimenti JGB a 2, 10 e 30 anni", [JGB_2A, JGB_10A, JGB_30A],
-                            periodo_iniziale="10A", largo=True,
-                            nota="Il 30 anni parte dal 1999, il 10 anni dal 1986. Se il Ministero non risponde "
-                                 "il solo 10 anni ripiega sulla media mensile OCSE (FRED)."),
+                    storico("jp-jgb", "JGB yields at 2, 10 and 30 years", [JGB_2A, JGB_10A, JGB_30A],
+                            periodo_iniziale="10Y", largo=True,
+                            nota="The 30-year starts in 1999, the 10-year in 1986. If the Ministry does not respond "
+                                 "the 10-year alone falls back on the OECD monthly average (FRED)."),
                 ]),
-        Sezione("inflazione", "Inflazione",
-                "Variazione annua dei prezzi al consumo. Il \"core\" esclude gli alimentari freschi; "
-                "il \"core-core\" esclude anche l'energia.",
+        Sezione("inflazione", "Inflation",
+                "Change in consumer prices compared with a year earlier. \"Core\" excludes fresh food; "
+                "\"core-core\" also excludes energy.",
                 grafici=[
-                    storico("jp-inflazione", "CPI totale, core e core-core (% annua)",
-                            [CPI, CPI_CORE, CPI_CORE_CORE], riferimento=(2, ""), periodo_iniziale="10A",
+                    storico("jp-inflazione", "Headline, core and core-core CPI (% y/y)",
+                            [CPI, CPI_CORE, CPI_CORE_CORE], riferimento=(2, ""), periodo_iniziale="10Y",
                             largo=True,
-                            nota="Linea tratteggiata: obiettivo della BoJ al 2%. Tutte e tre le serie vengono dallo "
-                                 "Statistics Bureau of Japan (via DBnomics): la variazione annua è calcolata "
-                                 "sull'indice. Nel Confronto globale il Giappone usa invece i dati BIS, "
-                                 "per avere la stessa fonte per tutti i Paesi."),
+                            nota="Dashed line: the BoJ's 2% target. All three series come from the "
+                                 "Statistics Bureau of Japan (via DBnomics): the annual change is calculated "
+                                 "from the index. In the Global comparison Japan uses BIS data instead, "
+                                 "so that every country has the same source."),
                 ]),
-        Sezione("cambio", "Cambio", grafici=[
-            storico("jp-cambio", "USD/JPY (yen per 1 dollaro)", [CAMBIO], periodo_iniziale="10A", largo=True,
+        Sezione("cambio", "Exchange rate", grafici=[
+            storico("jp-cambio", "USD/JPY (yen per 1 dollar)", [CAMBIO], periodo_iniziale="10Y", largo=True,
                     mostra_unita=True,
-                    nota="Sale = lo yen si indebolisce. Se Yahoo non risponde si usa FRED (rilevazione "
-                         "giornaliera della Fed, con qualche giorno di ritardo)."),
+                    nota="Up = the yen weakens. If Yahoo does not respond FRED is used (the Fed's daily "
+                         "rate, with a delay of a few days)."),
         ]),
-        Sezione("borsa", "Borsa", grafici=[
-            storico("jp-nikkei", "Nikkei 225", [NIKKEI], periodo_iniziale="10A", largo=True,
-                    nota="Indice in yen, chiusure giornaliere. Fonte Yahoo Finance (non ufficiale)."),
+        Sezione("borsa", "Equities", grafici=[
+            storico("jp-nikkei", "Nikkei 225", [NIKKEI], periodo_iniziale="10Y", largo=True,
+                    nota="Index in yen, daily closes. Source: Yahoo Finance (unofficial)."),
         ]),
     ]

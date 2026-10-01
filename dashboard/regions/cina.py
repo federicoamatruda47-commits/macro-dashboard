@@ -15,38 +15,38 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
     _, storico = attrezzi(serie)
 
     return [
-        Sezione("politica-monetaria", "Politica monetaria",
-                "La Cina non ha un unico tasso di policy come Fed o BCE: il riferimento per il credito è "
-                "il Loan Prime Rate (LPR), pubblicato ogni mese dalla People's Bank of China "
-                "sulla base delle quotazioni delle banche.",
+        Sezione("politica-monetaria", "Monetary policy",
+                "China has no single policy rate like the Fed or the ECB: the reference for credit is "
+                "the Loan Prime Rate (LPR), published every month by the People's Bank of China "
+                "based on quotes from banks.",
                 grafici=[
-                    storico("cn-lpr", "Loan Prime Rate a 1 anno", [LPR_1A], periodo_iniziale="Max", largo=True,
-                            nota="Fonte BIS, dati giornalieri. Dal 20/08/2019 è l'LPR a 1 anno; prima il BIS "
-                                 "usa il tasso ufficiale sui prestiti a 1 anno."),
+                    storico("cn-lpr", "1-year Loan Prime Rate", [LPR_1A], periodo_iniziale="Max", largo=True,
+                            nota="Source: BIS, daily data. From 20 Aug 2019 it is the 1-year LPR; before that the BIS "
+                                 "uses the official 1-year lending rate."),
                 ]),
-        Sezione("inflazione", "Inflazione", "Variazione annua dei prezzi al consumo.",
+        Sezione("inflazione", "Inflation", "Change in consumer prices compared with a year earlier.",
                 grafici=[
-                    storico("cn-inflazione", "CPI Cina (% annua)", [CPI], riferimento=(0, ""),
-                            periodo_iniziale="10A", largo=True,
-                            nota="Fonte BIS, dati mensili. Linea tratteggiata: zero (sotto = deflazione)."),
+                    storico("cn-inflazione", "China CPI (% y/y)", [CPI], riferimento=(0, ""),
+                            periodo_iniziale="10Y", largo=True,
+                            nota="Source: BIS, monthly data. Dashed line: zero (below = deflation)."),
                 ]),
-        Sezione("cambio", "Cambio", grafici=[
-            storico("cn-cambio", "USD/CNY (yuan per 1 dollaro)", [CAMBIO], periodo_iniziale="10A", largo=True,
+        Sezione("cambio", "Exchange rate", grafici=[
+            storico("cn-cambio", "USD/CNY (yuan per 1 dollar)", [CAMBIO], periodo_iniziale="10Y", largo=True,
                     mostra_unita=True,
-                    nota="Cambio onshore. Sale = lo yuan si indebolisce. Se Yahoo non risponde si usa FRED."),
+                    nota="Onshore rate. Up = the yuan weakens. If Yahoo does not respond FRED is used."),
         ]),
-        Sezione("borsa", "Borsa",
-                "La borsa cinese è rappresentata dal CSI 300 (Shanghai e Shenzhen); Hong Kong ha un mercato "
-                "separato, misurato dall'Hang Seng.",
+        Sezione("borsa", "Equities",
+                "Chinese equities are represented by the CSI 300 (Shanghai and Shenzhen); Hong Kong has a "
+                "separate market, measured by the Hang Seng.",
                 grafici=[
-                    storico("cn-csi300", "CSI 300 (ETF 510300)", [CSI300], periodo_iniziale="10A",
+                    storico("cn-csi300", "CSI 300 (ETF 510300)", [CSI300], periodo_iniziale="10Y",
                             mostra_unita=True,
-                            nota="Attenzione: non è l'indice ma un ETF che lo replica (ticker 510300 sulla borsa di "
-                                 "Shanghai, prezzo in yuan), perché Yahoo non fornisce lo storico dell'indice "
-                                 "CSI 300. Il prezzo segue l'indice ma non coincide con il suo livello; "
-                                 "i dati partono dal 2012."),
-                    storico("cn-hangseng", "Hang Seng (Hong Kong)", [HANG_SENG], periodo_iniziale="10A",
-                            nota="Indice in punti, chiusure giornaliere. Fonte Yahoo Finance (non ufficiale)."),
+                            nota="Note: this is not the index but an ETF that tracks it (ticker 510300 on the "
+                                 "Shanghai exchange, price in yuan), because Yahoo does not provide the history of the "
+                                 "CSI 300 index. The price follows the index but is not equal to its level; "
+                                 "data start in 2012."),
+                    storico("cn-hangseng", "Hang Seng (Hong Kong)", [HANG_SENG], periodo_iniziale="10Y",
+                            nota="Index in points, daily closes. Source: Yahoo Finance (unofficial)."),
                 ]),
-        sezione_non_inclusi("Non inclusi per mancanza di fonti gratuite aggiornate: rendimento 10A, LPR 5A, PPI."),
+        sezione_non_inclusi("Not included for lack of free, up-to-date sources: 10-year yield, 5-year LPR, PPI."),
     ]

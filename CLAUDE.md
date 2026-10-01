@@ -23,7 +23,8 @@ prima del merge**. Prima di dichiarare finito uno step: `python tools/inventario
 mappa in `docs/mappa-grafici.yaml`). Quando la ristrutturazione sarà finita, le sezioni "Struttura" e "Regole" qui sotto vanno riscritte.
 
 ## Regole del progetto
-- **Commenti e testi del sito in italiano.** Numeri in formato italiano (virgola decimale).
+- **Testi del sito in INGLESE** (decisione del 01/10/2026): numeri `1,234.5` (punto decimale), date `30 Sep 2026`, scadenze `10Y`, unità `bp`/`pp`,
+  periodi `1Y 5Y 10Y Max`. **Commenti e nomi interni del codice restano in italiano.** Nel config `nome` e `unita` sono in inglese (`"% y/y"`).
 - Ambiente: Windows + PowerShell, **Python 3.14**, ambiente virtuale `.venv`.
 - Prima di aggiungere una libreria, verificare che esista un wheel per Python 3.14 su Windows
   (`pip install --dry-run --only-binary=:all: <pacchetto>`) e aggiornare `requirements.txt` con la versione fissata.
@@ -46,8 +47,10 @@ mappa in `docs/mappa-grafici.yaml`). Quando la ristrutturazione sarà finita, le
 - **Controllo di freschezza** su tutte le serie: se l'ultimo dato supera la soglia (10 giorni giornaliere, 21 settimanali,
   75 mensili, 120 trimestrali, contati dalla fine del periodo) il sito mostra un avviso in cima. Serve a scoprire
   le serie "congelate" che non danno errore (vedi il caso HICP sotto).
-- Grafici: un solo asse y per grafico (niente doppio asse), palette a ordine fisso (`--s1`…`--s8` in `static/style.css`,
-  uguale a `PALETTE` in `dashboard/charts.py`). Bande grigie = recessioni: NBER (serie `USREC`) per USA e Commodities,
+- Grafici: un solo asse y per grafico (niente doppio asse), **colori fissi per Paese** (blocco `colori:` di `config.yaml`, campo `paese`/`colore` di ogni serie; le variabili CSS `--c-<chiave>` le scrive
+  ogni pagina da lì; `tools/valida_palette.py --pairs all` verifica i colori anche per il daltonismo: rilanciarlo se se ne cambia uno).
+  Più serie dello stesso colore nello stesso grafico si distinguono dallo stile della linea (piena, tratteggiata, puntinata). Ogni grafico
+  deve avere `come_leggerlo` (una riga in parole semplici): la build avvisa se manca. Bande grigie = recessioni: NBER (serie `USREC`) per USA e Commodities,
   CEPR (date scritte a mano in `config.yaml` → `recessioni:`) per l'Eurozona.
   Per confrontare due serie con unità diverse si usa `charts.due_pannelli`: due pannelli sovrapposti con lo stesso
   asse del tempo, ognuno col suo asse y (il pannello in basso si può invertire). `app.js` gestisce più assi e gli

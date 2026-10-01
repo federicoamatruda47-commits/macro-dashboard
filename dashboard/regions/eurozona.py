@@ -13,8 +13,8 @@ DFR = "FM/D.U2.EUR.4F.KR.DFR.LEV"
 
 # Curva AAA dell'area euro (BCE): usata come approssimazione dei Bund tedeschi
 AAA = "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_"
-SCADENZE = [("3M", AAA + "3M"), ("1A", AAA + "1Y"), ("2A", AAA + "2Y"),
-            ("5A", AAA + "5Y"), ("10A", AAA + "10Y"), ("30A", AAA + "30Y")]
+SCADENZE = [("3M", AAA + "3M"), ("1Y", AAA + "1Y"), ("2Y", AAA + "2Y"),
+            ("5Y", AAA + "5Y"), ("10Y", AAA + "10Y"), ("30Y", AAA + "30Y")]
 AAA_2A, AAA_10A = AAA + "2Y", AAA + "10Y"
 TUTTI_10A = "YC/B.U2.EUR.4F.G_N_C.SV_C_YM.SR_10Y"
 
@@ -27,7 +27,7 @@ EURUSD = "EXR/D.USD.EUR.SP00.A"
 EURO_STOXX_50, DAX, CAC_40, FTSE_MIB, BANCHE = "^STOXX50E", "^GDAXIP", "^FCHI", "FTSEMIB.MI", "EXV1.DE"
 AZIONI = [EURO_STOXX_50, DAX, CAC_40, FTSE_MIB, BANCHE]
 
-NOTA_RECESSIONI = "Bande grigie: recessioni dell'area euro datate dal CEPR."
+NOTA_RECESSIONI = "Grey bands: euro-area recessions dated by the CEPR."
 
 
 def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
@@ -43,7 +43,7 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
         opzioni_figura = {k: opzioni_grafico.pop(k) for k in ("riferimento", "evidenzia_inversioni")
                           if k in opzioni_grafico}
         figura = charts.linee_storiche(lista(*ids), recessioni=recessioni,
-                                       etichetta_recessioni="Recessione CEPR", **opzioni_figura)
+                                       etichetta_recessioni="CEPR recession", **opzioni_figura)
         return Grafico(id=id_grafico, titolo=titolo, figura=figura, serie_ids=list(ids), **opzioni_grafico)
 
     def base100(id_grafico, titolo, ids, **opzioni_grafico) -> Grafico:
@@ -53,83 +53,83 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
 
     figura_curva, _ = charts.curva_rendimenti([(etichetta, trova_serie(serie, i)) for etichetta, i in SCADENZE])
     grafico_curva = Grafico(
-        id="eur-curva-oggi", titolo="Curva AAA area euro (proxy Bund): oggi, 1 mese fa, 1 anno fa",
+        id="eur-curva-oggi", titolo="Euro-area AAA curve (Bund proxy): today, 1 month ago, 1 year ago",
         figura=figura_curva, serie_ids=[i for _, i in SCADENZE], storico=False,
     )
 
     return [
-        Sezione("politica-monetaria", "Politica monetaria",
-                "Il tasso sui depositi (DFR) è il tasso che la BCE paga alle banche sulla liquidità "
-                "depositata: oggi è il principale strumento con cui la BCE guida i tassi di mercato.",
+        Sezione("politica-monetaria", "Monetary policy",
+                "The deposit facility rate (DFR) is the rate the ECB pays banks on the liquidity "
+                "they deposit: today it is the main tool the ECB uses to steer market rates.",
                 grafici=[
-                    storico("eur-dfr", "Tasso sui depositi BCE (DFR)", [DFR], periodo_iniziale="Max",
+                    storico("eur-dfr", "ECB deposit facility rate (DFR)", [DFR], periodo_iniziale="Max",
                             largo=True, nota=NOTA_RECESSIONI),
                 ]),
-        Sezione("curva", "Curva AAA area euro (proxy Bund)",
-                "Rendimenti stimati dalla BCE sui titoli di Stato dell'area euro con rating AAA "
-                "(Germania, Paesi Bassi e pochi altri). Dati giornalieri dal 2004. I rendimenti "
-                "dei soli Bund tedeschi, giornalieri, non sono disponibili gratuitamente: "
-                "questa curva ne è una buona approssimazione.",
+        Sezione("curva", "AAA curve of the euro area (Bund proxy)",
+                "Yields estimated by the ECB on euro-area government bonds rated AAA "
+                "(Germany, the Netherlands and a few others). Daily data from 2004. Daily yields "
+                "on German Bunds alone are not freely available: "
+                "this curve is a good approximation.",
                 grafici=[
                     grafico_curva,
-                    storico("eur-rendimenti", "Curva AAA area euro (proxy Bund): 2 e 10 anni",
-                            [AAA_2A, AAA_10A], periodo_iniziale="10A"),
-                    storico("eur-pendenza", "Pendenza della curva AAA: 10A - 2A", ["EA_AAA_10A_2A"],
+                    storico("eur-rendimenti", "AAA curve of the euro area (Bund proxy): 2 and 10 years",
+                            [AAA_2A, AAA_10A], periodo_iniziale="10Y"),
+                    storico("eur-pendenza", "Slope of the AAA curve: 10Y - 2Y", ["EA_AAA_10A_2A"],
                             evidenzia_inversioni=True, periodo_iniziale="Max", largo=True,
-                            nota="Area rossa: curva invertita (spread sotto zero). " + NOTA_RECESSIONI),
+                            nota="Red area: inverted curve (spread below zero). " + NOTA_RECESSIONI),
                 ]),
-        Sezione("spread-sovrani", "Spread sovrani",
-                "Quanto rendimento in più chiedono gli investitori per prestare a un Paese "
-                "rispetto alla Germania: misura il rischio percepito (debito, politica, "
-                "tenuta dell'euro).",
+        Sezione("spread-sovrani", "Sovereign spreads",
+                "How much extra yield investors demand to lend to a country "
+                "compared with Germany: it measures perceived risk (debt, politics, "
+                "the survival of the euro).",
                 grafici=[
-                    storico("eur-spread-paesi", "Spread BTP-Bund e OAT-Bund 10 anni (dati MENSILI)",
+                    storico("eur-spread-paesi", "BTP-Bund and OAT-Bund 10-year spreads (MONTHLY data)",
                             ["SPREAD_BTP_BUND", "SPREAD_OAT_BUND"], periodo_iniziale="Max", largo=True,
-                            nota="Dati mensili: media del mese dei rendimenti a 10 anni usati dalla BCE "
-                                 "per i criteri di convergenza, pubblicati con circa un mese di ritardo. "
-                                 "I rendimenti giornalieri dei singoli Paesi non sono disponibili "
-                                 "gratuitamente. " + NOTA_RECESSIONI),
-                    storico("eur-spread-tutti", "Tutti i titoli di Stato area euro meno AAA, 10 anni (giornaliero)",
+                            nota="Monthly data: the monthly average of the 10-year yields the ECB uses "
+                                 "for its convergence criteria, published with about a month's delay. "
+                                 "Daily yields of individual countries are not freely "
+                                 "available. " + NOTA_RECESSIONI),
+                    storico("eur-spread-tutti", "All euro-area government bonds minus AAA, 10 years (daily)",
                             ["EA_TUTTI_MENO_AAA_10A"], periodo_iniziale="Max", largo=True,
-                            nota="Rendimento a 10 anni della curva BCE di tutti i titoli di Stato "
-                                 "dell'area euro meno quello della curva AAA: un indicatore giornaliero "
-                                 "del premio di rischio medio dei Paesi non AAA (Italia, Francia, "
-                                 "Spagna...). Dati dal 2004. " + NOTA_RECESSIONI),
+                            nota="10-year yield of the ECB curve for all euro-area government bonds "
+                                 "minus that of the AAA curve: a daily indicator "
+                                 "of the average risk premium of non-AAA countries (Italy, France, "
+                                 "Spain...). Data from 2004. " + NOTA_RECESSIONI),
                 ]),
-        Sezione("inflazione", "Inflazione", "Variazione dei prezzi al consumo (HICP) rispetto a un anno prima.",
+        Sezione("inflazione", "Inflation", "Change in consumer prices (HICP) compared with a year earlier.",
                 grafici=[
-                    storico("eur-inflazione", "HICP headline e core (% annua)", [HICP, HICP_CORE],
-                            riferimento=(2, ""), periodo_iniziale="10A", largo=True,
-                            nota="Core = esclusi energia, alimentari, alcol e tabacco. "
-                                 "Linea tratteggiata: obiettivo della BCE al 2%. " + NOTA_RECESSIONI),
+                    storico("eur-inflazione", "HICP headline and core (% y/y)", [HICP, HICP_CORE],
+                            riferimento=(2, ""), periodo_iniziale="10Y", largo=True,
+                            nota="Core = excluding energy, food, alcohol and tobacco. "
+                                 "Dashed line: the ECB's 2% target. " + NOTA_RECESSIONI),
                 ]),
-        Sezione("credito", "Credito",
-                "Premio di rendimento richiesto sulle obbligazioni societarie in euro rispetto ai titoli di Stato.",
+        Sezione("credito", "Credit",
+                "Extra yield investors demand on euro corporate bonds compared with government bonds.",
                 grafici=[
-                    storico("eur-hy", "OAS High Yield in euro (ICE BofA)", [HY_EURO], periodo_iniziale="Max",
+                    storico("eur-hy", "High Yield OAS in euro (ICE BofA)", [HY_EURO], periodo_iniziale="Max",
                             largo=True,
-                            nota="Su FRED la serie parte da ottobre 2023 (limite di licenza ICE). "
-                                 "Lo spread Investment Grade in euro non è incluso: non esiste una "
-                                 "fonte gratuita."),
+                            nota="On FRED the series starts in October 2023 (an ICE licensing limit). "
+                                 "The euro Investment Grade spread is not included: there is no "
+                                 "free source."),
                 ]),
-        Sezione("azioni", "Azioni",
-                "I principali indici azionari dell'area euro e le banche europee, in euro.",
-                tabella_performance=AZIONI, etichetta_performance="Indice",
+        Sezione("azioni", "Equities",
+                "The main euro-area equity indices and European banks, in euro.",
+                tabella_performance=AZIONI, etichetta_performance="Index",
                 grafici=[
-                    base100("eur-indici-azionari", "Borse e banche europee (base 100)", AZIONI,
-                            periodo_iniziale="5A", largo=True,
-                            nota="Normalizzati a 100 all'inizio del periodo scelto con i pulsanti 1A / 5A / 10A / Max; "
-                                 "con \"Max\" si parte dal 2013, quando esistono tutte le linee (il DAX di prezzo su Yahoo parte da marzo 2013). "
-                                 "Prezzi di chiusura senza dividendi (non \"adjusted\"), in euro. DAX: si usa il DAX K "
-                                 "(Kursindex, indice di prezzo); l'indice DAX \"ufficiale\" reinveste i dividendi e non "
-                                 "sarebbe confrontabile con gli altri. \"Banche europee\" è l'ETF iShares STOXX Europe 600 "
-                                 "Banks (Xetra, ticker EXV1): include anche banche non dell'area euro (es. Regno Unito, "
-                                 "Svizzera) e NON è l'Euro Stoxx Banks, che su Yahoo non è disponibile. L'ETF distribuisce "
-                                 "i dividendi: nel prezzo si vedono come piccoli cali."),
+                    base100("eur-indici-azionari", "European equity indices and banks (base 100)", AZIONI,
+                            periodo_iniziale="5Y", largo=True,
+                            nota="Rebased to 100 at the start of the period chosen with the 1Y / 5Y / 10Y / Max buttons; "
+                                 "with \"Max\" the chart starts in 2013, when every line exists (the DAX price index on Yahoo starts in March 2013). "
+                                 "Closing prices without dividends (not \"adjusted\"), in euro. DAX: the DAX K is used "
+                                 "(Kursindex, a price index); the \"official\" DAX index reinvests dividends and would not "
+                                 "be comparable with the others. \"European banks\" is the iShares STOXX Europe 600 "
+                                 "Banks ETF (Xetra, ticker EXV1): it also includes banks outside the euro area (e.g. the UK, "
+                                 "Switzerland) and is NOT the Euro Stoxx Banks, which is not available on Yahoo. The ETF pays out "
+                                 "dividends: in the price they show up as small drops."),
                 ]),
-        Sezione("cambio", "Cambio", grafici=[
-            storico("eur-eurusd", "EUR/USD (dollari per 1 euro)", [EURUSD], periodo_iniziale="10A", largo=True,
-                    nota="Cambio di riferimento BCE, rilevato ogni giorno lavorativo alle 14:15 (ora di "
-                         "Francoforte). Sale = l'euro si rafforza. " + NOTA_RECESSIONI),
+        Sezione("cambio", "Exchange rate", grafici=[
+            storico("eur-eurusd", "EUR/USD (dollars per 1 euro)", [EURUSD], periodo_iniziale="10Y", largo=True,
+                    nota="ECB reference rate, taken every working day at 14:15 (Frankfurt time). "
+                         "Up = the euro strengthens. " + NOTA_RECESSIONI),
         ]),
     ]

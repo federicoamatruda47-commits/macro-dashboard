@@ -26,25 +26,25 @@ def scarica(id_serie: str) -> pd.Series:
     come valori. In caso di problemi solleva ErroreFonte.
     """
     if "/" not in id_serie:
-        raise ErroreFonte("codice BCE non valido: serve la forma DATASET/CHIAVE")
+        raise ErroreFonte("invalid ECB code: the form DATASET/KEY is required")
     dataset, chiave = id_serie.split("/", 1)
 
     # csvdata = tabella CSV; dataonly = solo date e valori, senza metadati
     parametri = {"format": "csvdata", "detail": "dataonly"}
-    ultimo_errore = "errore sconosciuto"
+    ultimo_errore = "unknown error"
 
     for tentativo in range(1, TENTATIVI + 1):
         try:
             risposta = requests.get(URL_DATI + dataset + "/" + chiave, params=parametri,
                                     timeout=TIMEOUT_SECONDI)
         except requests.RequestException as errore:
-            ultimo_errore = f"errore di rete ({type(errore).__name__})"
+            ultimo_errore = f"network error ({type(errore).__name__})"
         else:
             if risposta.status_code == 200:
                 return _converti_in_serie(risposta.text, id_serie)
             if risposta.status_code == 404:
                 # La BCE risponde 404 quando il codice non corrisponde a nessuna serie
-                ultimo_errore = "serie non trovata presso la BCE (codice errato o dismesso?)"
+                ultimo_errore = "series not found at the ECB (wrong or discontinued code?)"
             else:
                 ultimo_errore = f"HTTP {risposta.status_code}"
             # Gli errori 4xx non si risolvono riprovando, tranne il 429 = "troppe richieste"
@@ -60,19 +60,19 @@ def scarica(id_serie: str) -> pd.Series:
 def _converti_in_serie(testo_csv: str, id_serie: str) -> pd.Series:
     """Trasforma il CSV della BCE in una pandas Series pulita."""
     if not testo_csv.strip():
-        raise ErroreFonte("la BCE non ha restituito dati")
+        raise ErroreFonte("the ECB returned no data")
     tabella = pd.read_csv(io.StringIO(testo_csv), dtype={"TIME_PERIOD": str})
     if "TIME_PERIOD" not in tabella or "OBS_VALUE" not in tabella:
-        raise ErroreFonte("risposta della BCE in un formato inatteso")
+        raise ErroreFonte("unexpected ECB response format")
     if tabella["KEY"].nunique() > 1:
-        raise ErroreFonte("il codice corrisponde a più serie: specificare la chiave completa")
+        raise ErroreFonte("the code matches several series: give the full key")
 
     valori = pd.to_numeric(tabella["OBS_VALUE"], errors="coerce")
     serie = pd.Series(valori.to_numpy(), index=_date_bce(tabella["TIME_PERIOD"]), name=id_serie)
     serie = serie.dropna().sort_index()
 
     if serie.empty:
-        raise ErroreFonte("la serie non contiene valori numerici")
+        raise ErroreFonte("the series contains no numeric values")
     return serie
 
 

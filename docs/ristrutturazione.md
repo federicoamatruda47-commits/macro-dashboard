@@ -8,8 +8,8 @@ Piano approvato dall'utente il 01/10/2026, con le scelte della sezione 0 e due a
 | Step | Cosa | Stato |
 |---|---|---|
 | 0 | Rete di sicurezza: inventario dei 56 grafici e delle serie + controllo automatico "nulla è perso / nulla è doppio" | **fatto e in `main`** |
-| 1 | Motore multipagina (base template, menu a 2 righe, link relativi); le 7 tab diventano 7 pagine, stesso contenuto | **fatto sul ramo** `ristrutturazione/step-1`, in attesa dell'ok per il merge |
-| 2 | Inglese (testi, numeri, unità, date), campo `paese`, palette fissa per Paese, campo "Come leggerlo" | da fare |
+| 1 | Motore multipagina (base template, menu a 2 righe, link relativi); le 7 tab diventano 7 pagine, stesso contenuto | **fatto e in `main`** |
+| 2 | Inglese (testi, numeri, unità, date), campo `paese`, palette fissa per Paese, campo "Come leggerlo" | **fatto sul ramo** `ristrutturazione/step-2`, in attesa dell'ok per il merge |
 | 3 | Footer dei grafici (fonte + link + note), registro `contenuti/note.yaml`, pagine Method e Series status | da fare |
 | 4a | Mercati: Commodities | da fare |
 | 4b | Mercati: FX | da fare |
@@ -24,7 +24,7 @@ Flusso di lavoro: un ramo per step (`ristrutturazione/step-N`); a fine step riep
 (il merge pubblica il sito tramite GitHub Actions). Il merge si fa a fine di ogni step (non tutto alla fine), con `git push origin main`. Nessun commit/push fuori da questo flusso senza richiesta.
 
 Strumenti di controllo: `python tools/inventario.py controlla` (deve passare a ogni step), `python tools/inventario.py sito` (dopo `python build.py`: controlla le pagine HTML vere e ne stampa il peso), `python tools/inventario.py salva`
-(solo allo step 0, rigenera la baseline). Mappa vecchio grafico → nuovo posto: [mappa-grafici.yaml](mappa-grafici.yaml).
+(solo allo step 0, rigenera la baseline), `python tools/valida_palette.py --pairs all` (colori dei Paesi; da rilanciare se se ne cambia uno). Mappa vecchio grafico → nuovo posto: [mappa-grafici.yaml](mappa-grafici.yaml).
 
 ## Aggiunte richieste dall'utente
 
@@ -274,3 +274,11 @@ Il workflow GitHub non cambia (pubblica già tutta `site/`).
 - 01/10/2026: step 1 completato sul ramo `ristrutturazione/step-1`: `dashboard/pagine.py` (percorsi relativi, menu a 2 righe), `render.py` scrive `site/<regione>/index.html` + home provvisoria,
   template `base/pagina/home/_componenti`, avvisi filtrati per le serie di ogni pagina, ancora `#chart-<id>` su ogni grafico, redirect dei vecchi `/#usa`. `config.yaml`: `descrizione` per regione e blocco `menu:` (provvisori fino allo step 5).
   Pesi (MB): usa 1,54 · globale 1,82 · commodities 0,85 · eurozona 0,75 · giappone 0,50 · cina 0,26 · corea 0,21 (prima: 5,95 in un file solo). Controlli: `inventario.py controlla` e `sito` OK (56/56).
+- 01/10/2026: step 1 unito in `main`.
+- 01/10/2026: step 2 completato sul ramo `ristrutturazione/step-2`. Sito tutto in inglese (testi, nomi serie e unità in `config.yaml`, messaggi d'errore delle fonti, numeri `1,234.5`,
+  date `30 Sep 2026`, `bp`/`pp`, `1Y 5Y 10Y Max`, orario di aggiornamento in UTC; via il locale italiano di Plotly). Colori: blocco `colori:` in `config.yaml` + campi `paese`/`colore` su tutte le 94 serie;
+  gli 8 colori dei Paesi sono stati cercati con un'ottimizzazione e passano tutte le 28 coppie (daltonismo ΔE ≥ 8,3; vista normale ≥ 15,2) in chiaro e scuro con `tools/valida_palette.py`
+  (porting Python del validatore della skill dataviz: Node non è installato). Contrasto sotto 3:1 per alcuni colori (kr in chiaro; us, jp, uk in scuro): serve la legenda sempre visibile, che c'è.
+  Le materie prime usano un colore per gruppo (energia, metalli preziosi, metalli industriali, agricoli: alias di colori dei Paesi che non compaiono mai con loro). Stessa serie colorata uguale in ogni grafico;
+  più serie dello stesso colore nello stesso grafico = stile di linea diverso (fino a 6). Campo `come_leggerlo` aggiunto al modello e mostrato sotto i grafici; la build avvisa per i 56 grafici che ancora non ce l'hanno
+  (le righe si scrivono pagina per pagina nello step 4). `slot`/`--s1…--s8`/`PALETTE` eliminati.

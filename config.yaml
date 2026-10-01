@@ -14,14 +14,18 @@
 #                  Per il BIS l'id è "DATASET/CHIAVE", es. WS_CBPOL/D.JP (tasso di policy del Giappone)
 #                  Per "mof" l'id è JGB_ seguito dalla scadenza, es. JGB_10Y; per "statjp" è "CPIm/740"
 #   nome           etichetta mostrata sul sito
-#   regione        tab in cui compare (deve esistere nella lista "regioni")
+#   regione        pagina in cui compare (deve esistere nella lista "regioni"; provvisorio fino allo step 5)
+#   paese          a quale Paese appartiene (us, ea, it, de, fr, jp, cn, kr, uk) oppure "global" per le materie prime
+#                  e gli indici mondiali. Decide il colore del grafico (vedi il blocco "colori")
 #   categoria      gruppo tematico (serve a orientarsi e per i confronti futuri)
-#   unita          unità DOPO la trasformazione: "%", "% a/a", "indice", "punti"
+#   unita          unità DOPO la trasformazione (testo mostrato sul sito, in inglese): "%", "% y/y", "index", "points"
 #   trasformazione "livello" = dato così com'è
 #                  "yoy"     = variazione % rispetto a un anno prima
 #   riepilogo      true = compare nella scheda riassuntiva in cima alla pagina
 #
 # Campi facoltativi:
+#   colore         chiave del blocco "colori" se diversa dal paese (es. la Germania usa il colore dell'area euro:
+#                  paese: de, colore: ea; le materie prime usano il gruppo: colore: energia)
 #   riserva        fonte alternativa se la principale non risponde, es.
 #                    riserva: {fonte: fred, id: ECBDFR}
 #                  (si può aggiungere "trasformazione" se diversa da quella principale,
@@ -45,41 +49,41 @@
 # Provvisorio: nello step 5 della ristrutturazione (docs/ristrutturazione.md) "regioni" diventa "pagine".
 regioni:
   - id: usa
-    nome: Stati Uniti
-    descrizione: Politica monetaria, curva dei Treasury, tassi reali, inflazione, credito, azioni e condizioni finanziarie.
+    nome: United States
+    descrizione: Monetary policy, the Treasury curve, real rates, inflation, credit, equities and financial conditions.
     attiva: true
   - id: eurozona
-    nome: Eurozona
-    descrizione: Tasso BCE, curva AAA (proxy Bund), spread sovrani, inflazione HICP, credito, azioni ed EUR/USD.
+    nome: Euro area
+    descrizione: ECB policy rate, the AAA curve (Bund proxy), sovereign spreads, HICP inflation, credit, equities and EUR/USD.
     attiva: true
   # Non è una regione geografica, ma usa la stessa struttura (dashboard/regions/commodities.py)
   - id: commodities
     nome: Commodities
-    descrizione: Energia, metalli e agricoli, con la tabella di performance e il confronto con i tassi USA.
+    descrizione: Energy, metals and agricultural prices, with a performance table and a comparison with US rates.
     attiva: true
   # Asia (fase 3): tre paesi, nessuna banda di recessione (nessuna fonte ufficiale e automatica)
   - id: giappone
-    nome: Giappone
-    descrizione: Tasso BoJ, rendimenti dei JGB, inflazione, cambio yen e Nikkei.
+    nome: Japan
+    descrizione: BoJ policy rate, JGB yields, inflation, the yen and the Nikkei.
     attiva: true
   - id: cina
-    nome: Cina
-    descrizione: Loan Prime Rate, inflazione, cambio yuan, CSI 300 e Hang Seng.
+    nome: China
+    descrizione: Loan Prime Rate, inflation, the yuan, the CSI 300 and the Hang Seng.
     attiva: true
   - id: corea
-    nome: Corea del Sud
-    descrizione: Tasso BoK, rendimento a 10 anni, inflazione, cambio won e KOSPI.
+    nome: South Korea
+    descrizione: BoK base rate, the 10-year yield, inflation, the won and the KOSPI.
     attiva: true
   - id: globale
-    nome: Confronto globale
-    descrizione: Tassi di policy, rendimenti a 10 anni, inflazione, valute e borse di cinque economie sullo stesso grafico.
+    nome: Global comparison
+    descrizione: Policy rates, 10-year yields, inflation, currencies and equities of five economies on the same chart.
     attiva: true
 
 # Menu in cima a ogni pagina (provvisorio, come "regioni"): "pagina" = id di una regione (o "home");
 # "figli" = voce con una seconda riga di link. La voce con "figli" porta alla prima pagina figlia.
 menu:
   - {titolo: Home, pagina: home}
-  - {titolo: Paesi, figli: [usa, eurozona, giappone, cina, corea]}
+  - {titolo: Countries, figli: [usa, eurozona, giappone, cina, corea]}
   - {pagina: globale}
   - {pagina: commodities}
 
@@ -102,12 +106,33 @@ recessioni:
       - {picco: 2011Q3, minimo: 2013Q1}
       - {picco: 2019Q4, minimo: 2020Q2}
 
+# Colori fissi dei grafici: ogni Paese (e ogni gruppo di materie prime) ha SEMPRE lo stesso colore, in tutte le pagine.
+# "chiaro" e "scuro" sono lo stesso colore regolato per i due temi. Gli 8 colori dei Paesi sono stati verificati con
+# tools/valida_palette.py (tutte le 28 coppie: distinguibili anche con daltonismo; da rilanciare se si cambia un colore).
+# "alias: us" = stesso colore di un'altra voce. "mondo" è il colore neutro del benchmark (indice mondiale).
+# In un grafico, più serie con lo stesso colore si distinguono dallo stile della linea (piena, tratteggiata, puntinata).
+colori:
+  us: {nome: United States,  gruppo: paese, chiaro: "#014cd3", scuro: "#0c54db"}
+  ea: {nome: Euro area,      gruppo: paese, chiaro: "#e45301", scuro: "#e75608"}
+  it: {nome: Italy,          gruppo: paese, chiaro: "#519257", scuro: "#519357"}
+  jp: {nome: Japan,          gruppo: paese, chiaro: "#8c3748", scuro: "#9e4756"}
+  cn: {nome: China,          gruppo: paese, chiaro: "#dd4f9e", scuro: "#e153a1"}
+  kr: {nome: South Korea,    gruppo: paese, chiaro: "#45b9e8", scuro: "#229fcd"}
+  uk: {nome: United Kingdom, gruppo: paese, chiaro: "#9b1da2", scuro: "#a225a8"}
+  fr: {nome: France,         gruppo: paese, chiaro: "#8d80fa", scuro: "#8173ec"}
+  energia:             {nome: Energy,            gruppo: materia_prima, alias: ea}
+  metalli_preziosi:    {nome: Precious metals,   gruppo: materia_prima, alias: uk}
+  metalli_industriali: {nome: Industrial metals, gruppo: materia_prima, alias: kr}
+  agricoli:            {nome: Agricultural,      gruppo: materia_prima, alias: it}
+  mondo:               {nome: World benchmark,   gruppo: neutro, chiaro: "#52514e", scuro: "#c3c2b7"}
+
 serie:
   # --- Politica monetaria -------------------------------------------
   - id: DFF
     fonte: fred
-    nome: Fed funds effettivo
+    nome: "Fed funds effective"
     regione: usa
+    paese: us
     categoria: politica_monetaria
     unita: "%"
     trasformazione: livello
@@ -116,40 +141,45 @@ serie:
   # --- Curva dei Treasury -------------------------------------------
   - id: DGS3MO
     fonte: fred
-    nome: Treasury 3 mesi
+    nome: "Treasury 3M"
     regione: usa
+    paese: us
     categoria: curva
     unita: "%"
     trasformazione: livello
     riepilogo: false
   - id: DGS2
     fonte: fred
-    nome: Treasury 2 anni
+    nome: "Treasury 2Y"
     regione: usa
+    paese: us
     categoria: curva
     unita: "%"
     trasformazione: livello
     riepilogo: true
   - id: DGS5
     fonte: fred
-    nome: Treasury 5 anni
+    nome: "Treasury 5Y"
     regione: usa
+    paese: us
     categoria: curva
     unita: "%"
     trasformazione: livello
     riepilogo: false
   - id: DGS10
     fonte: fred
-    nome: Treasury 10 anni
+    nome: "Treasury 10Y"
     regione: usa
+    paese: us
     categoria: curva
     unita: "%"
     trasformazione: livello
     riepilogo: true
   - id: DGS30
     fonte: fred
-    nome: Treasury 30 anni
+    nome: "Treasury 30Y"
     regione: usa
+    paese: us
     categoria: curva
     unita: "%"
     trasformazione: livello
@@ -158,16 +188,18 @@ serie:
   # --- Spread della curva -------------------------------------------
   - id: T10Y2Y
     fonte: fred
-    nome: Spread 10A-2A
+    nome: "10Y-2Y spread"
     regione: usa
+    paese: us
     categoria: spread_curva
     unita: "%"
     trasformazione: livello
     riepilogo: true
   - id: T10Y3M
     fonte: fred
-    nome: Spread 10A-3M
+    nome: "10Y-3M spread"
     regione: usa
+    paese: us
     categoria: spread_curva
     unita: "%"
     trasformazione: livello
@@ -176,16 +208,18 @@ serie:
   # --- Tassi reali e breakeven --------------------------------------
   - id: DFII10
     fonte: fred
-    nome: Tasso reale 10A (TIPS)
+    nome: "Real yield 10Y (TIPS)"
     regione: usa
+    paese: us
     categoria: tassi_reali
     unita: "%"
     trasformazione: livello
     riepilogo: true
   - id: T10YIE
     fonte: fred
-    nome: Breakeven 10A
+    nome: "Breakeven inflation 10Y"
     regione: usa
+    paese: us
     categoria: tassi_reali
     unita: "%"
     trasformazione: livello
@@ -194,50 +228,56 @@ serie:
   # --- Inflazione (indici di prezzo trasformati in variazione annua) -
   - id: CPIAUCSL
     fonte: fred
-    nome: CPI headline
+    nome: "CPI headline"
     regione: usa
+    paese: us
     categoria: inflazione
-    unita: "% a/a"
+    unita: "% y/y"
     trasformazione: yoy
     riepilogo: true
   - id: CPILFESL
     fonte: fred
-    nome: CPI core
+    nome: "CPI core"
     regione: usa
+    paese: us
     categoria: inflazione
-    unita: "% a/a"
+    unita: "% y/y"
     trasformazione: yoy
     riepilogo: true
   - id: PCEPILFE
     fonte: fred
-    nome: PCE core
+    nome: "PCE core"
     regione: usa
+    paese: us
     categoria: inflazione
-    unita: "% a/a"
+    unita: "% y/y"
     trasformazione: yoy
     riepilogo: true
 
   # --- Credito ------------------------------------------------------
   - id: BAA10Y
     fonte: fred
-    nome: Spread Baa - Treasury 10A
+    nome: "Baa spread vs 10Y Treasury"
     regione: usa
+    paese: us
     categoria: credito
     unita: "%"
     trasformazione: livello
     riepilogo: true
   - id: BAMLC0A0CM
     fonte: fred
-    nome: OAS Investment Grade
+    nome: "OAS Investment Grade"
     regione: usa
+    paese: us
     categoria: credito
     unita: "%"
     trasformazione: livello
     riepilogo: false
   - id: BAMLH0A0HYM2
     fonte: fred
-    nome: OAS High Yield
+    nome: "OAS High Yield"
     regione: usa
+    paese: us
     categoria: credito
     unita: "%"
     trasformazione: livello
@@ -246,24 +286,27 @@ serie:
   # --- Condizioni finanziarie e lavoro ------------------------------
   - id: VIXCLS
     fonte: fred
-    nome: VIX
+    nome: "VIX"
     regione: usa
+    paese: us
     categoria: condizioni
-    unita: punti
+    unita: "points"
     trasformazione: livello
     riepilogo: true
   - id: DTWEXBGS
     fonte: fred
-    nome: Dollaro broad
+    nome: "Broad dollar index"
     regione: usa
+    paese: us
     categoria: condizioni
-    unita: indice
+    unita: "index"
     trasformazione: livello
     riepilogo: true
   - id: UNRATE
     fonte: fred
-    nome: Tasso di disoccupazione
+    nome: "Unemployment rate"
     regione: usa
+    paese: us
     categoria: lavoro
     unita: "%"
     trasformazione: livello
@@ -273,10 +316,11 @@ serie:
   # Non è un grafico: serve a disegnare le bande grigie sui grafici storici.
   - id: USREC
     fonte: fred
-    nome: Recessioni NBER
+    nome: "NBER recessions"
     regione: usa
+    paese: us
     categoria: recessioni
-    unita: indicatore
+    unita: "indicator"
     trasformazione: livello
     riepilogo: false
 
@@ -287,8 +331,9 @@ serie:
   # --- Politica monetaria -------------------------------------------
   - id: FM/D.U2.EUR.4F.KR.DFR.LEV
     fonte: ecb
-    nome: Tasso sui depositi BCE (DFR)
+    nome: "ECB deposit facility rate (DFR)"
     regione: eurozona
+    paese: ea
     categoria: politica_monetaria
     unita: "%"
     trasformazione: livello
@@ -299,48 +344,54 @@ serie:
   # Curva stimata dalla BCE sui titoli di Stato con rating AAA, giornaliera dal 2004
   - id: YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_3M
     fonte: ecb
-    nome: AAA 3 mesi
+    nome: "AAA 3M"
     regione: eurozona
+    paese: ea
     categoria: curva
     unita: "%"
     trasformazione: livello
     riepilogo: false
   - id: YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_1Y
     fonte: ecb
-    nome: AAA 1 anno
+    nome: "AAA 1Y"
     regione: eurozona
+    paese: ea
     categoria: curva
     unita: "%"
     trasformazione: livello
     riepilogo: false
   - id: YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y
     fonte: ecb
-    nome: AAA 2 anni
+    nome: "AAA 2Y"
     regione: eurozona
+    paese: ea
     categoria: curva
     unita: "%"
     trasformazione: livello
     riepilogo: true
   - id: YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_5Y
     fonte: ecb
-    nome: AAA 5 anni
+    nome: "AAA 5Y"
     regione: eurozona
+    paese: ea
     categoria: curva
     unita: "%"
     trasformazione: livello
     riepilogo: false
   - id: YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y
     fonte: ecb
-    nome: AAA 10 anni
+    nome: "AAA 10Y"
     regione: eurozona
+    paese: ea
     categoria: curva
     unita: "%"
     trasformazione: livello
     riepilogo: true
   - id: YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_30Y
     fonte: ecb
-    nome: AAA 30 anni
+    nome: "AAA 30Y"
     regione: eurozona
+    paese: ea
     categoria: curva
     unita: "%"
     trasformazione: livello
@@ -348,8 +399,9 @@ serie:
   - id: EA_AAA_10A_2A
     fonte: calcolata
     componenti: [YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y, YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y]
-    nome: Pendenza AAA 10A-2A
+    nome: "AAA slope 10Y-2Y"
     regione: eurozona
+    paese: ea
     categoria: spread_curva
     unita: "%"
     trasformazione: livello
@@ -360,8 +412,10 @@ serie:
   # BCE dei criteri di convergenza. I dati giornalieri per Paese non sono gratuiti.
   - id: IRS/M.DE.L.L40.CI.0000.EUR.N.Z
     fonte: ecb
-    nome: Bund 10 anni (media mensile)
+    nome: "Bund 10Y (monthly average)"
     regione: eurozona
+    paese: de
+    colore: ea
     categoria: titoli_stato
     unita: "%"
     trasformazione: livello
@@ -369,8 +423,9 @@ serie:
     riserva: {fonte: fred, id: IRLTLT01DEM156N}
   - id: IRS/M.IT.L.L40.CI.0000.EUR.N.Z
     fonte: ecb
-    nome: BTP 10 anni (media mensile)
+    nome: "BTP 10Y (monthly average)"
     regione: eurozona
+    paese: it
     categoria: titoli_stato
     unita: "%"
     trasformazione: livello
@@ -378,8 +433,9 @@ serie:
     riserva: {fonte: fred, id: IRLTLT01ITM156N}
   - id: IRS/M.FR.L.L40.CI.0000.EUR.N.Z
     fonte: ecb
-    nome: OAT 10 anni (media mensile)
+    nome: "OAT 10Y (monthly average)"
     regione: eurozona
+    paese: fr
     categoria: titoli_stato
     unita: "%"
     trasformazione: livello
@@ -388,8 +444,9 @@ serie:
   - id: SPREAD_BTP_BUND
     fonte: calcolata
     componenti: [IRS/M.IT.L.L40.CI.0000.EUR.N.Z, IRS/M.DE.L.L40.CI.0000.EUR.N.Z]
-    nome: Spread BTP-Bund (mensile)
+    nome: "BTP-Bund spread (monthly)"
     regione: eurozona
+    paese: it
     categoria: spread_sovrani
     unita: "%"
     trasformazione: livello
@@ -397,8 +454,9 @@ serie:
   - id: SPREAD_OAT_BUND
     fonte: calcolata
     componenti: [IRS/M.FR.L.L40.CI.0000.EUR.N.Z, IRS/M.DE.L.L40.CI.0000.EUR.N.Z]
-    nome: Spread OAT-Bund (mensile)
+    nome: "OAT-Bund spread (monthly)"
     regione: eurozona
+    paese: fr
     categoria: spread_sovrani
     unita: "%"
     trasformazione: livello
@@ -406,8 +464,9 @@ serie:
   # Spread giornaliero: curva di TUTTI i titoli di Stato area euro meno curva AAA, 10 anni
   - id: YC/B.U2.EUR.4F.G_N_C.SV_C_YM.SR_10Y
     fonte: ecb
-    nome: Tutti i titoli di Stato 10 anni
+    nome: "All euro-area government bonds 10Y"
     regione: eurozona
+    paese: ea
     categoria: titoli_stato
     unita: "%"
     trasformazione: livello
@@ -415,8 +474,9 @@ serie:
   - id: EA_TUTTI_MENO_AAA_10A
     fonte: calcolata
     componenti: [YC/B.U2.EUR.4F.G_N_C.SV_C_YM.SR_10Y, YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y]
-    nome: Spread tutti - AAA 10A
+    nome: "All minus AAA spread 10Y"
     regione: eurozona
+    paese: ea
     categoria: spread_sovrani
     unita: "%"
     trasformazione: livello
@@ -427,19 +487,21 @@ serie:
   # Il vecchio dataset "ICP" è fermo a dicembre 2025.
   - id: HICP/M.U2.N.000000.4D0.ANR
     fonte: ecb
-    nome: HICP headline
+    nome: "HICP headline"
     regione: eurozona
+    paese: ea
     categoria: inflazione
-    unita: "% a/a"
+    unita: "% y/y"
     trasformazione: livello   # la BCE pubblica già la variazione annua
     riepilogo: true
     riserva: {fonte: fred, id: CP0000EZCCM086NEST, trasformazione: yoy}
   - id: HICP/M.U2.N.XEF000.4D0.ANR
     fonte: ecb
-    nome: HICP core
+    nome: "HICP core"
     regione: eurozona
+    paese: ea
     categoria: inflazione
-    unita: "% a/a"
+    unita: "% y/y"
     trasformazione: livello
     riepilogo: true
     riserva: {fonte: fred, id: 00XEFDEZCCM086NEST, trasformazione: yoy}
@@ -448,8 +510,9 @@ serie:
   # Nessuna fonte gratuita per lo spread Investment Grade in euro.
   - id: BAMLHE00EHYIOAS
     fonte: fred
-    nome: OAS High Yield euro
+    nome: "OAS High Yield euro"
     regione: eurozona
+    paese: ea
     categoria: credito
     unita: "%"
     trasformazione: livello
@@ -458,10 +521,11 @@ serie:
   # --- Cambio -------------------------------------------------------
   - id: EXR/D.USD.EUR.SP00.A
     fonte: ecb
-    nome: EUR/USD
+    nome: "EUR/USD"
     regione: eurozona
+    paese: ea
     categoria: cambio
-    unita: dollari
+    unita: "USD"
     trasformazione: livello
     riepilogo: true
     decimali: 4
@@ -479,110 +543,132 @@ serie:
   # --- Energia ------------------------------------------------------
   - id: CL=F
     fonte: yahoo
-    nome: Petrolio WTI
+    nome: "WTI crude oil"
     regione: commodities
+    paese: global
+    colore: energia
     categoria: energia
-    unita: $/barile
+    unita: "$/barrel"
     trasformazione: livello
     riepilogo: false
-    riserva: {fonte: fred, id: DCOILWTICO, nota: "prezzo spot giornaliero, non future"}
+    riserva: {fonte: fred, id: DCOILWTICO, nota: "daily spot price, not futures"}
   - id: BZ=F
     fonte: yahoo
-    nome: Petrolio Brent
+    nome: "Brent crude oil"
     regione: commodities
+    paese: global
+    colore: energia
     categoria: energia
-    unita: $/barile
+    unita: "$/barrel"
     trasformazione: livello
     riepilogo: false
-    riserva: {fonte: fred, id: DCOILBRENTEU, nota: "prezzo spot giornaliero, non future"}
+    riserva: {fonte: fred, id: DCOILBRENTEU, nota: "daily spot price, not futures"}
   - id: NG=F
     fonte: yahoo
-    nome: Gas naturale Henry Hub
+    nome: "Henry Hub natural gas"
     regione: commodities
+    paese: global
+    colore: energia
     categoria: energia
-    unita: $/MMBtu
+    unita: "$/MMBtu"
     trasformazione: livello
     riepilogo: false
     decimali: 3
-    riserva: {fonte: fred, id: DHHNGSP, nota: "prezzo spot giornaliero, non future"}
+    riserva: {fonte: fred, id: DHHNGSP, nota: "daily spot price, not futures"}
   - id: TTF=F
     fonte: yahoo
-    nome: Gas europeo TTF
+    nome: "TTF natural gas (Europe)"
     regione: commodities
+    paese: global
+    colore: energia
     categoria: energia
-    unita: €/MWh
+    unita: "€/MWh"
     trasformazione: livello
     riepilogo: false
-    riserva: {fonte: fred, id: PNGASEUUSDM, unita: $/MMBtu, nota: "media mensile FMI"}
+    riserva: {fonte: fred, id: PNGASEUUSDM, unita: $/MMBtu, nota: "IMF monthly average"}
 
   # --- Metalli preziosi (nessuna riserva gratuita) -------------------
   - id: GC=F
     fonte: yahoo
-    nome: Oro
+    nome: "Gold"
     regione: commodities
+    paese: global
+    colore: metalli_preziosi
     categoria: metalli_preziosi
-    unita: $/oncia
+    unita: "$/oz"
     trasformazione: livello
     riepilogo: false
   - id: SI=F
     fonte: yahoo
-    nome: Argento
+    nome: "Silver"
     regione: commodities
+    paese: global
+    colore: metalli_preziosi
     categoria: metalli_preziosi
-    unita: $/oncia
+    unita: "$/oz"
     trasformazione: livello
     riepilogo: false
 
   # --- Metalli industriali ------------------------------------------
   - id: HG=F
     fonte: yahoo
-    nome: Rame
+    nome: "Copper"
     regione: commodities
+    paese: global
+    colore: metalli_industriali
     categoria: metalli_industriali
-    unita: $/libbra
+    unita: "$/lb"
     trasformazione: livello
     riepilogo: false
     decimali: 3
-    riserva: {fonte: fred, id: PCOPPUSDM, unita: $/tonnellata, nota: "media mensile FMI"}
+    riserva: {fonte: fred, id: PCOPPUSDM, unita: $/tonne, nota: "IMF monthly average"}
   - id: ALI=F
     fonte: yahoo
-    nome: Alluminio
+    nome: "Aluminium (COMEX)"
     regione: commodities
+    paese: global
+    colore: metalli_industriali
     categoria: metalli_industriali
-    unita: $/tonnellata
+    unita: "$/tonne"
     trasformazione: livello
     riepilogo: false
-    riserva: {fonte: fred, id: PALUMUSDM, nota: "media mensile FMI"}
+    riserva: {fonte: fred, id: PALUMUSDM, nota: "IMF monthly average"}
 
   # --- Agricoli -----------------------------------------------------
   - id: ZW=F
     fonte: yahoo
-    nome: Grano
+    nome: "Wheat"
     regione: commodities
+    paese: global
+    colore: agricoli
     categoria: agricoli
-    unita: cent/bushel
+    unita: "cents/bushel"
     trasformazione: livello
     riepilogo: false
-    riserva: {fonte: fred, id: PWHEAMTUSDM, unita: $/tonnellata, nota: "media mensile FMI"}
+    riserva: {fonte: fred, id: PWHEAMTUSDM, unita: $/tonne, nota: "IMF monthly average"}
   - id: ZC=F
     fonte: yahoo
-    nome: Mais
+    nome: "Corn"
     regione: commodities
+    paese: global
+    colore: agricoli
     categoria: agricoli
-    unita: cent/bushel
+    unita: "cents/bushel"
     trasformazione: livello
     riepilogo: false
-    riserva: {fonte: fred, id: PMAIZMTUSDM, unita: $/tonnellata, nota: "media mensile FMI"}
+    riserva: {fonte: fred, id: PMAIZMTUSDM, unita: $/tonne, nota: "IMF monthly average"}
 
   # --- Serie calcolate per i grafici di analisi ----------------------
   # Calcolate solo se entrambe le componenti vengono da Yahoo (mai spot FRED − future Yahoo)
   - id: SPREAD_BRENT_WTI
     fonte: calcolata
     componenti: [BZ=F, CL=F]
-    nome: Spread Brent-WTI
+    nome: "Brent-WTI spread"
     regione: commodities
+    paese: global
+    colore: energia
     categoria: analisi
-    unita: $/barile
+    unita: "$/barrel"
     trasformazione: livello
     riepilogo: false
   - id: RAPPORTO_RAME_ORO
@@ -590,10 +676,12 @@ serie:
     componenti: [HG=F, GC=F]
     operazione: rapporto
     fattore: 1000   # rame ($/libbra) / oro ($/oncia) vale circa 0,0016: ×1000 per leggerlo meglio
-    nome: Rapporto rame/oro (×1000)
+    nome: "Copper/gold ratio (×1000)"
     regione: commodities
+    paese: global
+    colore: metalli_industriali
     categoria: analisi
-    unita: rapporto
+    unita: "ratio"
     trasformazione: livello
     riepilogo: false
     decimali: 3
@@ -609,16 +697,18 @@ serie:
   # --- Giappone ------------------------------------------------------
   - id: WS_CBPOL/D.JP
     fonte: bis
-    nome: Tasso di policy BoJ
+    nome: "BoJ policy rate"
     regione: giappone
+    paese: jp
     categoria: politica_monetaria
     unita: "%"
     trasformazione: livello
     riepilogo: true
   - id: JGB_2Y
     fonte: mof
-    nome: JGB 2 anni
+    nome: "JGB 2Y"
     regione: giappone
+    paese: jp
     categoria: rendimenti
     unita: "%"
     trasformazione: livello
@@ -626,18 +716,20 @@ serie:
     decimali: 3
   - id: JGB_10Y
     fonte: mof
-    nome: JGB 10 anni
+    nome: "JGB 10Y"
     regione: giappone
+    paese: jp
     categoria: rendimenti
     unita: "%"
     trasformazione: livello
     riepilogo: true
     decimali: 3
-    riserva: {fonte: fred, id: IRLTLT01JPM156N, nota: "media mensile OCSE"}
+    riserva: {fonte: fred, id: IRLTLT01JPM156N, nota: "OECD monthly average"}
   - id: JGB_30Y
     fonte: mof
-    nome: JGB 30 anni
+    nome: "JGB 30Y"
     regione: giappone
+    paese: jp
     categoria: rendimenti
     unita: "%"
     trasformazione: livello
@@ -645,43 +737,48 @@ serie:
     decimali: 3
   - id: CPIm/001
     fonte: statjp
-    nome: CPI totale Giappone
+    nome: "Japan CPI headline"
     regione: giappone
+    paese: jp
     categoria: inflazione
-    unita: "% a/a"
+    unita: "% y/y"
     trasformazione: yoy
     riepilogo: true
   - id: CPIm/733
     fonte: statjp
-    nome: CPI core Giappone (senza alimentari freschi)
+    nome: "Japan CPI core (ex fresh food)"
     regione: giappone
+    paese: jp
     categoria: inflazione
-    unita: "% a/a"
+    unita: "% y/y"
     trasformazione: yoy
     riepilogo: true
   - id: CPIm/740
     fonte: statjp
-    nome: CPI core-core Giappone (senza freschi né energia)
+    nome: "Japan CPI core-core (ex fresh food and energy)"
     regione: giappone
+    paese: jp
     categoria: inflazione
-    unita: "% a/a"
+    unita: "% y/y"
     trasformazione: yoy
     riepilogo: false
   - id: JPY=X
     fonte: yahoo
-    nome: USD/JPY
+    nome: "USD/JPY"
     regione: giappone
+    paese: jp
     categoria: cambio
-    unita: yen per dollaro
+    unita: "JPY per USD"
     trasformazione: livello
     riepilogo: true
     riserva: {fonte: fred, id: DEXJPUS}
   - id: ^N225
     fonte: yahoo
-    nome: Nikkei 225
+    nome: "Nikkei 225"
     regione: giappone
+    paese: jp
     categoria: borsa
-    unita: punti
+    unita: "points"
     trasformazione: livello
     riepilogo: true
     decimali: 0
@@ -689,45 +786,50 @@ serie:
   # --- Cina ----------------------------------------------------------
   - id: WS_CBPOL/D.CN
     fonte: bis
-    nome: LPR 1 anno (PBoC)
+    nome: "PBoC 1-year LPR"
     regione: cina
+    paese: cn
     categoria: politica_monetaria
     unita: "%"
     trasformazione: livello
     riepilogo: true
   - id: WS_LONG_CPI/M.CN.771
     fonte: bis
-    nome: Inflazione CPI Cina
+    nome: "China CPI inflation"
     regione: cina
+    paese: cn
     categoria: inflazione
-    unita: "% a/a"
+    unita: "% y/y"
     trasformazione: livello
     riepilogo: true
   - id: CNY=X
     fonte: yahoo
-    nome: USD/CNY
+    nome: "USD/CNY"
     regione: cina
+    paese: cn
     categoria: cambio
-    unita: yuan per dollaro
+    unita: "CNY per USD"
     trasformazione: livello
     riepilogo: true
     decimali: 4
     riserva: {fonte: fred, id: DEXCHUS}
   - id: 510300.SS
     fonte: yahoo
-    nome: CSI 300 (ETF 510300)
+    nome: "CSI 300 (ETF 510300)"
     regione: cina
+    paese: cn
     categoria: borsa
-    unita: yuan
+    unita: "CNY"
     trasformazione: livello
     riepilogo: true
     decimali: 3
   - id: ^HSI
     fonte: yahoo
-    nome: Hang Seng
+    nome: "Hang Seng"
     regione: cina
+    paese: cn
     categoria: borsa
-    unita: punti
+    unita: "points"
     trasformazione: livello
     riepilogo: true
     decimali: 0
@@ -735,8 +837,9 @@ serie:
   # --- Corea del Sud -------------------------------------------------
   - id: WS_CBPOL/D.KR
     fonte: bis
-    nome: Tasso base BoK
+    nome: "BoK base rate"
     regione: corea
+    paese: kr
     categoria: politica_monetaria
     unita: "%"
     trasformazione: livello
@@ -746,36 +849,40 @@ serie:
     soglia_giorni: 45
   - id: IRLTLT01KRM156N
     fonte: fred
-    nome: Titoli di Stato 10 anni Corea (mensile)
+    nome: "Korea 10Y government bond (monthly)"
     regione: corea
+    paese: kr
     categoria: rendimenti
     unita: "%"
     trasformazione: livello
     riepilogo: true
   - id: WS_LONG_CPI/M.KR.771
     fonte: bis
-    nome: Inflazione CPI Corea
+    nome: "Korea CPI inflation"
     regione: corea
+    paese: kr
     categoria: inflazione
-    unita: "% a/a"
+    unita: "% y/y"
     trasformazione: livello
     riepilogo: true
   - id: KRW=X
     fonte: yahoo
-    nome: USD/KRW
+    nome: "USD/KRW"
     regione: corea
+    paese: kr
     categoria: cambio
-    unita: won per dollaro
+    unita: "KRW per USD"
     trasformazione: livello
     riepilogo: true
     decimali: 1
     riserva: {fonte: fred, id: DEXKOUS}
   - id: ^KS11
     fonte: yahoo
-    nome: KOSPI
+    nome: "KOSPI"
     regione: corea
+    paese: kr
     categoria: borsa
-    unita: punti
+    unita: "points"
     trasformazione: livello
     riepilogo: true
     decimali: 0
@@ -783,8 +890,9 @@ serie:
   # --- Confronto globale (solo le serie che non appartengono già a un'altra pagina) ---
   - id: WS_CBPOL/D.US
     fonte: bis
-    nome: Tasso di policy Fed
+    nome: "Fed policy rate"
     regione: globale
+    paese: us
     categoria: politica_monetaria
     unita: "%"
     trasformazione: livello
@@ -792,34 +900,38 @@ serie:
     decimali: 3
   - id: WS_CBPOL/D.XM
     fonte: bis
-    nome: Tasso di policy BCE (depositi)
+    nome: "ECB policy rate (deposit)"
     regione: globale
+    paese: ea
     categoria: politica_monetaria
     unita: "%"
     trasformazione: livello
     riepilogo: true
   - id: WS_LONG_CPI/M.JP.771
     fonte: bis
-    nome: Inflazione CPI Giappone
+    nome: "Japan CPI inflation"
     regione: globale
+    paese: jp
     categoria: inflazione
-    unita: "% a/a"
+    unita: "% y/y"
     trasformazione: livello
     riepilogo: false
   - id: WS_LONG_CPI/M.US.771
     fonte: bis
-    nome: Inflazione CPI USA
+    nome: "US CPI inflation"
     regione: globale
+    paese: us
     categoria: inflazione
-    unita: "% a/a"
+    unita: "% y/y"
     trasformazione: livello
     riepilogo: true
   - id: WS_LONG_CPI/M.XM.771
     fonte: bis
-    nome: Inflazione CPI Eurozona
+    nome: "Euro area CPI inflation"
     regione: globale
+    paese: ea
     categoria: inflazione
-    unita: "% a/a"
+    unita: "% y/y"
     trasformazione: livello
     riepilogo: true
   # =================================================================
@@ -833,39 +945,43 @@ serie:
   # --- Stati Uniti ---------------------------------------------------
   - id: ^GSPC
     fonte: yahoo
-    nome: S&P 500
+    nome: "S&P 500"
     regione: usa
+    paese: us
     categoria: borsa
-    unita: punti
+    unita: "points"
     trasformazione: livello
     riepilogo: true
     decimali: 0
-    riserva: {fonte: fred, id: SP500, nota: "su FRED solo dal 10/2016"}
+    riserva: {fonte: fred, id: SP500, nota: "on FRED only from Oct 2016"}
   - id: ^NDX
     fonte: yahoo
-    nome: Nasdaq 100
+    nome: "Nasdaq 100"
     regione: usa
+    paese: us
     categoria: borsa
-    unita: punti
+    unita: "points"
     trasformazione: livello
     riepilogo: true
     decimali: 0
     riserva: {fonte: fred, id: NASDAQ100}
   - id: ^RUT
     fonte: yahoo
-    nome: Russell 2000
+    nome: "Russell 2000"
     regione: usa
+    paese: us
     categoria: borsa
-    unita: punti
+    unita: "points"
     trasformazione: livello
     riepilogo: true
     decimali: 0
   - id: ^SPXEW
     fonte: yahoo
-    nome: S&P 500 Equal Weight
+    nome: "S&P 500 Equal Weight"
     regione: usa
+    paese: us
     categoria: borsa
-    unita: punti
+    unita: "points"
     trasformazione: livello
     riepilogo: true
     decimali: 0
@@ -873,10 +989,11 @@ serie:
   # scende = a trainare l'S&P 500 sono pochi giganti. Entrambe le componenti da Yahoo.
   - id: SP500_EW_SU_CW
     fonte: calcolata
-    nome: Rapporto S&P 500 Equal Weight / S&P 500
+    nome: "S&P 500 Equal Weight / S&P 500 ratio"
     regione: usa
+    paese: us
     categoria: azioni
-    unita: rapporto (×100)
+    unita: "ratio (×100)"
     trasformazione: livello
     riepilogo: false
     componenti: [^SPXEW, ^GSPC]
@@ -886,56 +1003,64 @@ serie:
   # --- Eurozona ------------------------------------------------------
   - id: ^STOXX50E
     fonte: yahoo
-    nome: Euro Stoxx 50
+    nome: "Euro Stoxx 50"
     regione: eurozona
+    paese: ea
     categoria: borsa
-    unita: punti
+    unita: "points"
     trasformazione: livello
     riepilogo: true
     decimali: 0
   - id: ^GDAXIP
     fonte: yahoo
-    nome: DAX (indice di prezzo)
+    nome: "DAX (price index)"
     regione: eurozona
+    paese: de
+    colore: ea
     categoria: borsa
-    unita: punti
+    unita: "points"
     trasformazione: livello
     riepilogo: true
     decimali: 0
   - id: ^FCHI
     fonte: yahoo
-    nome: CAC 40
+    nome: "CAC 40"
     regione: eurozona
+    paese: fr
     categoria: borsa
-    unita: punti
+    unita: "points"
     trasformazione: livello
     riepilogo: true
     decimali: 0
   - id: FTSEMIB.MI
     fonte: yahoo
-    nome: FTSE MIB
+    nome: "FTSE MIB"
     regione: eurozona
+    paese: it
     categoria: borsa
-    unita: punti
+    unita: "points"
     trasformazione: livello
     riepilogo: true
     decimali: 0
   - id: EXV1.DE
     fonte: yahoo
-    nome: Banche europee – STOXX Europe 600 Banks (ETF)
+    nome: "European banks (STOXX Europe 600 Banks ETF)"
     regione: eurozona
+    paese: ea
     categoria: borsa
-    unita: euro
+    unita: "EUR"
     trasformazione: livello
     riepilogo: true
     decimali: 2
   # --- Mondo ---------------------------------------------------------
   - id: ACWI
     fonte: yahoo
-    nome: MSCI ACWI (ETF iShares)
+    nome: "MSCI ACWI (iShares ETF)"
     regione: globale
+    paese: global
+    colore: mondo
     categoria: borsa
-    unita: dollari
+    unita: "USD"
     trasformazione: livello
     riepilogo: true
     decimali: 2
@@ -943,19 +1068,21 @@ serie:
   # EUR=X = euro per dollaro; HKD=X = dollari di Hong Kong per dollaro (cambio agganciato al dollaro).
   - id: EUR=X
     fonte: yahoo
-    nome: USD/EUR
+    nome: "USD/EUR"
     regione: globale
+    paese: ea
     categoria: cambio
-    unita: euro per dollaro
+    unita: "EUR per USD"
     trasformazione: livello
     riepilogo: false
     decimali: 4
   - id: HKD=X
     fonte: yahoo
-    nome: USD/HKD
+    nome: "USD/HKD"
     regione: globale
+    paese: cn
     categoria: cambio
-    unita: dollari di Hong Kong per dollaro
+    unita: "HKD per USD"
     trasformazione: livello
     riepilogo: false
     decimali: 4
@@ -963,10 +1090,11 @@ serie:
   # Borse in USD = indice in valuta locale / cambio "valuta per dollaro" (solo se indice e cambio vengono da Yahoo)
   - id: ^STOXX50E_USD
     fonte: calcolata
-    nome: Euro Stoxx 50 in USD
+    nome: "Euro Stoxx 50 in USD"
     regione: globale
+    paese: ea
     categoria: borsa
-    unita: punti in USD
+    unita: "points in USD"
     trasformazione: livello
     riepilogo: false
     componenti: [^STOXX50E, EUR=X]
@@ -974,10 +1102,11 @@ serie:
     decimali: 0
   - id: FTSEMIB.MI_USD
     fonte: calcolata
-    nome: FTSE MIB in USD
+    nome: "FTSE MIB in USD"
     regione: globale
+    paese: it
     categoria: borsa
-    unita: punti in USD
+    unita: "points in USD"
     trasformazione: livello
     riepilogo: false
     componenti: [FTSEMIB.MI, EUR=X]
@@ -985,10 +1114,11 @@ serie:
     decimali: 0
   - id: ^N225_USD
     fonte: calcolata
-    nome: Nikkei 225 in USD
+    nome: "Nikkei 225 in USD"
     regione: globale
+    paese: jp
     categoria: borsa
-    unita: punti in USD
+    unita: "points in USD"
     trasformazione: livello
     riepilogo: false
     componenti: [^N225, JPY=X]
@@ -996,10 +1126,11 @@ serie:
     decimali: 0
   - id: ^KS11_USD
     fonte: calcolata
-    nome: KOSPI in USD
+    nome: "KOSPI in USD"
     regione: globale
+    paese: kr
     categoria: borsa
-    unita: punti in USD
+    unita: "points in USD"
     trasformazione: livello
     riepilogo: false
     componenti: [^KS11, KRW=X]
@@ -1007,10 +1138,11 @@ serie:
     decimali: 0
   - id: 510300.SS_USD
     fonte: calcolata
-    nome: CSI 300 (ETF) in USD
+    nome: "CSI 300 (ETF) in USD"
     regione: globale
+    paese: cn
     categoria: borsa
-    unita: punti in USD
+    unita: "points in USD"
     trasformazione: livello
     riepilogo: false
     componenti: [510300.SS, CNY=X]
@@ -1018,10 +1150,11 @@ serie:
     decimali: 2
   - id: ^HSI_USD
     fonte: calcolata
-    nome: Hang Seng in USD
+    nome: "Hang Seng in USD"
     regione: globale
+    paese: cn
     categoria: borsa
-    unita: punti in USD
+    unita: "points in USD"
     trasformazione: livello
     riepilogo: false
     componenti: [^HSI, HKD=X]

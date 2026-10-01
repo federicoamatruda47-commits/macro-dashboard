@@ -4,8 +4,8 @@
 {% macro avvisi(errori, in_ritardo, riserve, totale_serie, ambito) %}
 {% if errori %}
 <div class="avviso avviso-errore" role="alert">
-  <strong>⚠ Attenzione: {{ errori|length }} {{ 'serie non è stata scaricata' if errori|length == 1 else 'serie non sono state scaricate' }}</strong>
-  (su {{ totale_serie }}{{ ambito }}). Il resto della dashboard è aggiornato.
+  <strong>⚠ Warning: {{ errori|length }} series could not be downloaded</strong>
+  (out of {{ totale_serie }}{{ ambito }}). The rest of the dashboard is up to date.
   <ul>
     {% for e in errori %}<li><code>{{ e.id }}</code> {{ e.nome }}: {{ e.errore }}</li>{% endfor %}
   </ul>
@@ -15,17 +15,17 @@
    (può voler dire che la fonte l'ha dismessa o sostituita) #}
 {% if in_ritardo %}
 <div class="avviso avviso-ritardo" role="alert">
-  <strong>⚠ Attenzione: {{ in_ritardo|length }} {{ 'serie non riceve' if in_ritardo|length == 1 else 'serie non ricevono' }} dati nuovi da troppo tempo</strong>
-  (soglie: 10 giorni per le giornaliere, 21 per le settimanali, 75 per le mensili, 120 per le trimestrali,
-  contati dalla fine del periodo dell'ultimo dato). Controllare che la fonte non sia cambiata.
+  <strong>⚠ Warning: {{ in_ritardo|length }} {{ 'series has' if in_ritardo|length == 1 else 'series have' }} not received new data for too long</strong>
+  (thresholds: 10 days for daily series, 21 for weekly, 75 for monthly, 120 for quarterly,
+  counted from the end of the period of the latest data point). Check that the source has not changed.
   <ul>
-    {% for s in in_ritardo %}<li>{{ s.regione }} · <code>{{ s.id }}</code> {{ s.nome }}: ultimo dato {{ s.data }}, serie {{ s.frequenza }}, {{ s.giorni }} giorni (soglia {{ s.soglia }})</li>{% endfor %}
+    {% for s in in_ritardo %}<li>{{ s.regione }} · <code>{{ s.id }}</code> {{ s.nome }}: latest data {{ s.data }}, {{ s.frequenza }} series, {{ s.giorni }} days (threshold {{ s.soglia }})</li>{% endfor %}
   </ul>
 </div>
 {% endif %}
 {% if riserve %}
 <div class="avviso avviso-riserva">
-  <strong>ⓘ Fonte di riserva in uso</strong> per {{ riserve|length }} serie: i dati sono comunque aggiornati.
+  <strong>ⓘ Fallback source in use</strong> for {{ riserve|length }} {{ 'series' }}: the data is still up to date.
   <ul>
     {% for s in riserve %}<li><code>{{ s.id }}</code> {{ s.nome }}: {{ s.nota }}</li>{% endfor %}
   </ul>
@@ -36,24 +36,24 @@
 {# ---- Scheda riassuntiva (KPI) ---- #}
 {% macro riepilogo(r) %}
 <section class="blocco" aria-labelledby="riepilogo-{{ r.id }}">
-  <h2 id="riepilogo-{{ r.id }}">In sintesi</h2>
-  <p class="descrizione">Ultimo valore e variazione rispetto a 1 settimana, 1 mese e 1 anno prima
-    (per le borse anche da inizio anno).
-    Tassi in punti base (pb = 0,01%), inflazione in punti percentuali (pp), indici in %.</p>
+  <h2 id="riepilogo-{{ r.id }}">Key numbers</h2>
+  <p class="descrizione">Latest value and change versus 1 week, 1 month and 1 year earlier
+    (equity indices also year to date).
+    Rates change in basis points (bp = 0.01%), inflation in percentage points (pp), indices in %.</p>
   <div class="griglia-kpi">
     {% for k in r.riepilogo %}
     <article class="kpi{% if not k.ok %} kpi-errore{% endif %}">
       <h3>{{ k.nome }}</h3>
       {% if k.ok %}
       <p class="kpi-valore">{{ k.valore }}</p>
-      <p class="kpi-data{% if k.ritardo %} in-ritardo{% endif %}">al {{ k.data }}{% if k.ritardo %} · in ritardo{% endif %}</p>
+      <p class="kpi-data{% if k.ritardo %} in-ritardo{% endif %}">as of {{ k.data }}{% if k.ritardo %} · stale{% endif %}</p>
       <dl class="kpi-variazioni">
         {% for v in k.variazioni %}
         <div><dt>{{ v.etichetta }}</dt><dd>{{ v.testo }}</dd></div>
         {% endfor %}
       </dl>
       {% else %}
-      <p class="kpi-valore">n.d.</p>
+      <p class="kpi-valore">n/a</p>
       <p class="kpi-data">⚠ {{ k.errore }}</p>
       {% endif %}
     </article>
@@ -67,8 +67,8 @@
 <div class="tabella-scorrevole">
   <table class="performance">
     {# "secondaria" = colonna nascosta sul telefono, per lasciare spazio alle variazioni #}
-    <thead><tr><th>{{ sez.etichetta_performance }}</th><th class="num">Ultimo</th><th>Unità</th><th class="secondaria">Data</th>
-      <th class="num">1 sett.</th><th class="num">1 mese</th><th class="num">Da inizio anno</th><th class="num">1 anno</th><th class="secondaria">Fonte</th></tr></thead>
+    <thead><tr><th>{{ sez.etichetta_performance }}</th><th class="num">Last</th><th>Unit</th><th class="secondaria">Date</th>
+      <th class="num">1W</th><th class="num">1M</th><th class="num">YTD</th><th class="num">1Y</th><th class="secondaria">Source</th></tr></thead>
     <tbody>
       {% for p in sez.performance %}
       <tr>
@@ -80,7 +80,7 @@
         {% for v in p.variazioni %}<td class="num var{% if v.segno %} var-{{ v.segno }}{% endif %}">{{ v.testo }}</td>{% endfor %}
         <td class="secondaria">{{ p.fonte }}{% if p.nota_fonte %} <span class="stato-ritardo" title="{{ p.nota_fonte }}">ⓘ</span>{% endif %}</td>
         {% else %}
-        <td colspan="8" class="stato-errore">⚠ non disponibile: {{ p.errore }}</td>
+        <td colspan="8" class="stato-errore">⚠ unavailable: {{ p.errore }}</td>
         {% endif %}
       </tr>
       {% endfor %}
@@ -95,8 +95,8 @@
   <header class="scheda-testa">
     <h3>{{ g.titolo }}</h3>
     {% if g.storico and g.json %}
-    <div class="periodi" role="group" aria-label="Periodo del grafico">
-      {% for p in ["1A", "5A", "10A", "Max"] %}
+    <div class="periodi" role="group" aria-label="Chart period">
+      {% for p in ["1Y", "5Y", "10Y", "Max"] %}
       <button type="button" data-grafico="{{ g.id }}" data-periodo="{{ p }}"
               aria-pressed="{{ 'true' if p == g.periodo_iniziale else 'false' }}">{{ p }}</button>
       {% endfor %}
@@ -104,7 +104,7 @@
     {% endif %}
     {# Interruttore tra due versioni dello stesso grafico (es. valuta locale / USD) #}
     {% if g.varianti and g.json %}
-    <div class="varianti" role="group" aria-label="Versione del grafico">
+    <div class="varianti" role="group" aria-label="Chart version">
       {% for v in g.varianti %}
       <button type="button" data-grafico="{{ g.id }}" data-variante="{{ v.id }}"
               aria-pressed="{{ 'true' if loop.first else 'false' }}">{{ v.etichetta }}</button>
@@ -113,20 +113,21 @@
     {% endif %}
   </header>
   {% if g.mancanti %}
-  <p class="avviso-piccolo">⚠ Non disponibile:
+  <p class="avviso-piccolo">⚠ Unavailable:
     {% for m in g.mancanti %}{{ m.nome }} ({{ m.errore }}){{ ", " if not loop.last }}{% endfor %}</p>
   {% endif %}
   {% if g.json %}
   <div class="grafico" id="{{ g.id }}" data-periodo="{{ g.periodo_iniziale if g.storico else '' }}"
-       role="img" aria-label="Grafico: {{ g.titolo }}"></div>
+       role="img" aria-label="Chart: {{ g.titolo }}"></div>
   <script type="application/json" id="dati-{{ g.id }}">{{ g.json|safe }}</script>
   {% else %}
-  <div class="grafico grafico-vuoto">Dati non disponibili per questo grafico.</div>
+  <div class="grafico grafico-vuoto">No data available for this chart.</div>
   {% endif %}
   <footer class="scheda-piede">
+    {% if g.come_leggerlo %}<p class="come-leggerlo"><strong>How to read it:</strong> {{ g.come_leggerlo }}</p>{% endif %}
     {% if g.nota %}<p class="nota">{{ g.nota }}</p>{% endif %}
     {% if g.ultimi_dati %}
-    <p class="ultimi">Ultimo dato:
+    <p class="ultimi">Latest data:
       {% for u in g.ultimi_dati %}<span{% if u.ritardo %} class="in-ritardo"{% endif %}>{{ u.nome }} {{ u.data }}</span>{{ " · " if not loop.last }}{% endfor %}</p>
     {% endif %}
   </footer>
@@ -137,10 +138,10 @@
 {% macro stato_serie(r) %}
 <section class="blocco" aria-labelledby="stato-{{ r.id }}">
   <details class="stato">
-    <summary><h2 id="stato-{{ r.id }}">Stato delle serie ({{ r.stato|length }})</h2></summary>
+    <summary><h2 id="stato-{{ r.id }}">Series status ({{ r.stato|length }})</h2></summary>
     <div class="tabella-scorrevole">
       <table>
-        <thead><tr><th>Serie</th><th>Codice</th><th>Fonte</th><th>Frequenza</th><th>Dal</th><th>Ultimo dato</th><th class="num">Valore</th><th>Stato</th></tr></thead>
+        <thead><tr><th>Series</th><th>Code</th><th>Source</th><th>Frequency</th><th>From</th><th>Latest data</th><th class="num">Value</th><th>Status</th></tr></thead>
         <tbody>
           {% for s in r.stato %}
           <tr>
@@ -151,7 +152,7 @@
             <td>{{ s.dal }}</td>
             <td>{{ s.ultimo }}</td>
             <td class="num">{{ s.valore }}</td>
-            <td>{% if not s.ok %}<span class="stato-errore">⚠ {{ s.errore }}</span>{% elif s.ritardo %}<span class="stato-ritardo">ⓘ in ritardo</span>{% else %}<span class="stato-ok">✓ ok</span>{% endif %}</td>
+            <td>{% if not s.ok %}<span class="stato-errore">⚠ {{ s.errore }}</span>{% elif s.ritardo %}<span class="stato-ritardo">ⓘ stale</span>{% else %}<span class="stato-ok">✓ ok</span>{% endif %}</td>
           </tr>
           {% endfor %}
         </tbody>

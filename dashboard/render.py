@@ -1,7 +1,7 @@
 """Costruzione del sito statico: prende serie e grafici e scrive la cartella site/."""
 
 import shutil
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -16,14 +16,17 @@ from .regions import REGIONI, Grafico
 FUSO_ORARIO = ZoneInfo("Europe/Rome")
 
 
+# Frequenze delle serie come si leggono sul sito (dentro il codice restano in italiano)
+FREQUENZE = {"giornaliera": "daily", "settimanale": "weekly", "mensile": "monthly", "trimestrale": "quarterly"}
+
+
 # ---------------------------------------------------------------------
-# Formattazione dei numeri "all'italiana" (virgola decimale)
+# Formattazione dei numeri e delle date all'inglese (punto decimale, virgola per le migliaia)
 # ---------------------------------------------------------------------
 
 def numero(valore: float, decimali: int = 2, segno: bool = False) -> str:
-    """Esempio: numero(1234.5, 1) -> '1.234,5'; con segno=True -> '+1.234,5'."""
+    """Esempio: numero(1234.5, 1) -> '1,234.5'; con segno=True -> '+1,234.5'."""
     testo = f"{valore:+,.{decimali}f}" if segno else f"{valore:,.{decimali}f}"
-    testo = testo.replace(",", "§").replace(".", ",").replace("§", ".")
     return testo.replace("-", "−")  # segno meno tipografico
 
 
@@ -43,15 +46,16 @@ def testo_variazione(valore: float | None, unita: str) -> str:
     if valore is None:
         return "—"
     tipo = tipo_variazione(unita)
-    decimali = 0 if tipo == "pb" else 1
+    decimali = 0 if tipo == "bp" else 1
     arrotondato = round(valore, decimali) + 0.0  # "+ 0.0" trasforma −0,0 in 0,0
     # Niente segno se la variazione arrotondata è zero (evita "−0,0")
     testo = numero(arrotondato, decimali, segno=arrotondato != 0)
-    return f"{testo} {tipo}" if tipo in ("pb", "pp") else f"{testo}%"
+    return f"{testo} {tipo}" if tipo in ("bp", "pp") else f"{testo}%"
 
 
-def data_it(data: pd.Timestamp | None) -> str:
-    return f"{data:%d/%m/%Y}" if data is not None else "—"
+def formatta_data(data: pd.Timestamp | None) -> str:
+    """Es. '30 Sep 2026' (il giorno senza zero iniziale: %-d non esiste su Windows)."""
+    return f"{data.day} {data:%b %Y}" if data is not None else "—"
 
 
 # ---------------------------------------------------------------------
@@ -66,7 +70,7 @@ def _scheda_riepilogo(s: Serie, oggi: pd.Timestamp) -> dict:
     if s.ok:
         scheda.update(
             valore=valore_con_unita(s.ultimo_valore, s.unita, s.decimali),
-            data=data_it(s.ultima_data),
+            data=formatta_data(s.ultima_data),
             ritardo=s.in_ritardo(oggi),
             variazioni=[{"etichetta": etichetta, "testo": testo_variazione(v, s.unita)}
                         for etichetta, v in variazioni(s, periodi).items()],
@@ -80,7 +84,7 @@ def _riga_performance(s: Serie, oggi: pd.Timestamp) -> dict:
             "nota_fonte": s.nota_fonte}
     if s.ok:
         riga.update(
-            valore=numero(s.ultimo_valore, s.decimali), unita=s.unita, data=data_it(s.ultima_data),
+            valore=numero(s.ultimo_valore, s.decimali), unita=s.unita, data=formatta_data(s.ultima_data),
             ritardo=s.in_ritardo(oggi),
             # segno: serve al CSS per colorare in verde (rialzo) o rosso (ribasso)
             variazioni=[{"testo": testo_variazione(v, s.unita),
@@ -103,13 +107,14 @@ def _dati_grafico(grafico: Grafico, serie: dict[str, Serie], oggi: pd.Timestamp)
         "id": grafico.id,
         "titolo": grafico.titolo,
         "nota": grafico.nota,
+        "come_leggerlo": grafico.come_leggerlo,
         "storico": grafico.storico,
         "periodo_iniziale": grafico.periodo_iniziale,
         "largo": grafico.largo,
         "alto": grafico.alto,
         "varianti": [{"id": i, "etichetta": e} for i, e in grafico.varianti],
         "json": _figura_json(grafico),
-        "ultimi_dati": [{"nome": s.nome, "data": data_it(s.ultima_data), "ritardo": s.in_ritardo(oggi)}
+        "ultimi_dati": [{"nome": s.nome, "data": formatta_data(s.ultima_data), "ritardo": s.in_ritardo(oggi)}
                         for s in usate if s.ok],
         "mancanti": [{"nome": s.nome, "id": s.id, "errore": s.errore} for s in usate if not s.ok],
     }
@@ -124,7 +129,7 @@ def _riga_stato(s: Serie, oggi: pd.Timestamp) -> dict:
             fonte += f" (× {numero(s.fattore, 0)})"
     return {
         "id": s.id, "nome": s.nome, "fonte": fonte, "unita": s.unita,
-        "frequenza": s.frequenza or "—", "dal": data_it(s.prima_data), "ultimo": data_it(s.ultima_data),
+        "frequenza": FREQUENZE.get(s.frequenza, "—"), "dal": formatta_data(s.prima_data), "ultimo": formatta_data(s.ultima_data),
         "valore": (valore_con_unita(s.ultimo_valore, s.unita, s.decimali)
                    if s.ok and s.unita != "indicatore" else "—"),
         "ok": s.ok, "ritardo": s.in_ritardo(oggi), "errore": s.errore, "nota_fonte": s.nota_fonte,
@@ -134,8 +139,26 @@ def _riga_stato(s: Serie, oggi: pd.Timestamp) -> dict:
 def _voce_ritardo(s: Serie, oggi: pd.Timestamp, nomi_regioni: dict[str, str]) -> dict:
     """Una riga dell'avviso 'dati non aggiornati'."""
     return {"id": s.id, "nome": s.nome, "regione": nomi_regioni.get(s.regione, s.regione),
-            "data": data_it(s.ultima_data), "frequenza": s.frequenza,
+            "data": formatta_data(s.ultima_data), "frequenza": FREQUENZE.get(s.frequenza),
             "giorni": s.giorni_senza_dati(oggi), "soglia": s.soglia_ritardo}
+
+
+def css_colori(config: dict) -> str:
+    """Le variabili CSS --c-<chiave> dei colori fissi (tema chiaro e scuro), lette da config.yaml.
+
+    Sono scritte dentro ogni pagina: così i colori hanno UNA sola definizione (config.yaml) e li usano
+    sia il CSS sia i grafici (app.js li legge dalle variabili).
+    """
+    colori = config["colori"]
+
+    def valore(chiave: str, tema: str) -> str:
+        voce = colori[chiave]
+        return colori[voce["alias"]][tema] if "alias" in voce else voce[tema]
+
+    def blocco(tema: str) -> str:
+        return " ".join(f"--c-{chiave}: {valore(chiave, tema)};" for chiave in colori)
+
+    return f":root {{ {blocco('chiaro')} }}\n@media (prefers-color-scheme: dark) {{ :root {{ {blocco('scuro')} }} }}"
 
 
 def _serie_usate(sezioni, serie: dict[str, Serie]) -> list[Serie]:
@@ -166,6 +189,7 @@ def prepara_contesto(config: dict, serie: dict[str, Serie]) -> dict:
     """Raccoglie tutto ciò che serve al modello HTML."""
     adesso = datetime.now(FUSO_ORARIO)
     oggi = pd.Timestamp(adesso.date())
+    adesso_utc = adesso.astimezone(timezone.utc)
 
     nomi_regioni = {r["id"]: r["nome"] for r in config["regioni"]}
     regioni = []
@@ -203,12 +227,13 @@ def prepara_contesto(config: dict, serie: dict[str, Serie]) -> dict:
         })
 
     return {
-        "aggiornato": adesso.strftime("%d/%m/%Y alle %H:%M") + " (ora italiana)",
+        "aggiornato": f"{adesso_utc.day} {adesso_utc:%b %Y}, {adesso_utc:%H:%M} UTC",
         "regioni": regioni,
         "errori": [{"id": s.id, "nome": s.nome, "errore": s.errore} for s in serie.values() if not s.ok],
         "in_ritardo": [_voce_ritardo(s, oggi, nomi_regioni) for s in serie.values() if s.in_ritardo(oggi)],
         "riserve": [{"id": s.id, "nome": s.nome, "nota": s.nota_fonte} for s in serie.values() if s.nota_fonte],
         "totale_serie": len(serie),
+        "css_colori": css_colori(config),
         "plotly_versione": get_plotlyjs_version(),
         "versione": adesso.strftime("%Y%m%d%H%M"),
     }
@@ -230,8 +255,12 @@ def genera_sito(config: dict, serie: dict[str, Serie], radice_progetto: Path) ->
                            autoescape=select_autoescape(["html", "j2"]),
                            trim_blocks=True, lstrip_blocks=True)
     contesto = prepara_contesto(config, serie)
+    # Regola del sito: ogni grafico ha una riga "How to read it" (si scrive pagina per pagina durante la ristrutturazione)
+    senza = [g["id"] for r in contesto["regioni"] for s in r["sezioni"] for g in s["grafici"] if not g["come_leggerlo"]]
+    if senza:
+        print(f"Warning: {len(senza)} charts have no 'come_leggerlo' line (How to read it), e.g. {', '.join(senza[:4])}...")
     comune = {chiave: contesto[chiave]
-              for chiave in ("aggiornato", "plotly_versione", "versione")}
+              for chiave in ("aggiornato", "plotly_versione", "versione", "css_colori")}
 
     def scrivi(id_pagina: str, modello: str, **dati) -> Path:
         menu, sottomenu = costruisci_menu(config, id_pagina)
