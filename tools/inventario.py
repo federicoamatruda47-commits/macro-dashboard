@@ -44,8 +44,8 @@ def raccogli(config: dict) -> dict:
         for sezione in costruttore({}, config):
             for g in sezione.grafici:
                 grafici.append({"id": g.id, "pagina": id_regione, "titolo": g.titolo, "serie_ids": list(g.serie_ids)})
-            if sezione.tabella_performance:
-                tabelle.append({"pagina": id_regione, "sezione": sezione.id, "serie_ids": list(sezione.tabella_performance)})
+            if sezione.serie_tabella():
+                tabelle.append({"pagina": id_regione, "sezione": sezione.id, "serie_ids": sezione.serie_tabella()})
 
     componenti = {s["id"]: s.get("componenti") or [] for s in config["serie"]}
 

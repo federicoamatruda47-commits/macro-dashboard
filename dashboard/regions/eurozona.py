@@ -21,10 +21,6 @@ TUTTI_10A = "YC/B.U2.EUR.4F.G_N_C.SV_C_YM.SR_10Y"
 HICP = "HICP/M.U2.N.000000.4D0.ANR"
 HICP_CORE = "HICP/M.U2.N.XEF000.4D0.ANR"
 
-# Azioni (Yahoo Finance): le definizioni stanno in config.yaml, qui solo gli id
-EURO_STOXX_50, DAX, CAC_40, FTSE_MIB, BANCHE = "^STOXX50E", "^GDAXIP", "^FCHI", "FTSEMIB.MI", "EXV1.DE"
-AZIONI = [EURO_STOXX_50, DAX, CAC_40, FTSE_MIB, BANCHE]
-
 
 
 def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
@@ -41,11 +37,6 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                           if k in opzioni_grafico}
         figura = charts.linee_storiche(lista(*ids), recessioni=recessioni,
                                        etichetta_recessioni="CEPR recession", **opzioni_figura)
-        return Grafico(id=id_grafico, titolo=titolo, figura=figura, serie_ids=list(ids), **opzioni_grafico)
-
-    def base100(id_grafico, titolo, ids, **opzioni_grafico) -> Grafico:
-        """Confronto a base 100: la ribasatura all'inizio del periodo scelto la fa il JavaScript."""
-        figura = charts.linee_base100([(s, False) for s in lista(*ids)])
         return Grafico(id=id_grafico, titolo=titolo, figura=figura, serie_ids=list(ids), **opzioni_grafico)
 
     figura_curva, _ = charts.curva_rendimenti([(etichetta, trova_serie(serie, i)) for etichetta, i in SCADENZE])
@@ -80,13 +71,5 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                     storico("eur-inflazione", "HICP headline and core (% y/y)", [HICP, HICP_CORE],
                             riferimento=(2, ""), periodo_iniziale="10Y", largo=True,
                             note=["hicp-core", "target-ecb", "bands-cepr"]),
-                ]),
-        Sezione("azioni", "Equities",
-                "The main euro-area equity indices and European banks, in euro.",
-                tabella_performance=AZIONI, etichetta_performance="Index",
-                grafici=[
-                    base100("eur-indici-azionari", "European equity indices and banks (base 100)", AZIONI,
-                            periodo_iniziale="5Y", largo=True,
-                            note=["rebase-base100", "price-no-dividends", "dax-price-index", "ea-banks-etf"]),
                 ]),
     ]

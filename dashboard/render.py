@@ -233,7 +233,7 @@ def _serie_usate(sezioni, serie: dict[str, Serie]) -> list[Serie]:
         for grafico in sezione.grafici:
             for i in grafico.serie_ids:
                 aggiungi(i)
-        for i in sezione.tabella_performance:
+        for i in sezione.serie_tabella():
             aggiungi(i)
     return list(trovate.values())
 
@@ -277,7 +277,7 @@ def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict) -> dict:
                         usi_serie.setdefault(i, []).append(riferimento)
                     for i in g.note:
                         usi_note.setdefault(i, []).append(riferimento)
-                for i in _con_componenti(sezione.tabella_performance, serie):
+                for i in _con_componenti(sezione.serie_tabella(), serie):
                     usi_serie.setdefault(i, []).append({
                         "pagina": voce["nome"], "href": f"{id_pagina}/#{slug}-{sezione.id}",
                         "titolo": f"{sezione.titolo} (table)"})
@@ -285,8 +285,9 @@ def prepara_contesto(config: dict, serie: dict[str, Serie], note: dict) -> dict:
                     "id": sezione.id, "titolo": sezione.titolo, "descrizione": sezione.descrizione,
                     "grafici": [_dati_grafico(g, serie, oggi, note) for g in sezione.grafici],
                     "etichetta_performance": sezione.etichetta_performance,
-                    "performance": [_riga_performance(trova_serie(serie, i), oggi)
-                                    for i in sezione.tabella_performance],
+                    "performance": ([_riga_performance(trova_serie(serie, i), oggi) for i in sezione.tabella_performance]
+                                    + [{**_riga_performance(trova_serie(serie, i), oggi), "gruppo": titolo}
+                                       for titolo, ids in sezione.gruppi_performance for i in ids]),
                 })
         schede = [trova_serie(serie, i) for i in id_numeri_chiave]
         return {

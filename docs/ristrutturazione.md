@@ -13,8 +13,8 @@ Piano approvato dall'utente il 01/10/2026, con le scelte della sezione 0 e due a
 | 3 | Footer dei grafici (fonte + link + note), registro `contenuti/note.yaml`, pagine Method e Series status | **fatto e in `main`** |
 | 4a | Mercati: Commodities | **fatto e in `main`** |
 | 4b | Mercati: FX | **fatto e in `main`** |
-| 4c | Mercati: Credit | **fatto sul ramo** `ristrutturazione/step-4c`, in attesa dell'ok per il merge |
-| 4d | Mercati: Equities (con colonna "Last", vedi sotto) | da fare |
+| 4c | Mercati: Credit | **fatto e in `main`** |
+| 4d | Mercati: Equities (con colonna "Last", vedi sotto) | **fatto sul ramo** `ristrutturazione/step-4d`, in attesa dell'ok per il merge |
 | 4e | Mercati: Rates & curves | da fare |
 | 5 | Economies (hub + 5 segnaposto + UNRATE in USA); `regioni` → `pagine` nel config; via le vecchie pagine e il Confronto globale | da fare |
 | 6 | Overview (14 numeri chiave con sparkline, "What changed this week", schede, avvisi); diventa `/` | da fare |
@@ -312,3 +312,8 @@ Il workflow GitHub non cambia (pubblica già tutta `site/`).
 - 01/10/2026: step 4c (Credit) sul ramo `ristrutturazione/step-4c`: pagina `/markets/credit/` (`dashboard/mercati/credit.py`) con 6 numeri chiave e sezioni "High yield: US vs euro area" (nuovo grafico `mk-credit-hy`, assorbe `eur-hy`),
   "US credit in detail" (`usa-oas`, `usa-baa`) e "Sovereign spreads" (`eur-spread-paesi`, `eur-spread-tutti`), tutti con "How to read it". Tolti dalle pagine USA ed Eurozona le sezioni Credit e Sovereign spreads.
   Rinominate cinque serie in `config.yaml` per distinguere USA ed euro (es. "US high-yield spread (OAS)", "Euro high-yield spread (OAS)"). Bande NBER su `usa-oas`/`usa-baa` e CEPR sugli spread sovrani; nessuna banda sul confronto USA-euro.
+- 01/10/2026: step 4c unito in `main` (riga BTP-Bund / OAT-Bund con gli esempi e le medie mensili, verificata in `main`).
+- 01/10/2026: step 4d (Equities) sul ramo `ristrutturazione/step-4d`: pagina `/markets/equities/` (`dashboard/mercati/equities.py`) con 6 numeri chiave (S&P 500, Euro Stoxx 50, Nikkei 225, KOSPI, ACWI, VIX), tabella di performance unica a gruppi
+  (United States / Euro area / Asia / World) con la colonna "Last" (ultimo livello) e le variazioni 1W / 1M / YTD / 1Y, sezioni "Equity indices compared" (`gl-borse`, interruttore Local currency / In USD), "Regional detail" (`usa-indici-azionari`, `eur-indici-azionari`, `usa-concentrazione`)
+  e "Volatility" (`usa-vix`), con "How to read it". Tolti dalle pagine dei Paesi i grafici di borsa; `jp-nikkei`, `cn-csi300`, `cn-hangseng`, `kr-kospi` assorbiti da `gl-borse` e dalla tabella (il livello in punti resta nella colonna "Last").
+  Nuovo meccanismo `Sezione.gruppi_performance` per le tabelle con righe di titolo; nuova nota `vix-definition`; nella pagina USA la sezione "Financial conditions and labour" diventa "Labour" (resta solo la disoccupazione, che andrà in Economies/USA allo step 5).

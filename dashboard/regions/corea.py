@@ -7,7 +7,6 @@ from .modello import Sezione
 POLICY = "WS_CBPOL/D.KR"
 KTB_10A = "IRLTLT01KRM156N"
 CPI = "WS_LONG_CPI/M.KR.771"
-KOSPI = "^KS11"
 
 
 def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
@@ -33,8 +32,4 @@ def costruisci(serie: dict[str, Serie], config: dict) -> list[Sezione]:
                             periodo_iniziale="10Y", largo=True,
                             note=["target-bok"]),
                 ]),
-        Sezione("borsa", "Equities", grafici=[
-            storico("kr-kospi", "KOSPI", [KOSPI], periodo_iniziale="10Y", largo=True,
-                            note=["index-daily-closes"]),
-        ]),
     ]

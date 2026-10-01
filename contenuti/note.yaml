@@ -172,6 +172,13 @@ note:
     testo: >-
       Index levels (in points, or the price in local currency for ETFs) are daily closing prices from Yahoo Finance, an
       unofficial source. The last candle is dropped if the trading session has not finished yet.
+  vix-definition:
+    gruppo: equities
+    titolo: What the VIX is
+    testo: >-
+      The VIX is the CBOE Volatility Index: the volatility of the S&P 500 that investors expect over the next 30 days,
+      calculated from option prices (series VIXCLS on FRED, daily close). It is quoted in points, not in currency: a value
+      of 20 corresponds to an expected move of roughly 20% over a year, or about 6% over a month.
   us-index-definitions:
     gruppo: equities
     titolo: US index definitions

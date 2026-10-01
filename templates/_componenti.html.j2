@@ -71,7 +71,12 @@
     <thead><tr><th>{{ sez.etichetta_performance }}</th><th class="num">Last</th><th>Unit</th><th class="secondaria">Date</th>
       <th class="num">1W</th><th class="num">1M</th><th class="num">YTD</th><th class="num">1Y</th><th class="secondaria">Source</th></tr></thead>
     <tbody>
+      {% set gruppo_corrente = namespace(nome=None) %}
       {% for p in sez.performance %}
+      {% if p.gruppo and p.gruppo != gruppo_corrente.nome %}
+      <tr class="riga-gruppo"><th colspan="9">{{ p.gruppo }}</th></tr>
+      {% set gruppo_corrente.nome = p.gruppo %}
+      {% endif %}
       <tr>
         <td>{{ p.nome }}</td>
         {% if p.ok %}
