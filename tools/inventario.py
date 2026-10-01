@@ -3,6 +3,7 @@
 Uso (dalla cartella del progetto, con l'ambiente virtuale attivo):
     python tools/inventario.py controlla   # confronta il sito attuale con la baseline (da lanciare a ogni step)
     python tools/inventario.py salva       # riscrive la baseline: SOLO allo step 0, sul sito di partenza
+    python tools/inventario.py sito        # dopo `python build.py`: controlla le pagine HTML vere in site/ (e ne misura il peso)
 
 Non scarica nulla: costruisce i grafici con un dizionario di serie vuoto (i grafici esistono comunque, con l'avviso
 "non disponibile"), quindi gira in pochi secondi e senza chiave API.
@@ -19,6 +20,7 @@ Dallo step 1 in poi cambia solo `raccogli()`: i grafici si leggono dal registro 
 """
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -105,9 +107,38 @@ def confronta(baseline: dict, corrente: dict, mappa: dict) -> list[str]:
     return problemi
 
 
+def controlla_sito(baseline: dict, mappa: dict) -> int:
+    """Guarda le pagine HTML generate: ogni grafico (anche "non disponibile") ha un <article id="chart-<id>">."""
+    trovati: dict[str, list[str]] = {}
+    pagine = sorted((RADICE / "site").rglob("index.html"))
+    for pagina in pagine:
+        html = pagina.read_text(encoding="utf-8")
+        nome = pagina.relative_to(RADICE / "site").parent.as_posix().lstrip(".")
+        print(f"  {nome or '(home)':<14} {pagina.stat().st_size / 1e6:6.2f} MB  "
+              f"{len(re.findall(r'<article class=\"scheda-grafico', html)):3d} grafici")
+        for id_grafico in re.findall(r'<article class="scheda-grafico[^"]*" id="chart-([^"]+)"', html):
+            trovati.setdefault(id_grafico, []).append(nome)
+    problemi = []
+    for id_grafico, dove in sorted(trovati.items()):
+        if len(dove) > 1:
+            problemi.append(f"Grafico doppio nel sito: {id_grafico} in {dove}")
+    attesi = {g["id"] for g in baseline["grafici"]}
+    for id_grafico in sorted(attesi - set(trovati)):
+        if mappa["grafici"][id_grafico].get("esito") != "merged":
+            problemi.append(f"Grafico mancante nel sito: {id_grafico}")
+    for id_grafico in sorted(set(trovati) - attesi - set(mappa.get("nuovi", {}))):
+        problemi.append(f"Grafico nel sito che né la baseline né la mappa conoscono: {id_grafico}")
+    totale = sum(len(v) for v in trovati.values())
+    print(f"Grafici nel sito: {totale} ({len(pagine)} pagine); baseline: {len(attesi)}")
+    for p in problemi:
+        print("✗", p)
+    print("OK: il sito contiene tutti i grafici." if not problemi else f"{len(problemi)} problema/i.")
+    return 1 if problemi else 0
+
+
 def main() -> int:
     comando = sys.argv[1] if len(sys.argv) > 1 else ""
-    if comando not in ("salva", "controlla"):
+    if comando not in ("salva", "controlla", "sito"):
         print(__doc__)
         return 2
     config = carica_config(RADICE / "config.yaml")
@@ -123,6 +154,8 @@ def main() -> int:
 
     baseline = json.loads(BASELINE.read_text(encoding="utf-8"))
     mappa = yaml.safe_load(MAPPA.read_text(encoding="utf-8"))
+    if comando == "sito":
+        return controlla_sito(baseline, mappa)
     problemi = confronta(baseline, corrente, mappa)
     print(f"Grafici: {len(corrente['grafici'])} oggi, {len(baseline['grafici'])} nella baseline · "
           f"serie in config: {len(corrente['serie_config'])}/{len(baseline['serie_config'])}")

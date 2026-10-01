@@ -41,31 +41,47 @@
 # nella scheda riassuntiva (se riepilogo: true) e nella tabella "Stato delle serie".
 # =====================================================================
 
-# Tab mostrate in cima al sito. "attiva: false" = tab visibile ma "in arrivo".
+# Pagine del sito (una pagina HTML per regione: site/<id>/index.html). "attiva: false" = pagina "in arrivo".
+# Provvisorio: nello step 5 della ristrutturazione (docs/ristrutturazione.md) "regioni" diventa "pagine".
 regioni:
   - id: usa
     nome: Stati Uniti
+    descrizione: Politica monetaria, curva dei Treasury, tassi reali, inflazione, credito, azioni e condizioni finanziarie.
     attiva: true
   - id: eurozona
     nome: Eurozona
+    descrizione: Tasso BCE, curva AAA (proxy Bund), spread sovrani, inflazione HICP, credito, azioni ed EUR/USD.
     attiva: true
   # Non è una regione geografica, ma usa la stessa struttura (dashboard/regions/commodities.py)
   - id: commodities
     nome: Commodities
+    descrizione: Energia, metalli e agricoli, con la tabella di performance e il confronto con i tassi USA.
     attiva: true
   # Asia (fase 3): tre paesi, nessuna banda di recessione (nessuna fonte ufficiale e automatica)
   - id: giappone
     nome: Giappone
+    descrizione: Tasso BoJ, rendimenti dei JGB, inflazione, cambio yen e Nikkei.
     attiva: true
   - id: cina
     nome: Cina
+    descrizione: Loan Prime Rate, inflazione, cambio yuan, CSI 300 e Hang Seng.
     attiva: true
   - id: corea
     nome: Corea del Sud
+    descrizione: Tasso BoK, rendimento a 10 anni, inflazione, cambio won e KOSPI.
     attiva: true
   - id: globale
     nome: Confronto globale
+    descrizione: Tassi di policy, rendimenti a 10 anni, inflazione, valute e borse di cinque economie sullo stesso grafico.
     attiva: true
+
+# Menu in cima a ogni pagina (provvisorio, come "regioni"): "pagina" = id di una regione (o "home");
+# "figli" = voce con una seconda riga di link. La voce con "figli" porta alla prima pagina figlia.
+menu:
+  - {titolo: Home, pagina: home}
+  - {titolo: Paesi, figli: [usa, eurozona, giappone, cina, corea]}
+  - {pagina: globale}
+  - {pagina: commodities}
 
 # Recessioni disegnate come bande grigie, per le regioni senza una serie scaricabile.
 # (Per gli USA si usa la serie FRED USREC, più in basso.)

@@ -1,0 +1,49 @@
+{% extends "base.html.j2" %}
+{% from "_componenti.html.j2" import avvisi, riepilogo, tabella_performance, scheda_grafico, stato_serie %}
+{# Pagina di una regione (USA, Eurozona, Commodities, ...): titolo, avvisi, "In sintesi", sezioni con grafici #}
+
+{% block titolo %}{{ r.nome }} · Dashboard macro{% endblock %}
+{% block descrizione %}{{ r.descrizione }}{% endblock %}
+
+{% block contenuto %}
+<section class="intestazione-pagina">
+  <h1>{{ r.nome }}</h1>
+  {% if r.descrizione %}<p class="descrizione">{{ r.descrizione }}</p>{% endif %}
+  <p class="aggiornamento">Aggiornata il <strong>{{ aggiornato }}</strong></p>
+</section>
+
+{{ avvisi(r.errori, r.in_ritardo, r.riserve, r.totale_serie, " usate in questa pagina") }}
+
+{% if not r.attiva %}
+<div class="in-arrivo">
+  <h2>{{ r.nome }}</h2>
+  <p>Questa sezione è in preparazione e arriverà nelle prossime fasi del progetto.</p>
+</div>
+{% else %}
+{# ---- Scheda riassuntiva (solo se la regione ha serie con riepilogo: true) ---- #}
+{% if r.riepilogo %}{{ riepilogo(r) }}{% endif %}
+
+{# ---- Sezioni con i grafici ---- #}
+{% for sez in r.sezioni %}
+<section class="blocco" id="{{ r.id }}-{{ sez.id }}" aria-labelledby="titolo-{{ r.id }}-{{ sez.id }}">
+  <h2 id="titolo-{{ r.id }}-{{ sez.id }}">{{ sez.titolo }}</h2>
+  {% if sez.descrizione %}<p class="descrizione">{{ sez.descrizione }}</p>{% endif %}
+  {% if sez.performance %}{{ tabella_performance(sez) }}{% endif %}
+  {% if sez.grafici %}
+  <div class="griglia-grafici">
+    {% for g in sez.grafici %}{{ scheda_grafico(g) }}{% endfor %}
+  </div>
+  {% endif %}
+</section>
+{% endfor %}
+
+{{ stato_serie(r) }}
+{% endif %}
+{% endblock %}
+
+{% block script_grafici %}
+{% if r.ha_grafici %}
+<script src="https://cdn.plot.ly/plotly-{{ plotly_versione }}.min.js" charset="utf-8"></script>
+<script src="https://cdn.plot.ly/plotly-locale-it-latest.js" charset="utf-8"></script>
+{% endif %}
+{% endblock %}
