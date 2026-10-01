@@ -15,6 +15,13 @@ Sezione **Azioni** (fatta) nelle tab USA ed Eurozona e benchmark ACWI con interr
 Tab tematica **Commodities** (fatta): tabella di performance, energia, metalli preziosi e industriali, agricoli,
 grafici commodities vs tassi USA. Fonte Yahoo Finance (future continui), riserva FRED (spot o medie mensili FMI).
 
+## Ristrutturazione in corso
+Il sito sta passando da 7 tab in una pagina sola a più pagine (Overview, Markets, Economies, Method & sources), in inglese.
+**Piano approvato e stato degli step: [docs/ristrutturazione.md](docs/ristrutturazione.md)** (leggerlo a inizio sessione e aggiornare
+la tabella "Stato" a ogni fine step). Un ramo per step (`ristrutturazione/step-N`); a fine step riepilogo e **attesa dell'ok dell'utente
+prima del merge**. Prima di dichiarare finito uno step: `python tools/inventario.py controlla` (nessun grafico o serie perso/doppio;
+mappa in `docs/mappa-grafici.yaml`). Quando la ristrutturazione sarà finita, le sezioni "Struttura" e "Regole" qui sotto vanno riscritte.
+
 ## Regole del progetto
 - **Commenti e testi del sito in italiano.** Numeri in formato italiano (virgola decimale).
 - Ambiente: Windows + PowerShell, **Python 3.14**, ambiente virtuale `.venv`.
